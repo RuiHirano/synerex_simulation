@@ -7,8 +7,8 @@ option go_package="github.com/synerex/synerex_alpha/api/simulation/agent";
 import "simulation/common/common.proto";
 
 message Pedestrian {
-    PedStatus status = 4;
-    PedRoute route = 7;
+    PedStatus status = 1;
+    PedRoute route = 2;
 }
 
 message PedRoute {
@@ -22,7 +22,6 @@ message PedRoute {
     double total_distance = 8;
     double required_time = 9;
 }
-
 
 message PedStatus {
     string age = 1;

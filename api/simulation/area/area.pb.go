@@ -21,100 +21,21 @@ var _ = math.Inf
 // proto package needs to be updated.
 const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
 
-type GetAreaRequest struct {
-	Id                   uint64   `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
-	XXX_NoUnkeyedLiteral struct{} `json:"-"`
-	XXX_unrecognized     []byte   `json:"-"`
-	XXX_sizecache        int32    `json:"-"`
-}
-
-func (m *GetAreaRequest) Reset()         { *m = GetAreaRequest{} }
-func (m *GetAreaRequest) String() string { return proto.CompactTextString(m) }
-func (*GetAreaRequest) ProtoMessage()    {}
-func (*GetAreaRequest) Descriptor() ([]byte, []int) {
-	return fileDescriptor_c8212774c97f163d, []int{0}
-}
-
-func (m *GetAreaRequest) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_GetAreaRequest.Unmarshal(m, b)
-}
-func (m *GetAreaRequest) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_GetAreaRequest.Marshal(b, m, deterministic)
-}
-func (m *GetAreaRequest) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_GetAreaRequest.Merge(m, src)
-}
-func (m *GetAreaRequest) XXX_Size() int {
-	return xxx_messageInfo_GetAreaRequest.Size(m)
-}
-func (m *GetAreaRequest) XXX_DiscardUnknown() {
-	xxx_messageInfo_GetAreaRequest.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_GetAreaRequest proto.InternalMessageInfo
-
-func (m *GetAreaRequest) GetId() uint64 {
-	if m != nil {
-		return m.Id
-	}
-	return 0
-}
-
-type GetAreaResponse struct {
-	Area                 *Area2   `protobuf:"bytes,1,opt,name=area,proto3" json:"area,omitempty"`
-	XXX_NoUnkeyedLiteral struct{} `json:"-"`
-	XXX_unrecognized     []byte   `json:"-"`
-	XXX_sizecache        int32    `json:"-"`
-}
-
-func (m *GetAreaResponse) Reset()         { *m = GetAreaResponse{} }
-func (m *GetAreaResponse) String() string { return proto.CompactTextString(m) }
-func (*GetAreaResponse) ProtoMessage()    {}
-func (*GetAreaResponse) Descriptor() ([]byte, []int) {
-	return fileDescriptor_c8212774c97f163d, []int{1}
-}
-
-func (m *GetAreaResponse) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_GetAreaResponse.Unmarshal(m, b)
-}
-func (m *GetAreaResponse) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_GetAreaResponse.Marshal(b, m, deterministic)
-}
-func (m *GetAreaResponse) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_GetAreaResponse.Merge(m, src)
-}
-func (m *GetAreaResponse) XXX_Size() int {
-	return xxx_messageInfo_GetAreaResponse.Size(m)
-}
-func (m *GetAreaResponse) XXX_DiscardUnknown() {
-	xxx_messageInfo_GetAreaResponse.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_GetAreaResponse proto.InternalMessageInfo
-
-func (m *GetAreaResponse) GetArea() *Area2 {
-	if m != nil {
-		return m.Area
-	}
-	return nil
-}
-
 type Area struct {
-	Id                   uint64     `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
-	Name                 string     `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
-	NeighborAreas        []uint64   `protobuf:"varint,3,rep,packed,name=neighbor_areas,json=neighborAreas,proto3" json:"neighbor_areas,omitempty"`
-	DuplicateArea        *AreaCoord `protobuf:"bytes,4,opt,name=duplicate_area,json=duplicateArea,proto3" json:"duplicate_area,omitempty"`
-	ControlArea          *AreaCoord `protobuf:"bytes,5,opt,name=control_area,json=controlArea,proto3" json:"control_area,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}   `json:"-"`
-	XXX_unrecognized     []byte     `json:"-"`
-	XXX_sizecache        int32      `json:"-"`
+	Id                   uint64          `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
+	Name                 string          `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
+	DuplicateArea        []*common.Coord `protobuf:"bytes,3,rep,name=duplicate_area,json=duplicateArea,proto3" json:"duplicate_area,omitempty"`
+	ControlArea          []*common.Coord `protobuf:"bytes,4,rep,name=control_area,json=controlArea,proto3" json:"control_area,omitempty"`
+	XXX_NoUnkeyedLiteral struct{}        `json:"-"`
+	XXX_unrecognized     []byte          `json:"-"`
+	XXX_sizecache        int32           `json:"-"`
 }
 
 func (m *Area) Reset()         { *m = Area{} }
 func (m *Area) String() string { return proto.CompactTextString(m) }
 func (*Area) ProtoMessage()    {}
 func (*Area) Descriptor() ([]byte, []int) {
-	return fileDescriptor_c8212774c97f163d, []int{2}
+	return fileDescriptor_c8212774c97f163d, []int{0}
 }
 
 func (m *Area) XXX_Unmarshal(b []byte) error {
@@ -149,155 +70,14 @@ func (m *Area) GetName() string {
 	return ""
 }
 
-func (m *Area) GetNeighborAreas() []uint64 {
-	if m != nil {
-		return m.NeighborAreas
-	}
-	return nil
-}
-
-func (m *Area) GetDuplicateArea() *AreaCoord {
+func (m *Area) GetDuplicateArea() []*common.Coord {
 	if m != nil {
 		return m.DuplicateArea
 	}
 	return nil
 }
 
-func (m *Area) GetControlArea() *AreaCoord {
-	if m != nil {
-		return m.ControlArea
-	}
-	return nil
-}
-
-type AreaCoord struct {
-	StartLat             float64  `protobuf:"fixed64,1,opt,name=start_lat,json=startLat,proto3" json:"start_lat,omitempty"`
-	StartLon             float64  `protobuf:"fixed64,2,opt,name=start_lon,json=startLon,proto3" json:"start_lon,omitempty"`
-	EndLat               float64  `protobuf:"fixed64,3,opt,name=end_lat,json=endLat,proto3" json:"end_lat,omitempty"`
-	EndLon               float64  `protobuf:"fixed64,4,opt,name=end_lon,json=endLon,proto3" json:"end_lon,omitempty"`
-	XXX_NoUnkeyedLiteral struct{} `json:"-"`
-	XXX_unrecognized     []byte   `json:"-"`
-	XXX_sizecache        int32    `json:"-"`
-}
-
-func (m *AreaCoord) Reset()         { *m = AreaCoord{} }
-func (m *AreaCoord) String() string { return proto.CompactTextString(m) }
-func (*AreaCoord) ProtoMessage()    {}
-func (*AreaCoord) Descriptor() ([]byte, []int) {
-	return fileDescriptor_c8212774c97f163d, []int{3}
-}
-
-func (m *AreaCoord) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_AreaCoord.Unmarshal(m, b)
-}
-func (m *AreaCoord) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_AreaCoord.Marshal(b, m, deterministic)
-}
-func (m *AreaCoord) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_AreaCoord.Merge(m, src)
-}
-func (m *AreaCoord) XXX_Size() int {
-	return xxx_messageInfo_AreaCoord.Size(m)
-}
-func (m *AreaCoord) XXX_DiscardUnknown() {
-	xxx_messageInfo_AreaCoord.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_AreaCoord proto.InternalMessageInfo
-
-func (m *AreaCoord) GetStartLat() float64 {
-	if m != nil {
-		return m.StartLat
-	}
-	return 0
-}
-
-func (m *AreaCoord) GetStartLon() float64 {
-	if m != nil {
-		return m.StartLon
-	}
-	return 0
-}
-
-func (m *AreaCoord) GetEndLat() float64 {
-	if m != nil {
-		return m.EndLat
-	}
-	return 0
-}
-
-func (m *AreaCoord) GetEndLon() float64 {
-	if m != nil {
-		return m.EndLon
-	}
-	return 0
-}
-
-type Area2 struct {
-	Id                   uint64          `protobuf:"varint,1,opt,name=id,proto3" json:"id,omitempty"`
-	Name                 string          `protobuf:"bytes,2,opt,name=name,proto3" json:"name,omitempty"`
-	NeighborAreas        []uint64        `protobuf:"varint,3,rep,packed,name=neighbor_areas,json=neighborAreas,proto3" json:"neighbor_areas,omitempty"`
-	DuplicateArea        []*common.Coord `protobuf:"bytes,4,rep,name=duplicate_area,json=duplicateArea,proto3" json:"duplicate_area,omitempty"`
-	ControlArea          []*common.Coord `protobuf:"bytes,5,rep,name=control_area,json=controlArea,proto3" json:"control_area,omitempty"`
-	XXX_NoUnkeyedLiteral struct{}        `json:"-"`
-	XXX_unrecognized     []byte          `json:"-"`
-	XXX_sizecache        int32           `json:"-"`
-}
-
-func (m *Area2) Reset()         { *m = Area2{} }
-func (m *Area2) String() string { return proto.CompactTextString(m) }
-func (*Area2) ProtoMessage()    {}
-func (*Area2) Descriptor() ([]byte, []int) {
-	return fileDescriptor_c8212774c97f163d, []int{4}
-}
-
-func (m *Area2) XXX_Unmarshal(b []byte) error {
-	return xxx_messageInfo_Area2.Unmarshal(m, b)
-}
-func (m *Area2) XXX_Marshal(b []byte, deterministic bool) ([]byte, error) {
-	return xxx_messageInfo_Area2.Marshal(b, m, deterministic)
-}
-func (m *Area2) XXX_Merge(src proto.Message) {
-	xxx_messageInfo_Area2.Merge(m, src)
-}
-func (m *Area2) XXX_Size() int {
-	return xxx_messageInfo_Area2.Size(m)
-}
-func (m *Area2) XXX_DiscardUnknown() {
-	xxx_messageInfo_Area2.DiscardUnknown(m)
-}
-
-var xxx_messageInfo_Area2 proto.InternalMessageInfo
-
-func (m *Area2) GetId() uint64 {
-	if m != nil {
-		return m.Id
-	}
-	return 0
-}
-
-func (m *Area2) GetName() string {
-	if m != nil {
-		return m.Name
-	}
-	return ""
-}
-
-func (m *Area2) GetNeighborAreas() []uint64 {
-	if m != nil {
-		return m.NeighborAreas
-	}
-	return nil
-}
-
-func (m *Area2) GetDuplicateArea() []*common.Coord {
-	if m != nil {
-		return m.DuplicateArea
-	}
-	return nil
-}
-
-func (m *Area2) GetControlArea() []*common.Coord {
+func (m *Area) GetControlArea() []*common.Coord {
 	if m != nil {
 		return m.ControlArea
 	}
@@ -305,38 +85,25 @@ func (m *Area2) GetControlArea() []*common.Coord {
 }
 
 func init() {
-	proto.RegisterType((*GetAreaRequest)(nil), "api.area.GetAreaRequest")
-	proto.RegisterType((*GetAreaResponse)(nil), "api.area.GetAreaResponse")
 	proto.RegisterType((*Area)(nil), "api.area.Area")
-	proto.RegisterType((*AreaCoord)(nil), "api.area.AreaCoord")
-	proto.RegisterType((*Area2)(nil), "api.area.Area2")
 }
 
 func init() { proto.RegisterFile("simulation/area/area.proto", fileDescriptor_c8212774c97f163d) }
 
 var fileDescriptor_c8212774c97f163d = []byte{
-	// 364 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xac, 0x52, 0x41, 0x4b, 0xeb, 0x40,
-	0x10, 0x26, 0x4d, 0xda, 0xd7, 0x6e, 0x5f, 0x53, 0xde, 0xbe, 0x83, 0xa1, 0x82, 0x84, 0x88, 0x90,
-	0x53, 0x02, 0xb5, 0x14, 0xf1, 0xa6, 0x1e, 0xbc, 0x78, 0xca, 0xd1, 0x4b, 0xd9, 0x36, 0x4b, 0xbb,
-	0x90, 0xec, 0xc4, 0xdd, 0x0d, 0xea, 0xdf, 0x13, 0xfc, 0x5f, 0xb2, 0xd3, 0x26, 0xd4, 0xda, 0xde,
-	0xbc, 0x64, 0x32, 0xf3, 0x7d, 0xdf, 0xec, 0xcc, 0xc7, 0x90, 0x89, 0x16, 0x65, 0x5d, 0x30, 0x23,
-	0x40, 0xa6, 0x4c, 0x71, 0x86, 0x9f, 0xa4, 0x52, 0x60, 0x80, 0xf6, 0x59, 0x25, 0x12, 0x9b, 0x4f,
-	0x2e, 0xf6, 0x58, 0x2b, 0x28, 0xcb, 0x36, 0x6c, 0x99, 0x51, 0x48, 0xfc, 0x47, 0x6e, 0xee, 0x14,
-	0x67, 0x19, 0x7f, 0xa9, 0xb9, 0x36, 0xd4, 0x27, 0x1d, 0x91, 0x07, 0x4e, 0xe8, 0xc4, 0x5e, 0xd6,
-	0x11, 0x79, 0x34, 0x27, 0xe3, 0x96, 0xa1, 0x2b, 0x90, 0x9a, 0xd3, 0x4b, 0xe2, 0xd9, 0xe6, 0x48,
-	0x1a, 0x4e, 0xc7, 0x49, 0xf3, 0x5a, 0x62, 0x59, 0xd3, 0x0c, 0xc1, 0xe8, 0xd3, 0x21, 0x9e, 0xcd,
-	0x0f, 0x1b, 0x52, 0x4a, 0x3c, 0xc9, 0x4a, 0x1e, 0x74, 0x42, 0x27, 0x1e, 0x64, 0xf8, 0x4f, 0xaf,
-	0x88, 0x2f, 0xb9, 0x58, 0x6f, 0x96, 0xa0, 0x16, 0x56, 0xad, 0x03, 0x37, 0x74, 0x63, 0x2f, 0x1b,
-	0x35, 0x55, 0xdb, 0x49, 0xd3, 0x5b, 0xe2, 0xe7, 0x75, 0x55, 0x88, 0x15, 0x33, 0x1c, 0x79, 0x81,
-	0x87, 0x23, 0xfc, 0xff, 0x3e, 0xc2, 0x03, 0x80, 0xca, 0xb3, 0x51, 0x4b, 0xc5, 0x31, 0xe6, 0xe4,
-	0xef, 0x0a, 0xa4, 0x51, 0x50, 0x6c, 0x95, 0xdd, 0xd3, 0xca, 0xe1, 0x8e, 0x68, 0x2b, 0xd1, 0x2b,
-	0x19, 0xb4, 0x08, 0x3d, 0x27, 0x03, 0x6d, 0x98, 0x32, 0x8b, 0x82, 0x19, 0x5c, 0xc9, 0xc9, 0xfa,
-	0x58, 0x78, 0x62, 0x66, 0x0f, 0x04, 0x89, 0xdb, 0xb5, 0x20, 0x48, 0x7a, 0x46, 0xfe, 0x70, 0x99,
-	0xa3, 0xce, 0x45, 0xa8, 0xc7, 0x65, 0x6e, 0x55, 0x0d, 0x00, 0x12, 0x97, 0xd9, 0x01, 0x20, 0xa3,
-	0x0f, 0x87, 0x74, 0xd1, 0xd0, 0xdf, 0x74, 0xf0, 0xe6, 0x88, 0x83, 0x6e, 0x3c, 0x9c, 0xfe, 0x43,
-	0x1f, 0x76, 0xa7, 0x71, 0xd4, 0xbf, 0xd9, 0x0f, 0xff, 0x4e, 0xe8, 0xf6, 0xdd, 0xbb, 0x9f, 0x3f,
-	0xcf, 0xd6, 0xc2, 0x6c, 0xea, 0xa5, 0xe5, 0xa4, 0xfa, 0x5d, 0x72, 0xc5, 0xdf, 0x9a, 0xb8, 0x60,
-	0x45, 0xb5, 0x61, 0x29, 0xab, 0x44, 0x7a, 0x70, 0xcc, 0xcb, 0x1e, 0x9e, 0xe7, 0xf5, 0x57, 0x00,
-	0x00, 0x00, 0xff, 0xff, 0xc2, 0x60, 0xd1, 0x97, 0xe6, 0x02, 0x00, 0x00,
+	// 211 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0xff, 0xe2, 0x92, 0x2a, 0xce, 0xcc, 0x2d,
+	0xcd, 0x49, 0x2c, 0xc9, 0xcc, 0xcf, 0xd3, 0x4f, 0x2c, 0x4a, 0x4d, 0x04, 0x13, 0x7a, 0x05, 0x45,
+	0xf9, 0x25, 0xf9, 0x42, 0x1c, 0x89, 0x05, 0x99, 0x7a, 0x20, 0xbe, 0x94, 0x1c, 0x92, 0xaa, 0xe4,
+	0xfc, 0xdc, 0x5c, 0x38, 0x05, 0x51, 0xa9, 0x34, 0x8b, 0x91, 0x8b, 0xc5, 0xb1, 0x28, 0x35, 0x51,
+	0x88, 0x8f, 0x8b, 0x29, 0x33, 0x45, 0x82, 0x51, 0x81, 0x51, 0x83, 0x25, 0x88, 0x29, 0x33, 0x45,
+	0x48, 0x88, 0x8b, 0x25, 0x2f, 0x31, 0x37, 0x55, 0x82, 0x49, 0x81, 0x51, 0x83, 0x33, 0x08, 0xcc,
+	0x16, 0xb2, 0xe0, 0xe2, 0x4b, 0x29, 0x2d, 0xc8, 0xc9, 0x4c, 0x4e, 0x2c, 0x49, 0x8d, 0x07, 0x19,
+	0x2f, 0xc1, 0xac, 0xc0, 0xac, 0xc1, 0x6d, 0x24, 0xa8, 0x07, 0xb2, 0x0f, 0x6a, 0xae, 0x73, 0x7e,
+	0x7e, 0x51, 0x4a, 0x10, 0x2f, 0x5c, 0x21, 0xd8, 0x74, 0x13, 0x2e, 0x9e, 0xe4, 0xfc, 0xbc, 0x92,
+	0xa2, 0xfc, 0x1c, 0x88, 0x3e, 0x16, 0x5c, 0xfa, 0xb8, 0xa1, 0xca, 0x40, 0xba, 0x9c, 0xcc, 0xa2,
+	0x4c, 0xd2, 0x33, 0x4b, 0x32, 0x4a, 0x93, 0x40, 0x6a, 0xf4, 0x8b, 0x2b, 0xf3, 0x52, 0x8b, 0x52,
+	0x2b, 0x60, 0x74, 0x7c, 0x62, 0x4e, 0x41, 0x46, 0xa2, 0x7e, 0x62, 0x41, 0xa6, 0x3e, 0x5a, 0x48,
+	0x24, 0xb1, 0x81, 0xfd, 0x66, 0x0c, 0x08, 0x00, 0x00, 0xff, 0xff, 0x2b, 0x7f, 0x65, 0xb9, 0x23,
+	0x01, 0x00, 0x00,
 }

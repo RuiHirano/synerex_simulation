@@ -22,7 +22,7 @@ import (
 	gosocketio "github.com/mtfelian/golang-socketio"
 	pb "github.com/synerex/synerex_alpha/api"
 	"github.com/synerex/synerex_alpha/api/simulation/agent"
-	"github.com/synerex/synerex_alpha/api/simulation/participant"
+	"github.com/synerex/synerex_alpha/api/simulation/provider"
 	"github.com/synerex/synerex_alpha/api/simulation/area"
 	"github.com/synerex/synerex_alpha/api/simulation/daemon"
 	"github.com/synerex/synerex_alpha/api/simulation/synerex"

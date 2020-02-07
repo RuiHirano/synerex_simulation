@@ -15,7 +15,7 @@ import (
 	"github.com/synerex/synerex_alpha/api/simulation/agent"
 	"github.com/synerex/synerex_alpha/api/simulation/daemon"
 	"github.com/synerex/synerex_alpha/api/simulation/synerex"
-	"github.com/synerex/synerex_alpha/api/simulation/participant"
+	"github.com/synerex/synerex_alpha/api/simulation/provider"
 	"github.com/synerex/synerex_alpha/provider/simulation/scenario/communicator"
 	"github.com/synerex/synerex_alpha/provider/simulation/scenario/simulator"
 	"github.com/synerex/synerex_alpha/sxutil"

@@ -11,7 +11,7 @@ import (
 	pb "github.com/synerex/synerex_alpha/api"
 	"github.com/synerex/synerex_alpha/api/simulation/agent"
 	"github.com/synerex/synerex_alpha/api/simulation/clock"
-	"github.com/synerex/synerex_alpha/api/simulation/participant"
+	"github.com/synerex/synerex_alpha/api/simulation/provider"
 	"github.com/synerex/synerex_alpha/sxutil"
 	"google.golang.org/grpc"
 

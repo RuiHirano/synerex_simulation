@@ -23,7 +23,6 @@ message CarRoute {
     double required_time = 9;
 }
 
-
 message CarStatus {
     string age = 1;
     string sex = 2;

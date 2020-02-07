@@ -10,7 +10,7 @@ import (
 	pb "github.com/synerex/synerex_alpha/api"
 	"github.com/synerex/synerex_alpha/api/simulation/common"
 	"github.com/synerex/synerex_alpha/api/simulation/synerex"
-	"github.com/synerex/synerex_alpha/api/simulation/participant"
+	"github.com/synerex/synerex_alpha/api/simulation/provider"
 	"github.com/synerex/synerex_alpha/provider/simulation/car/communicator"
 	"github.com/synerex/synerex_alpha/provider/simulation/car/simulator"
 	"github.com/synerex/synerex_alpha/sxutil"

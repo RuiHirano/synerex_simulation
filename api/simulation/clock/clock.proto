@@ -11,6 +11,13 @@ message SetClockRequest{
 message SetClockResponse{
 }
 
+message UpdateClockRequest{
+    Clock clock = 1;
+}
+
+message UpdateClockResponse{
+}
+
 
 message GetClockRequest{
 }
@@ -20,21 +27,18 @@ message GetClockResponse{
 }
 
 message ForwardClockRequest{
-    uint64 step_num = 1;
 }
 
 message ForwardClockResponse{
 }
 
 message BackClockRequest{
-    uint64 step_num = 1;
 }
 
 message BackClockResponse{
 }
 
 message StartClockRequest{
-    uint64 step_num = 1;
 }
 
 message StartClockResponse{
@@ -49,6 +53,7 @@ message StopClockResponse{
 message Clock {
         double global_time = 1;
         double time_step = 2;
+		uint64 step_num = 3;
 }
 
 

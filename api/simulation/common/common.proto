@@ -9,11 +9,16 @@ message Coord {
     double longitude = 2;
 }
 
-enum AgentType {
-	NONE = 0;
-    PEDESTRIAN = 1;
-    CAR = 2;
-	TRAIN = 3;
-	SIGNAL = 4;
+
+
+enum ServerType {
+    NODE_ID = 0;
+    SYNEREX = 1;
+	MONITOR = 2;
 }
 
+message Server {
+	uint64 id = 1;
+	string name = 2;
+    ServerType server_type = 3;
+}

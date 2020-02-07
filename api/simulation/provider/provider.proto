@@ -1,0 +1,94 @@
+syntax = "proto3";
+
+package api.provider;
+
+option go_package="github.com/synerex/synerex_alpha/api/simulation/provider";
+import "simulation/agent/agent.proto";
+
+message RegistProviderRequest {
+    Provider provider = 1;
+}
+
+message RegistProviderResponse {
+}
+
+message KillProviderRequest {
+    Provider provider = 1;
+}
+
+message KillProviderResponse {
+}
+
+message DivideProviderRequest {
+    repeated Provider providers = 1;
+}
+
+message DivideProviderResponse {
+}
+
+
+message UpdateProvidersRequest {
+	repeated Provider providers = 1;
+}
+
+message UpdateProvidersResponse {
+}
+
+message SendProviderStatusRequest {
+	Provider provider = 1;
+}
+
+message SendProviderStatusResponse {
+}
+
+
+message Provider {
+	uint64 id = 1;
+	string name = 2;
+    ProviderType provider_type = 3;
+	oneof data {
+		Scenario scenario = 4;
+		Agent agent = 5;
+		Visualization visualization = 6;
+		Clock clock = 7;
+	}
+}
+
+message ProviderStatus {
+	uint64 total_time = 1;
+	uint64 com_time = 2;
+	uint64 lc_time = 3;
+}
+
+
+enum ProviderType {
+    SCENARIO = 0;
+	AGENT = 1;
+	VISUALIZATION = 2;
+	CLOCK = 3;
+}
+
+message Scenario {
+	ProviderStatus status = 1;
+}
+
+message Agent {
+	uint64 area_id = 1;
+    agent.AgentType agent_type = 2;
+	uint64 agent_num = 3;
+	ProviderStatus status = 4;
+}
+
+message Visualization {
+	ProviderStatus status = 1;
+}
+
+message Clock {
+	ProviderStatus status = 1;
+}
+
+
+
+
+
+

@@ -6,7 +6,7 @@ option go_package="api";
 
 import "google/protobuf/timestamp.proto";
 import "google/protobuf/duration.proto";
-import "simulation/synerex/synerex.proto";
+import "simulation/simulation/simulation.proto";
 
 service Synerex {
     rpc RegisterDemand(Demand) returns (Response) {}
@@ -55,9 +55,8 @@ enum ChannelType {
     CLOCK_SERVICE = 1;  // Simulation Clock Service Information
     AREA_SERVICE = 2;  // Simulation Area Service Information
     AGENT_SERVICE = 3; // Simulation Agent Service Information
-    PARTICIPANT_SERVICE = 4; // Simulation Agent Service Information
-    ROUTE_SERVICE = 5; // Simulation Agent Service Information
-    END = 6;
+    PROVIDER_SERVICE = 4; // Simulation Agent Service Information
+    END = 5;
 }
 
 message Supply{
@@ -71,7 +70,7 @@ message Supply{
     string arg_json = 7;
     fixed64 mbus_id = 8;   // new mbus id for select demand.
     oneof arg_oneof {
-        synerex.SimSupply sim_supply = 9;
+        simulation.SimSupply sim_supply = 9;
     }
 }
 
@@ -86,7 +85,7 @@ message Demand {
     string arg_json = 7;
     fixed64 mbus_id = 8;   // new mbus id for select supply...
     oneof arg_oneof {
-		synerex.SimDemand sim_demand = 9;
+		simulation.SimDemand sim_demand = 9;
     }
 }
 
