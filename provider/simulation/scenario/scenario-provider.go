@@ -1,342 +1,1202 @@
 package main
 
 import (
+	"bufio"
+	"encoding/json"
 	"flag"
-	"log"
-	"sync"
-
 	"fmt"
-
-	"context"
-	"net"
+	"io"
+	"log"
+	"math"
+	"math/rand"
+	"net/http"
+	"os"
+	"os/exec"
+	"path/filepath"
+	"sort"
+	"sync"
 	"time"
 
+	"github.com/google/uuid"
+	gosocketio "github.com/mtfelian/golang-socketio"
 	pb "github.com/synerex/synerex_alpha/api"
-	"github.com/synerex/synerex_alpha/api/simulation/agent"
-	"github.com/synerex/synerex_alpha/api/simulation/daemon"
-	"github.com/synerex/synerex_alpha/api/simulation/synerex"
-	"github.com/synerex/synerex_alpha/api/simulation/provider"
-	"github.com/synerex/synerex_alpha/provider/simulation/scenario/communicator"
-	"github.com/synerex/synerex_alpha/provider/simulation/scenario/simulator"
+	simapi "github.com/synerex/synerex_alpha/api/simulation"
+	agent "github.com/synerex/synerex_alpha/api/simulation/agent"
+	area "github.com/synerex/synerex_alpha/api/simulation/area"
+	"github.com/synerex/synerex_alpha/api/simulation/clock"
+	common "github.com/synerex/synerex_alpha/api/simulation/common"
+	provider "github.com/synerex/synerex_alpha/api/simulation/provider"
+	"github.com/synerex/synerex_alpha/provider/simulation/simutil"
 	"github.com/synerex/synerex_alpha/sxutil"
 	"google.golang.org/grpc"
 )
 
-// rvo2適用
-// daemonでprovider起動setup
-// daemonをサーバとしてscenarioに命令
-
 var (
-	serverAddr       = flag.String("server_addr", "127.0.0.1:10000", "The server address in the format of host:port")
-	nodesrv          = flag.String("nodesrv", "127.0.0.1:9990", "Node ID Server")
-	port             = flag.Int("port", 10080, "HarmoVis Provider Listening Port")
-	daemonPort       = ":9996"
-	clockTime        = flag.Int("time", 1, "Time")
-	version          = "0.01"
-	isStart          bool
-	mu               sync.Mutex
-	com              *communicator.ScenarioCommunicator
-	sim              *simulator.ScenarioSimulator
+	serverAddr      = flag.String("server_addr", "127.0.0.1:10000", "The server address in the format of host:port")
+	nodesrv         = flag.String("nodesrv", "127.0.0.1:9990", "Node ID Server")
+	isStart         bool
+	mu              sync.Mutex
+	com             *simutil.Communicator
+	sim             *Simulator
+	providerManager *simutil.ProviderManager
+	pSources        map[provider.ProviderType]*provider.Source
 )
+
+const MAX_AGENTS_NUM = 1000
 
 func init() {
 	isStart = false
+
 }
 
-// startClock:
-func startClock(stepNum uint64) {
+var (
+	//fcs *geojson.FeatureCollection
+	//geofile string
+	port            = 9995
+	assetsDir       http.FileSystem
+	server          *gosocketio.Server = nil
+	providerMutex   sync.RWMutex
+	providerSources []*Source
+	serverSources   []*Source
+	orderInfos      []OrderInfo
+)
 
-	com.ForwardClockRequest(stepNum)
+/*func loadGeoJson(fname string) *geojson.FeatureCollection{
 
-	com.WaitForwardClockResponse()
+	bytes, err := ioutil.ReadFile(fname)
+	if err != nil {
+		log.Print("Can't read file:", err)
+		panic("load json")
+	}
+	fc, _ := geojson.UnmarshalFeatureCollection(bytes)
 
-	// calc next time
-	sim.ForwardStep()
-	log.Printf("\x1b[30m\x1b[47m \n Finish: Clock forwarded \n Time:  %v \x1b[0m\n", sim.GlobalTime)
+	return fc
+}*/
 
-	// 待機
-	time.Sleep(time.Duration(sim.TimeStep) * time.Second)
+// エリア分割の閾値(100人超えたら分割)
+var areaAgentNum = 100
 
-	// 次のサイクルを行う
-	if isStart {
-		startClock(stepNum)
-	} else {
-		log.Printf("\x1b[30m\x1b[47m \n Finish: Clock stopped \n GlobalTime:  %v \n TimeStep: %v \x1b[0m\n", sim.GlobalTime, sim.TimeStep)
-		isStart = false
-		// exit goroutin
-		return
+/*var mockProviderStats = []*ProviderStats{
+	{
+		AgentNum: 50,
+		Time: 0.0,
+	},
+}*/
+
+func Sub(coord1 *common.Coord, coord2 *common.Coord) *common.Coord {
+	return &common.Coord{Latitude: coord1.Latitude - coord2.Latitude, Longitude: coord1.Longitude - coord2.Longitude}
+}
+
+func Mul(coord1 *common.Coord, coord2 *common.Coord) float64 {
+	return coord1.Latitude*coord2.Latitude + coord1.Longitude*coord2.Longitude
+}
+
+func Abs(coord1 *common.Coord) float64 {
+	return math.Sqrt(Mul(coord1, coord1))
+}
+
+func Add(coord1 *common.Coord, coord2 *common.Coord) *common.Coord {
+	return &common.Coord{Latitude: coord1.Latitude + coord2.Latitude, Longitude: coord1.Longitude + coord2.Longitude}
+}
+
+func Div(coord *common.Coord, s float64) *common.Coord {
+	return &common.Coord{Latitude: coord.Latitude / s, Longitude: coord.Longitude / s}
+}
+
+type ByAbs struct {
+	Coords []*common.Coord
+}
+
+func (b ByAbs) Less(i, j int) bool {
+	return Abs(b.Coords[i]) < Abs(b.Coords[j])
+}
+func (b ByAbs) Len() int {
+	return len(b.Coords)
+}
+
+func (b ByAbs) Swap(i, j int) {
+	b.Coords[i], b.Coords[j] = b.Coords[j], b.Coords[i]
+}
+
+/*func updateProvider(newProviderStats []*ProviderStats) []*ProviderStats{
+	// write area devide algorithm
+	updatedProviderStats := make([]*ProviderStats, 0)
+	for _, state := range newProviderStats{
+		if state.AgentNum > areaAgentNum{
+			// devide area
+			//vectors := make([]*common.Coord, 0)
+
+			point1, point2, point3, point4 := state.Area[0], state.Area[1], state.Area[2], state.Area[3]
+			point1vecs := []*common.Coord{Sub(point1, point1), Sub(point2, point1), Sub(point3, point1), Sub(point4, point1)}
+			// 昇順にする
+			sort.Sort(ByAbs{point1vecs})
+			devPoint1 := Div(point1vecs[2], 2)	//分割点1
+			divPoint2 := Add(Div(point1vecs[2], 2), point1vecs[1]) //分割点2
+			// 二つに分割
+			coords1 := []*common.Coord{
+				Add(point1vecs[0], point1), Add(point1vecs[1], point1), Add(devPoint1, point1), Add(divPoint2, point1),
+			}
+			coords2 := []*common.Coord{
+				Add(point1vecs[2], point1), Add(point1vecs[3], point1), Add(devPoint1, point1), Add(divPoint2, point1),
+			}
+			// 追加
+			state1 := &ProviderStats{
+				Area: coords1,
+				AgentNum: state.AgentNum/2,
+				Time: state.Time,
+			}
+			state2 := &ProviderStats{
+				Area: coords2,
+				AgentNum: state.AgentNum/2,
+				Time: state.Time,
+			}
+
+			updatedProviderStats = append(updatedProviderStats, state1)
+			updatedProviderStats = append(updatedProviderStats, state2)
+		}else{
+			updatedProviderStats = append(updatedProviderStats, state)
+		}
+	}
+	return updatedProviderStats
+}
+
+func areaTest(){
+	go func(){
+		for{
+			log.Printf("time: ---\n")
+			time.Sleep(1 * time.Second)
+			// change provider stats
+			newProviderStats := make([]*ProviderStatus, 0)
+			for i, state := range mockProviderStats{
+				if i == 0{
+					log.Printf("agentNum: %v, providerNum: %v\n", state.AgentNum, len(mockProviderStats))
+				}
+				log.Printf("area: %v\n", state.Area)
+				state.AgentNum += 30
+				newProviderStats = append(newProviderStats, state)
+			}
+			// update provider
+			mockProviderStats = updateProvider(newProviderStats)
+
+			// startup provider
+			//log.Printf("providerStats: %v\n", providerStats)
+		}
+	}()
+}*/
+
+type Option struct {
+	Key   string
+	Value string
+}
+
+type Source struct {
+	CmdName     string
+	Type        provider.ProviderType
+	Description string
+	SrcDir      string
+	BinName     string
+	GoFiles     []string
+	Options     []Option
+}
+
+type OrderInfo struct {
+	CmdName string
+	Type    OrderType
+	Options []Option
+}
+
+func init() {
+	//areaTest()
+	//geofile = "transit_points.geojson"
+	//fcs = loadGeoJson(geofile)
+	//runProviders = make(map[uint64]*Provider)
+	//providerMap = make(map[string]*exec.Cmd)
+	providerMutex = sync.RWMutex{}
+	pSources = make(map[provider.ProviderType]*provider.Source)
+	pSources[provider.ProviderType_CLOCK] = &provider.Source{
+		CmdName: "Clock",
+		Type:    provider.ProviderType_CLOCK,
+		SrcDir:  "provider/simulation/clock",
+		BinName: "clock-provider",
+		GoFiles: []string{"clock-provider.go"},
+		SubFunc: SendLog,
+	}
+	pSources[provider.ProviderType_SCENARIO] = &provider.Source{
+		CmdName: "Scenario",
+		Type:    provider.ProviderType_SCENARIO,
+		SrcDir:  "provider/simulation/scenario",
+		BinName: "scenario-provider",
+		GoFiles: []string{"scenario-provider.go"},
+		SubFunc: SendLog,
+	}
+	pSources[provider.ProviderType_VISUALIZATION] = &provider.Source{
+		CmdName: "Visualization",
+		Type:    provider.ProviderType_VISUALIZATION,
+		SrcDir:  "provider/simulation/visualization",
+		BinName: "visualization-provider",
+		GoFiles: []string{"visualization-provider.go"},
+		SubFunc: SendLog,
+	}
+	pSources[provider.ProviderType_AGENT] = &provider.Source{
+		CmdName: "Agent",
+		Type:    provider.ProviderType_AGENT,
+		SrcDir:  "provider/simulation/agent",
+		BinName: "agent-provider",
+		GoFiles: []string{"agent-provider.go"},
+		SubFunc: SendLog,
+	}
+	pSources[provider.ProviderType_NODE_ID] = &provider.Source{
+		CmdName: "NodeIDServer",
+		Type:    provider.ProviderType_NODE_ID,
+		SrcDir:  "nodeserv",
+		BinName: "nodeid-server",
+		GoFiles: []string{"nodeid-server.go"},
+		SubFunc: SendLog,
+	}
+	pSources[provider.ProviderType_SYNEREX] = &provider.Source{
+		CmdName: "SynerexServer",
+		Type:    provider.ProviderType_SYNEREX,
+		SrcDir:  "server",
+		BinName: "synerex-server",
+		GoFiles: []string{"synerex-server.go", "message-store.go"},
+		SubFunc: SendLog,
+	}
+	pSources[provider.ProviderType_MONITOR] = &provider.Source{
+		CmdName: "MonitorServer",
+		Type:    provider.ProviderType_MONITOR,
+		SrcDir:  "monitor",
+		BinName: "monitor-server",
+		GoFiles: []string{"monitor-server.go"},
+		SubFunc: SendLog,
+	}
+
+	orderInfos = []OrderInfo{
+		{
+			CmdName: "SetAgents",
+			Type:    OrderType_SET_AGENTS,
+			Options: []Option{Option{
+				Key:   "test",
+				Value: "0",
+			}},
+		},
+		{
+			CmdName: "SetArea",
+			Type:    OrderType_SET_AREA,
+			Options: []Option{Option{
+				Key:   "test",
+				Value: "0",
+			}},
+		},
+		{
+			CmdName: "SetClock",
+			Type:    OrderType_SET_CLOCK,
+			Options: []Option{Option{
+				Key:   "test",
+				Value: "0",
+			}},
+		},
+		{
+			CmdName: "StartClock",
+			Type:    OrderType_START_CLOCK,
+			Options: []Option{Option{
+				Key:   "test",
+				Value: "0",
+			}},
+		},
+		{
+			CmdName: "StopClock",
+			Type:    OrderType_STOP_CLOCK,
+			Options: []Option{Option{
+				Key:   "test",
+				Value: "0",
+			}},
+		},
 	}
 
 }
 
+////////////////////////////////////////////////////////////
+//////////////////        Util          ///////////////////
+///////////////////////////////////////////////////////////
+
+// providerが変化した場合に更新通知をする
+func updateProviderOrder() {
+	go func() {
+		providerNum := providerManager.GetProviderNum()
+		for {
+			newProviderNum := providerManager.GetProviderNum()
+			if providerNum != newProviderNum {
+				com.UpdateProvidersRequest(nil, providerManager.Providers)
+				providerNum = newProviderNum
+			}
+		}
+	}()
+}
+
+// providerに変化があった場合にGUIに情報を送る
+/*func sendRunnningProviders() {
+	providerMutex.RLock()
+
+	//fmt.Printf("providers---------- %v\n", len(runProviders))
+	rpJsons := make([]string, 0)
+	for _, rp := range providerManager.Providers {
+		bytes, _ := json.Marshal(rp)
+		rpJson := string(bytes)
+		fmt.Printf("provider----------\n")
+		//fmt.Printf("Json: %v \n", rpJson)
+		rpJsons = append(rpJsons, rpJson)
+	}
+	//c.Emit("providers", rpJsons)
+	server.BroadcastToAll("providers", rpJsons)
+	providerMutex.RUnlock()
+}*/
+
+// assetsFileHandler for static Data
+func assetsFileHandler(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet && r.Method != http.MethodHead {
+		return
+	}
+
+	file := r.URL.Path
+
+	if file == "/" {
+		file = "/index.html"
+	}
+	f, err := assetsDir.Open(file)
+	if err != nil {
+		log.Printf("can't open file %s: %v\n", file, err)
+		return
+	}
+	defer f.Close()
+
+	fi, err := f.Stat()
+	if err != nil {
+		log.Printf("can't open file %s: %v\n", file, err)
+		return
+	}
+	http.ServeContent(w, r, file, fi.ModTime(), f)
+}
+
+/*func getGoPath() string{
+	env := os.Environ()
+	for _, ev := range env {
+		if strings.Contains(ev,"GOPATH=") {
+			return ev
+		}
+	}
+	return ""
+}
+
+func getGoEnv() []string { // we need to get/set gopath
+	d, _ := os.Getwd() // may obtain dir of se-daemon
+	gopath := filepath.FromSlash(filepath.ToSlash(d) + "/../../../../")
+	absGopath, _ := filepath.Abs(gopath)
+	env := os.Environ()
+	newenv := make([]string, 0, 1)
+	foundPath := false
+	for _, ev := range env {
+		if strings.Contains(ev, "GOPATH=") {
+			// this might depends on each OS
+			newenv = append(newenv, ev+string(os.PathListSeparator)+filepath.FromSlash(filepath.ToSlash(absGopath)+"/"))
+			foundPath = true
+		} else {
+			newenv = append(newenv, ev)
+		}
+	}
+	if !foundPath { // this might happen at in the daemon..
+		gp := getGoPath()
+		newenv = append(newenv, gp)
+	}
+	return newenv
+}*/
+
+//////// To Order ////////////
+
+/*func decideCoordInGeo(fcs *geojson.FeatureCollection) *common.Coord{
+
+	geoCoords := fcs.Features[0].Geometry.(orb.MultiLineString)[0]
+	transitNum := rand.Int63n(int64(len(geoCoords)-1))
+
+	longitude := geoCoords[transitNum][0] + 0.0001 * rand.Float64()
+	latitude := geoCoords[transitNum][1] + 0.0001 * rand.Float64()
+	coord := &common.Coord{
+		Longitude: longitude,
+		Latitude: latitude,
+	}
+	//log.Printf("coord: ", coord)
+
+	return coord
+}*/
+
+// Agentオブジェクトの変換
+func calcRoute() *agent.PedRoute {
+
+	var departure, destination *common.Coord
+
+	departure = &common.Coord{
+		Latitude:  35.12532,
+		Longitude: 135.235231,
+	}
+	destination = &common.Coord{
+		Latitude:  35.12532,
+		Longitude: 135.235231,
+	}
+
+	transitPoints := make([]*common.Coord, 0)
+	transitPoints = append(transitPoints, destination)
+
+	route := &agent.PedRoute{
+		Position:      departure,
+		Direction:     100 * rand.Float64(),
+		Speed:         100 * rand.Float64(),
+		Departure:     departure,
+		Destination:   destination,
+		TransitPoints: transitPoints,
+		NextTransit:   destination,
+	}
+
+	return route
+}
+
+func divideArea(areaInfo *area.Area, num uint64) []*area.Area {
+	// エリアを分割する
+	// 最初は単純にエリアを半分にする
+	//providerStats := mockProviderStats
+	//duplicateRate := 0.1	// areaCoordの10%の範囲
+	// 二等分にするアルゴリズム
+	areaCoord := areaInfo.ControlArea
+	point1, point2, point3, point4 := areaCoord[0], areaCoord[1], areaCoord[2], areaCoord[3]
+	point1vecs := []*common.Coord{Sub(point1, point1), Sub(point2, point1), Sub(point3, point1), Sub(point4, point1)}
+	// 昇順にする
+	sort.Sort(ByAbs{point1vecs})
+	divPoint1 := Div(point1vecs[2], 2)                     //分割点1
+	divPoint2 := Add(Div(point1vecs[2], 2), point1vecs[1]) //分割点2
+	// 二つに分割
+	coords1 := []*common.Coord{
+		Add(point1vecs[0], point1), Add(point1vecs[1], point1), Add(divPoint1, point1), Add(divPoint2, point1),
+	}
+	coords2 := []*common.Coord{
+		Add(point1vecs[2], point1), Add(point1vecs[3], point1), Add(divPoint1, point1), Add(divPoint2, point1),
+	}
+	areaInfos := []*area.Area{&area.Area{
+		Id:            1,
+		Name:          "aaa",
+		DuplicateArea: coords1,
+		ControlArea:   coords1,
+	}, &area.Area{
+		Id:            1,
+		Name:          "bbb",
+		DuplicateArea: coords2,
+		ControlArea:   coords2,
+	}}
+
+	for _, coord := range coords1 {
+		fmt.Printf("coord: %v\n", coord)
+	}
+	for _, coord := range coords2 {
+		fmt.Printf("coord: %v\n", coord)
+	}
+
+	return areaInfos
+}
+
+////////////////////////////////////////////////////////////
+//////////////////     ps Command     ////////////////////
+//////////////////////////////////////////////////////////
+
+/*func checkRunning(opt string) []string {
+	isLong := false
+	if opt == "long" {
+		isLong = true
+	}
+	var procs []string
+	i := 0
+	providerMutex.RLock()
+	if isLong {
+		procs = make([]string, len(providerManager.Providers)+2)
+		str := fmt.Sprintf("  pid: %-20s : \n", "process name")
+		procs[i] = str
+		procs[i+1] = "-----------------------------------------------------------------\n"
+		i += 2
+	} else {
+		procs = make([]string, len(providerManager.Providers))
+	}
+	for _, provider := range providerManager.Providers {
+		pid := pSources[provider.Type].Cmd.Process.Pid
+		name := provider.Name
+		if isLong {
+			str := fmt.Sprintf("%5d: %-20s : \n", pid, name)
+			procs[i] = str
+		} else {
+			if i != 0 {
+				procs[i] = ", " + name
+			} else {
+				procs[i] = name
+			}
+		}
+		i++
+	}
+	providerMutex.RUnlock()
+	return procs
+
+}*/
+
+////////////////////////////////////////////////////////////
+//////////////         Order Class         /////////////////
+///////////////////////////////////////////////////////////
+
+// Order
+type OrderType int
+
+const (
+	OrderType_SET_AGENTS  OrderType = 0
+	OrderType_SET_AREA    OrderType = 1
+	OrderType_SET_CLOCK   OrderType = 2
+	OrderType_START_CLOCK OrderType = 3
+	OrderType_STOP_CLOCK  OrderType = 4
+)
+
+type OrderOption struct {
+	AgentNum  string
+	ClockTime string
+}
+
+type Order struct {
+	Type   OrderType
+	Name   string
+	Option *OrderOption
+}
+
+func NewOrder(name string, option *OrderOption) (*Order, error) {
+	for _, sc := range orderInfos {
+		if sc.CmdName == name {
+			o := &Order{
+				Type:   sc.Type,
+				Name:   name,
+				Option: option,
+			}
+			return o, nil
+		}
+	}
+	msg := "invalid OrderName..."
+	return nil, fmt.Errorf("Error: %s\n", msg)
+}
+
+func (o *Order) Send() string {
+	target := o.Name
+	fmt.Printf("Target is : %v\n", target)
+	switch target {
+	case "SetClock":
+		fmt.Printf("SetClock\n")
+		globalTime := float64(0)
+		timeStep := float64(1)
+		o.SetClock(globalTime, timeStep)
+		return "ok"
+
+	case "SetAgents":
+		fmt.Printf("SetAgents\n")
+		//agentNum, _ := strconv.Atoi(order.Option)
+		agentNum := uint64(1)
+		o.SetAgents(agentNum)
+		return "ok"
+
+	case "StartClock":
+		fmt.Printf("StartClock\n")
+		o.StartClock()
+		return "ok"
+
+	case "StopClock":
+		fmt.Printf("StopClock\n")
+		o.StopClock()
+		return "ok"
+
+	case "SetArea":
+		fmt.Printf("SetArea\n")
+		//o.StopClock()
+		return "ok"
+
+	default:
+		err := "true"
+		log.Printf("Can't find command %s", target)
+		return err
+	}
+}
+
+// startClock:
+func (o *Order) StartClock() (bool, error) {
+
+	// エージェントを設置するリクエスト
+	com.StartClockRequest(nil)
+	return true, nil
+}
+
 // stopClock: Clockを停止する
-func stopClock() (bool, error) {
-	isStart = false
+func (o *Order) StopClock() (bool, error) {
+	// エージェントを設置するリクエスト
+	com.StopClockRequest(nil)
+
 	return true, nil
 }
 
 // setAgents: agentをセットするDemandを出す関数
-func setAgents(agents []*agent.Agent) (bool, error) {
+func (o *Order) SetAgents(agentNum uint64) (bool, error) {
+
+	agents := make([]*agent.Agent, 0)
+
+	for i := 0; i < int(agentNum); i++ {
+		uuid, err := uuid.NewRandom()
+		if err == nil {
+			agent := &agent.Agent{
+				Id:   uint64(uuid.ID()),
+				Type: agent.AgentType_PEDESTRIAN,
+				Data: &agent.Agent_Pedestrian{
+					Pedestrian: &agent.Pedestrian{
+						Status: &agent.PedStatus{
+							Age:  "20",
+							Name: "rui",
+						},
+						Route: calcRoute(),
+					},
+				},
+			}
+			agents = append(agents, agent)
+		}
+	}
+
+	// agentsに必要なプロバイダを起動
+	//runDividedProvider("Pedestrian", ProviderType_PEDESTRIAN)
+
+	// プロバイダに参加者情報を配布
+	//log.Printf("\x1b[30m\x1b[47m \n Finish: SetAgentRequest! \x1b[0m\n")
+	//com.SetParticipantsRequest()
 
 	// エージェントを設置するリクエスト
-	com.SetAgentsRequest(agents)
-
-	// 同期のため待機
-	com.WaitSetAgentsResponse()
+	com.SetAgentsRequest(nil, agents)
 
 	log.Printf("\x1b[30m\x1b[47m \n Finish: Agents set \n Add: %v \x1b[0m\n", len(agents))
 	return true, nil
 }
 
-// ClearAgents: agentを消去するDemandを出す関数
-func clearAgents() (bool, error) {
-
-	// エージェントを設置するリクエスト
-	com.ClearAgentsRequest()
-
-	// 同期のため待機
-	com.WaitClearAgentsResponse()
-
-	log.Printf("\x1b[30m\x1b[47m \n Finish: Agents cleared. \x1b[0m\n")
-	return true, nil
-}
-
 // setClock : クロック情報をDaemonから受け取りセットする
-func setClock(globalTime float64, timeStep float64) (bool, error) {
+func (o *Order) SetClock(globalTime float64, timeStep float64) (bool, error) {
 	// クロックをセット
-	sim.SetGlobalTime(globalTime)
-	sim.SetTimeStep(timeStep)
+	clockInfo := clock.NewClock(globalTime, timeStep, 1)
+	sim.Clock = clockInfo
 
 	// クロック情報をプロバイダに送信
-	clockInfo := sim.GetClock()
-	com.SetClockRequest(clockInfo)
-	// Responseを待機
-	com.WaitSetClockResponse()
-	log.Printf("\x1b[30m\x1b[47m \n Finish: Clock information set. \n GlobalTime:  %v \n TimeStep: %v \x1b[0m\n", sim.GlobalTime, sim.TimeStep)
+	com.SetClockRequest(nil, sim.Clock)
+
+	log.Printf("\x1b[30m\x1b[47m \n Finish: Clock information set. \n GlobalTime:  %v \n TimeStep: %v \x1b[0m\n", sim.Clock.GlobalTime, sim.Clock.TimeStep)
 	return true, nil
 }
 
-// notifyStartUp : 起動時に、他プロバイダの参加者情報を集める
-func notifyStartUp() {
-	// 起動をプロバイダに通知
-	com.NotifyStartUpRequest(participant.ProviderType_SCENARIO)
+/*////////////////////////////////////////////////////////////
+//////////////       Provider Manager Class      //////////
+///////////////////////////////////////////////////////////
+
+type ProviderManager struct{
+	Providers []*Provider
 }
 
-// callbackRegistParticipantRequest: 新規参加者を登録するための関数
-func callbackRegistParticipantRequest(dm *pb.Demand) {
+func NewProviderManager() *ProviderManager{
+	pm := &ProviderManager{
+		Providers: make([]*Provider, 0),
+	}
+	return pm
+}
 
-	participant := dm.GetSimDemand().GetRegistParticipantRequest().GetParticipant()
-	// IdListに保存
-	com.AddParticipant(participant)
+func (pm *ProviderManager)AddProvider(provider *Provider){
+	pm.Providers = append(pm.Providers, provider)
+	//log.Printf("Providers: %v\n", pm.Providers)
+}
 
-	// 同期するためのIdListを作成
-	com.CreateWaitIdList()
+func (pm *ProviderManager)SetProvider(index int, provider *Provider){
+	log.Printf("\x1b[31m\x1b[47m \n Provider Registed!!!: %v \x1b[0m\n", provider)
+	pm.Providers[index] = provider
+}
 
-	// 新規の参加者情報を参加プロバイダに送信
-	com.SetParticipantsRequest()
+func (pm *ProviderManager)DeleteProvider(id uint64){
+	newProviders := make([]*Provider, 0)
+    for _, provider := range pm.Providers {
+        if provider.ID == id {
+            continue
+        }
+        newProviders = append(newProviders, provider)
+    }
+	pm.Providers = newProviders
+}
 
-	// SetParticipantsResponseの待機
-	err := com.WaitSetParticipantsResponse()
-	if err != nil{
-		log.Printf("\x1b[31m\x1b[47m \n Error: %v \x1b[0m\n", err)
+////////////////////////////////////////////////////////////
+////////////         Provider Class         ////////////////
+///////////////////////////////////////////////////////////
+
+type Provider struct{
+	*provider.Provider
+}
+
+func NewProvider(name string, providerType provider.ProviderType)*Provider{
+	p := &Provider{
+		Provider: provider.NewProvider(name, providerType)
+	}
+	return p
+}
+
+func (p *Provider) Run(options []*Option) error{
+	log.Printf("Run '%s'\n", p.Name)
+	source := nil
+	for _, sc := range providerSources {
+		if sc.Type == p.Type {
+			if s.Type == provider.ProviderType_AGENT{
+				// Agentだった場合、種類を決定する
+				for _, name := range providerSources{
+					if name == p.Name{
+						source = sc
+					}
+				}
+			}else{
+				source = sc
+			}
+		}
+	}
+	if source == nil{
+		return fmt.Errorf("Error: not exist commmand...")
 	}
 
-	// 新規参加者に登録完了通知
-	com.RegistParticipantResponse(dm)
-	log.Printf("\x1b[30m\x1b[47m \n Finish: New participant registed  \x1b[0m\n")
-
+	cmd, err := createCmd(source)
+	if err != nil{
+		return err
+	}
+	runMyCmd(cmd, p.Name)
+	return nil
 }
 
-// callbackDeleteParticipantRequest: 参加者を削除するための関数
-func callbackDeleteParticipantRequest(dm *pb.Demand) {
+////////////////////////////////////////////////////////////
+////////////         Server Class         ////////////////
+///////////////////////////////////////////////////////////
 
-	participant := dm.GetSimDemand().GetDeleteParticipantRequest().GetParticipant()
-	// IdListに保存
-	com.DeleteParticipant(participant)
-	
-	// 同期するためのIdListを作成
-	com.CreateWaitIdList()
-
-	// 新規の参加者情報を参加プロバイダに送信
-	com.SetParticipantsRequest()
-	
-	// SetParticipantsResponseの待機
-	com.WaitSetParticipantsResponse()
-	
-	// 新規参加者に登録完了通知
-	com.DeleteParticipantResponse(dm)
-	log.Printf("\x1b[30m\x1b[47m \n Finish: Participant deleted \x1b[0m\n")
+type Server struct{
+	*provider.Server
 }
 
-// callbackGetClockRequest: 新規参加者がクロック情報を取得する関数
-func callbackGetClockRequest(dm *pb.Demand) {
-	// Clock情報を取得
-	clock := sim.GetClock()
-
-	// Clock情報を新規参加者へ送る
-	com.GetClockResponse(dm, clock)
+func NewServer(name string, serverType provider.ServerType)*Server{
+	s := &Server{
+		Server: provider.NewServer(name, serverType)
+	}
+	return p¥s
 }
 
-// notifyDownScenario: 新規参加者がクロック情報を取得する関数
-func notifyDownScenario() {
+func (s *Server) Run(options []*Option) error{
+	log.Printf("Run '%s'\n", p.Name)
+	source := nil
+	for _, sc := range serverSources {
+		if sc.Type == s.Type {
+			source = sc
+		}
+	}
+	if source == nil{
+		return fmt.Errorf("Error: not exist commmand...")
+	}
 
-	// 参加取り消しをするRequest
-	com.DownScenarioRequest()
-
-	// Responseの待機
-	com.WaitDownScenarioResponse()
-
-	log.Printf("\x1b[30m\x1b[47m \n Finish: Scenario-provider notified clash-infomation. \x1b[0m\n")
+	cmd, err := createCmd(source)
+	if err != nil{
+		return err
+	}
+	runMyCmd(cmd, s.Name)
+	return nil
 }
+
+////////////////////////////////////////////////////////////
+////////////         Run Commands           ////////////////
+///////////////////////////////////////////////////////////
+
+type Log struct{
+	ID uint64
+	Description string
+}
+
+func createCmd(source *Source) (*exec.Cmd, error){
+
+	d, err := os.Getwd()
+	if err != nil {
+		log.Printf("%s", err.Error())
+		return nil, fmt.Errorf("cannot get dir: %s", err.Error())
+	}
+
+	// get src dir
+	srcpath := filepath.FromSlash(filepath.ToSlash(d) + "/../../../" + source.SrcDir)
+	binpath := filepath.FromSlash(filepath.ToSlash(d) + "/../../../" + source.SrcDir + "/" + source.BinName)
+	//fi, err := os.Stat(binpath)
+	_, err = os.Stat(binpath)
+
+	// バイナリが最新かどうか
+	modTime := time.Date(2018, time.August, 1, 0, 0, 0, 0, time.UTC)
+	for _, fn := range source.GoFiles {
+		sp := filepath.FromSlash(filepath.ToSlash(srcpath) + "/" + fn)
+		ss, _ := os.Stat(sp)
+		if ss.ModTime().After(modTime) {
+			modTime = ss.ModTime()
+		}
+	}
+
+	// 最新でない場合、run
+	var cmd *exec.Cmd
+	if err == nil{ //&& fi.ModTime().After(modTime) { // check binary time
+		cmdArgs := make([]string, 0)
+		for _, option := range options{
+			cmdArgs =  append(cmdArgs, "-" + option.Key)
+			cmdArgs =  append(cmdArgs, option.Value)
+		}
+		cmd = exec.Command("./" + source.BinName, cmdArgs...) // run binary
+	} else {
+		log.Printf("Error: [provider].go file isn't done build command\n")
+		return nil, fmt.Errorf("Error: [provider].go file isn't done build command")
+	}
+
+	cmd.Dir = srcpath
+	cmd.Env = getGoEnv()
+
+	return cmd, nil
+}
+
+func runMyCmd(cmd *exec.Cmd, cmdName string) {
+
+	pipe, err := cmd.StderrPipe()
+	if err != nil {
+		log.Printf("Error for getting stdout pipe %s\n", cmd.Args[0])
+		return
+	}
+	err = cmd.Start()
+	if err != nil {
+		log.Printf("Error for executing %s %v\n", cmd.Args[0], err)
+		return
+	}
+	log.Printf("Starting %s..\n", cmd.Args[0])
+
+	// プロバイダーをリストに追加
+	providerMutex.Lock()
+	providerManager.AddProvider(p)
+	//runProviders[p.ID] = p
+	providerMutex.Unlock()
+
+	// logを読み取る
+	reader := bufio.NewReader(pipe)
+	for {
+		line, _, err := reader.ReadLine()
+		if err == io.EOF {
+			log.Printf("Command [%s] EOF\n", cmdName)
+			break
+		} else if err != nil {
+			log.Printf("Err %v\n", err)
+		}
+
+		logInfo := &Log{
+			ID: p.ID,
+			Description: string(line),
+		}
+
+		bytes, err  := json.Marshal(logInfo)
+		logjson := string(bytes)
+
+		if server != nil {
+			server.BroadcastToAll("log", logjson)
+		}
+		log.Printf("[%s]:%s", cmdName, string(line))
+	}
+
+	log.Printf("[%s]:Now ending...", cmdName)
+
+	cmd.Wait()
+	providerMutex.Lock()
+	providerManager.DeleteProvider(p.ID)
+	//delete(runProviders, p.ID)
+	providerMutex.Unlock()
+
+	log.Printf("Command [%s] closed\n", cmdName)
+}*/
+
+////////////////////////////////////////////////////////////
+////////////     Simulator CLI GUI Server    //////////////
+//////////////////////////////////////////////////////////
+
+type Log struct {
+	ID          uint64
+	Description string
+}
+
+type SimulatorServer struct{}
+
+func NewSimulatorServer() *SimulatorServer {
+	ss := &SimulatorServer{}
+	return ss
+}
+
+func (ss *SimulatorServer) Run() error {
+	go func() {
+		log.Printf("Starting.. Synergic Engine:")
+		currentRoot, err := os.Getwd()
+		if err != nil {
+			log.Printf("se-daemon: Can' get registered directory: %s", err.Error())
+		}
+		d := filepath.Join(currentRoot, "monitor", "build")
+
+		assetsDir = http.Dir(d)
+		server = gosocketio.NewServer()
+
+		server.On(gosocketio.OnConnection, func(c *gosocketio.Channel, param interface{}) {
+			log.Printf("Connected from %s as %s", c.IP(), c.Id())
+			// we need to send providers array
+			time.Sleep(1000 * time.Millisecond)
+			//sendRunnningProviders()
+
+		})
+		server.On(gosocketio.OnDisconnection, func(c *gosocketio.Channel) {
+			log.Printf("Disconnected from %s as %s", c.IP(), c.Id())
+		})
+
+		server.On("ps", func(c *gosocketio.Channel, param interface{}) []string {
+			// need to check param short or long
+			//opt := param.(string)
+
+			//return checkRunning(opt)
+			return []string{"ok"}
+		})
+
+		server.On("run", func(c *gosocketio.Channel, param interface{}) string {
+			targetName := param.(string)
+			log.Printf("Get run command %s", targetName)
+
+			p := provider.NewProvider(targetName, provider.ProviderType_AGENT)
+			p.Run(pSources[provider.ProviderType_AGENT])
+
+			//sendRunnningProviders()
+			return "ok"
+		})
+
+		server.On("order", func(c *gosocketio.Channel, param *Order) string {
+			name := param.Name
+			log.Printf("Get order command %s\n", name)
+			log.Printf("Get order command %v\n", param)
+			log.Printf("Get order command %v\n", param.Option)
+			order, _ := NewOrder(name, nil)
+			order.Send()
+			return "ok"
+		})
+
+		serveMux := http.NewServeMux()
+		serveMux.Handle("/socket.io/", server)
+		serveMux.HandleFunc("/", assetsFileHandler)
+		log.Println("Serving at localhost:9995...")
+		if err := http.ListenAndServe(fmt.Sprintf("0.0.0.0:%d", port), serveMux); err != nil {
+			log.Panic(err)
+		}
+
+		return
+
+	}()
+	return nil
+}
+
+func SendLog(cmd *exec.Cmd) {
+	// logを読み取る
+	pipe, _ := cmd.StderrPipe()
+	reader := bufio.NewReader(pipe)
+	for {
+		line, _, err := reader.ReadLine()
+		if err == io.EOF {
+			log.Printf("Command [%s] EOF\n")
+			break
+		} else if err != nil {
+			log.Printf("Err %v\n", err)
+		}
+
+		logInfo := &Log{
+			ID:          uint64(0),
+			Description: string(line),
+		}
+
+		bytes, err := json.Marshal(logInfo)
+		logjson := string(bytes)
+
+		if server != nil {
+			server.BroadcastToAll("log", logjson)
+		}
+		log.Printf("[%s]:%s", "test", string(line))
+	}
+}
+
+////////////////////////////////////////////////////////////
+////////////     Demand Supply Callback     ////////////////
+///////////////////////////////////////////////////////////
 
 // Supplyのコールバック関数
 func supplyCallback(clt *sxutil.SMServiceClient, sp *pb.Supply) {
 	// check if supply is match with my demand.
-	switch sp.GetSimSupply().SupplyType {
-	case synerex.SupplyType_SET_PARTICIPANTS_RESPONSE:
-		com.SendToSetParticipantsResponse(sp)
-	case synerex.SupplyType_SET_AGENTS_RESPONSE:
-		com.SendToSetAgentsResponse(sp)
-	case synerex.SupplyType_CLEAR_AGENTS_RESPONSE:
-		com.SendToClearAgentsResponse(sp)
-	case synerex.SupplyType_SET_CLOCK_RESPONSE:
-		com.SendToSetClockResponse(sp)
-	case synerex.SupplyType_FORWARD_CLOCK_RESPONSE:
-		com.SendToForwardClockResponse(sp)
-	case synerex.SupplyType_DOWN_SCENARIO_RESPONSE:
-		com.SendToDownScenarioResponse(sp)
-	default:
-		//fmt.Println("order is invalid")
+	switch sp.GetSimSupply().GetType() {
+	case simapi.SupplyType_UPDATE_PROVIDERS_RESPONSE:
+		com.SendToWaitCh(sp, sp.GetSimSupply().GetType())
+	case simapi.SupplyType_SET_CLOCK_RESPONSE:
+		com.SendToWaitCh(sp, sp.GetSimSupply().GetType())
+	case simapi.SupplyType_SET_AGENTS_RESPONSE:
+		com.SendToWaitCh(sp, sp.GetSimSupply().GetType())
+	case simapi.SupplyType_START_CLOCK_RESPONSE:
+		com.SendToWaitCh(sp, sp.GetSimSupply().GetType())
+	case simapi.SupplyType_STOP_CLOCK_RESPONSE:
+		com.SendToWaitCh(sp, sp.GetSimSupply().GetType())
 	}
 }
 
 // Demandのコールバック関数
 func demandCallback(clt *sxutil.SMServiceClient, dm *pb.Demand) {
 	// check if supply is match with my demand.
-	switch dm.GetSimDemand().DemandType {
-	case synerex.DemandType_REGIST_PARTICIPANT_REQUEST:
-		callbackRegistParticipantRequest(dm)
+	switch dm.GetSimDemand().GetType() {
+	case simapi.DemandType_REGIST_PROVIDER_REQUEST:
+		provider := dm.GetSimDemand().GetRegistProviderRequest().GetProvider()
+		providerManager.AddProvider(provider)
+	case simapi.DemandType_DIVIDE_PROVIDER_REQUEST:
+	case simapi.DemandType_KILL_PROVIDER_REQUEST:
+	case simapi.DemandType_SEND_PROVIDER_STATUS_REQUEST:
+
+		//divideArea(dm)
+	/*case synerex.DemandType_REGIST_PARTICIPANT_REQUEST:
+		participantInfo := dm.GetSimDemand().GetRegistParticipantRequest().GetParticipant()
+		log.Printf("\x1b[31m\x1b[47m \n Provider Request: %v %v\x1b[0m\n",participantInfo.Id, participantInfo.ProviderType )
+		for i, provider := range providerManager.Providers{
+			log.Printf("\x1b[31m\x1b[47m \n Provider Request: %v %v\x1b[0m\n",participantInfo.Id, provider.ID )
+			if provider.ID == participantInfo.Id{
+				log.Printf("\x1b[31m\x1b[47m \n Provider Request \x1b[0m\n")
+
+				provider.ParticipantInfo = participantInfo
+				provider.Status = ProviderStatusType_REGISTED
+				providerManager.SetProvider(i, provider)
+				log.Printf("\x1b[30m\x1b[47m \n Start: SetAgentRequest! \x1b[0m\n")
+				com.SetParticipantsRequest()
+			}
+		}
+		// 返信
+		com.RegistParticipantResponse(dm)
 	case synerex.DemandType_DELETE_PARTICIPANT_REQUEST:
-		callbackDeleteParticipantRequest(dm)
-	case synerex.DemandType_GET_CLOCK_REQUEST:
-		callbackGetClockRequest(dm)
+		participantInfo := dm.GetSimDemand().GetRegistParticipantRequest().GetParticipant()
+		providerManager.DeleteProvider(participantInfo.Id)*/
+
 	default:
 		//fmt.Println("order is invalid")
 	}
 
 }
 
-// simServer: scenarioと通信を行うサーバ
-type simDaemonServer struct {
+////////////////////////////////////////////////////////////
+////////////     Run Initial Provider     ////////////////
+///////////////////////////////////////////////////////////
+
+// 担当するAreaの範囲
+var mockAreaInfo = &area.Area{
+	Id:   uint64(0),
+	Name: "Area1",
+	DuplicateArea: []*common.Coord{
+		{Latitude: 35.156431, Longitude: 136.97285},
+		{Latitude: 35.156431, Longitude: 136.981308},
+		{Latitude: 35.153578, Longitude: 136.981308},
+		{Latitude: 35.153578, Longitude: 136.97285},
+	},
+	ControlArea: []*common.Coord{
+		{Latitude: 35.156431, Longitude: 136.97285},
+		{Latitude: 35.156431, Longitude: 136.981308},
+		{Latitude: 35.153578, Longitude: 136.981308},
+		{Latitude: 35.153578, Longitude: 136.97285},
+	},
 }
 
-// SetAgentsOrder
-func (s *simDaemonServer) SetAgentsOrder(ctx context.Context, in *daemon.SetAgentsMessage) (*daemon.Response, error) {
-	log.Printf("Received:SetAgents")
-	agents := in.GetAgents()
-	ok, err := setAgents(agents)
-	return &daemon.Response{Ok: ok}, err
-}
+func runInitProvider() {
+	// Run Server and Provider
+	nodeServer := provider.NewProvider("NodeIDServer", provider.ProviderType_NODE_ID)
+	nodeServer.Run(pSources[nodeServer.Type])
 
-// ClearAgentsOrder
-func (s *simDaemonServer) ClearAgentsOrder(ctx context.Context, in *daemon.ClearAgentsMessage) (*daemon.Response, error) {
-	log.Printf("Received:ClearAgents")
-	ok, err := clearAgents()
-	return &daemon.Response{Ok: ok}, err
-}
+	time.Sleep(500 * time.Millisecond)
+	monitorServer := provider.NewProvider("MonitorServer", provider.ProviderType_MONITOR)
+	monitorServer.Run(pSources[monitorServer.Type])
 
-// SetClock
-func (s *simDaemonServer) SetClockOrder(ctx context.Context, in *daemon.SetClockMessage) (*daemon.Response, error) {
-	log.Printf("Received:SetClock")
-	globalTime := in.GetGlobalTime()
-	timeStep := in.GetTimeStep()
-	ok, err := setClock(globalTime, timeStep)
-	return &daemon.Response{Ok: ok}, err
-}
+	time.Sleep(500 * time.Millisecond)
+	synerexServer := provider.NewProvider("SynerexServer", provider.ProviderType_SYNEREX)
+	synerexServer.Run(pSources[synerexServer.Type])
 
-// StartClock
-func (s *simDaemonServer) StartClockOrder(ctx context.Context, in *daemon.StartClockMessage) (*daemon.Response, error) {
-	log.Printf("Received:StartClock")
-	stepNum := in.GetStepNum()
-	log.Printf("debug %v\n", isStart)
-	if isStart {
-		log.Printf("\x1b[30m\x1b[47m \n Simulator is already started. \x1b[0m\n")
-	} else {
-		isStart = true
-		go startClock(stepNum)
+	time.Sleep(500 * time.Millisecond)
+	clockProvider := provider.NewProvider("Clock", provider.ProviderType_CLOCK)
+	clockProvider.Run(pSources[clockProvider.Type])
+
+	time.Sleep(500 * time.Millisecond)
+	visProvider := provider.NewProvider("Visualization", provider.ProviderType_VISUALIZATION)
+	visProvider.Run(pSources[visProvider.Type])
+
+	var INIT_PROVIDER_NUM = uint64(2)
+	var INIT_AGENT_NAMES = []string{"Pedestrian", "Car"}
+
+	for _, name := range INIT_AGENT_NAMES {
+		areaInfos := divideArea(mockAreaInfo, INIT_PROVIDER_NUM)
+		for _, areaInfo := range areaInfos {
+			fmt.Printf("areaInfo: %v\n", areaInfo)
+			options := make([]*provider.Option, 0)
+			options = append(options, &provider.Option{
+				Key:   "server_addr",
+				Value: "127.0.0.1:10000",
+			})
+			options = append(options, &provider.Option{
+				Key:   "nodesrv",
+				Value: "127.0.0.1:9990",
+			})
+			bytes, _ := json.Marshal(areaInfo)
+			options = append(options, &provider.Option{
+				Key:   "area_json",
+				Value: string(bytes),
+			})
+			provider := provider.NewProvider(name, provider.ProviderType_AGENT)
+			pSources[provider.Type].Options = options
+			provider.Run(pSources[provider.Type])
+
+		}
 	}
-	return &daemon.Response{Ok: true}, nil
-}
 
-// StopClock
-func (s *simDaemonServer) StopClockOrder(ctx context.Context, in *daemon.StopClockMessage) (*daemon.Response, error) {
-	log.Printf("Received:StopClock")
-	ok, err := stopClock()
-	return &daemon.Response{Ok: ok}, err
-}
-
-
-func runDaemonServer() {
-	// Scenarioとの通信サーバ
-	lis, err := net.Listen("tcp", daemonPort)
-	if err != nil {
-		log.Fatalf("failed to listen: %v", err)
-	}
-	s := grpc.NewServer()
-	daemon.RegisterSimDaemonServer(s, &simDaemonServer{})
-	if err := s.Serve(lis); err != nil {
-		log.Fatalf("failed to serve: %v", err)
-	}
 }
 
 func main() {
 
 	flag.Parse()
 
-	// connect to node server
-	sxutil.RegisterNodeName(*nodesrv, "ScenarioProvider", false)
+	// CLI, GUIの受信サーバ
+	simulatorServer := NewSimulatorServer()
+	simulatorServer.Run()
 
+	// Connect to Node Server
+	sxutil.RegisterNodeName(*nodesrv, "ScenarioProvider", false)
 	go sxutil.HandleSigInt()
 	sxutil.RegisterDeferFunction(sxutil.UnRegisterNode)
 
+	// Connect to Synerex Server
 	var opts []grpc.DialOption
-
 	opts = append(opts, grpc.WithInsecure())
 	conn, err := grpc.Dial(*serverAddr, opts...)
 	if err != nil {
 		log.Fatalf("fail to dial: %v", err)
 	}
-	sxutil.RegisterDeferFunction(func() { notifyDownScenario(); conn.Close() })
-
-	// run daemon server
-	go runDaemonServer()
-	log.Printf("Running Daemon Server..\n")
-
-	// connect to synerex server
+	sxutil.RegisterDeferFunction(func() { conn.Close() })
 	client := pb.NewSynerexClient(conn)
 	argJson := fmt.Sprintf("{Client:Scenario}")
 
-	// simulator
-	timeStep := float64(1)
-	globalTime := float64(0)
-	sim = simulator.NewScenarioSimulator(timeStep, globalTime)
+	// Simulator
+	clockInfo := clock.NewClock(0, 1, 1)
+	sim = NewSimulator(clockInfo)
 
 	// Communicator
-	com = communicator.NewScenarioCommunicator()
+	provider := provider.NewProvider("ScenarioProvider", provider.ProviderType_SCENARIO)
+	com = simutil.NewCommunicator(provider)
+	com.RegistClients(client, argJson)               // channelごとのClientを作成
+	com.SubscribeAll(demandCallback, supplyCallback) // ChannelにSubscribe
 
-	// Communicatorのsetup
+	// ProviderManager
+	providerManager = simutil.NewProviderManager()
+	providerManager.AddProvider(provider)
+
 	wg := sync.WaitGroup{}
 	wg.Add(1)
-	// channelごとのClientを作成
-	com.RegistClients(client, argJson)
-	// ChannelにSubscribe
-	com.SubscribeAll(demandCallback, supplyCallback, &wg)
-	wg.Wait()
-
-	wg.Add(1)
-	// 起動時、プロバイダがいれば登録する
-	notifyStartUp()
-
 	wg.Wait()
 	sxutil.CallDeferFunctions() // cleanup!
 

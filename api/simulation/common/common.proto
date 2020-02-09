@@ -11,14 +11,3 @@ message Coord {
 
 
 
-enum ServerType {
-    NODE_ID = 0;
-    SYNEREX = 1;
-	MONITOR = 2;
-}
-
-message Server {
-	uint64 id = 1;
-	string name = 2;
-    ServerType server_type = 3;
-}

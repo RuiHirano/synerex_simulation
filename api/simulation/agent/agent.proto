@@ -6,6 +6,7 @@ option go_package="github.com/synerex/synerex_alpha/api/simulation/agent";
 
 import "simulation/agent/pedestrian.proto";
 import "simulation/agent/car.proto";
+import "simulation/common/common.proto";
 
 message GetAgentsRequest {
 }
@@ -26,13 +27,26 @@ message SetAgentsResponse {
 message Agent {
     uint64 id = 1;
     AgentType type = 2;
+    Route route = 3;
 	oneof data {
-		pedestrian.Pedestrian pedestrian = 3;
-		car.Car car = 4;
+		pedestrian.Pedestrian pedestrian = 4;
+		car.Car car = 5;
 	}
 }
 
 enum AgentType {
     PEDESTRIAN = 0;
     CAR = 1;
+}
+
+message Route {
+    common.Coord position = 1;
+    double direction = 2;
+    double speed = 3;
+    common.Coord destination = 4;
+    common.Coord departure = 5;
+    repeated common.Coord transit_points = 6;
+    common.Coord next_transit = 7;
+    double total_distance = 8;
+    double required_time = 9;
 }

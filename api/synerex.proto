@@ -6,7 +6,7 @@ option go_package="api";
 
 import "google/protobuf/timestamp.proto";
 import "google/protobuf/duration.proto";
-import "simulation/simulation/simulation.proto";
+import "simulation/simulation.proto";
 
 service Synerex {
     rpc RegisterDemand(Demand) returns (Response) {}
@@ -53,7 +53,6 @@ message ConfirmResponse{
 enum ChannelType {
     NONE = 0;
     CLOCK_SERVICE = 1;  // Simulation Clock Service Information
-    AREA_SERVICE = 2;  // Simulation Area Service Information
     AGENT_SERVICE = 3; // Simulation Agent Service Information
     PROVIDER_SERVICE = 4; // Simulation Agent Service Information
     END = 5;

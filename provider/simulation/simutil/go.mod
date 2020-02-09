@@ -17,8 +17,10 @@ replace (
 	github.com/synerex/synerex_alpha/api/simulation/area => ../../../api/simulation/area
 	github.com/synerex/synerex_alpha/api/simulation/clock => ../../../api/simulation/clock
 	github.com/synerex/synerex_alpha/api/simulation/common => ../../../api/simulation/common
-	github.com/synerex/synerex_alpha/api/simulation/synerex => ../../../api/simulation/synerex
+	github.com/synerex/synerex_alpha/api/simulation => ../../../api/simulation
 	github.com/synerex/synerex_alpha/api/simulation/provider => ../../../api/simulation/provider
 	github.com/synerex/synerex_alpha/nodeapi => ../../../nodeapi
 	github.com/synerex/synerex_alpha/sxutil => ../../../sxutil
 )
+
+go 1.13

@@ -35,3 +35,5 @@ replace (
 	github.com/synerex/synerex_alpha/api/routing => ./api/routing
 	github.com/synerex/synerex_alpha/api/marketing => ./api/marketing
 )
+
+go 1.13

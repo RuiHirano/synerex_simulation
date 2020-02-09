@@ -15,3 +15,5 @@ require (
 replace github.com/synerex/synerex_alpha/monitor/monitorapi => ./monitorapi
 
 replace github.com/synerex/synerex_alpha/nodeapi => ../nodeapi
+
+go 1.13

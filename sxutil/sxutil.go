@@ -13,14 +13,12 @@ import (
 	"sync"
 	"time"
 
-	"github.com/synerex/synerex_alpha/api/simulation/synerex"
-
 	"github.com/bwmarrin/snowflake"
 	"github.com/golang/protobuf/ptypes"
-	"google.golang.org/grpc"
-
 	"github.com/synerex/synerex_alpha/api"
+	simapi "github.com/synerex/synerex_alpha/api/simulation"
 	"github.com/synerex/synerex_alpha/nodeapi"
+	"google.golang.org/grpc"
 )
 
 // IDType for all ID in Synergic Exchange
@@ -42,7 +40,7 @@ type DemandOpts struct {
 	Target    uint64
 	Name      string
 	JSON      string
-	SimDemand *synerex.SimDemand
+	SimDemand *simapi.SimDemand
 }
 
 // SupplyOpts is sender options for Supply
@@ -51,7 +49,7 @@ type SupplyOpts struct {
 	Target    uint64
 	Name      string
 	JSON      string
-	SimSupply *synerex.SimSupply
+	SimSupply *simapi.SimSupply
 }
 
 func init() {
@@ -280,11 +278,11 @@ func (clt *SMServiceClient) SelectDemand(dm *api.Demand) error {
 }
 
 // SubscribeSupply  Wrapper function for SMServiceClient
-func (clt *SMServiceClient) SubscribeSupply(ctx context.Context, spcb func(*SMServiceClient, *api.Supply), wg *sync.WaitGroup) error {
+func (clt *SMServiceClient) SubscribeSupply(ctx context.Context, spcb func(*SMServiceClient, *api.Supply)) error {
 	ch := clt.getChannel()
 	smc, err := clt.Client.SubscribeSupply(ctx, ch)
 	//log.Printf("Test3 %v", ch)
-	wg.Done()
+	//wg.Done()
 	if err != nil {
 		log.Printf("%v SubscribeSupply Error %v", clt, err)
 		return err
@@ -309,11 +307,11 @@ func (clt *SMServiceClient) SubscribeSupply(ctx context.Context, spcb func(*SMSe
 }
 
 // SubscribeDemand  Wrapper function for SMServiceClient
-func (clt *SMServiceClient) SubscribeDemand(ctx context.Context, dmcb func(*SMServiceClient, *api.Demand), wg *sync.WaitGroup) error {
+func (clt *SMServiceClient) SubscribeDemand(ctx context.Context, dmcb func(*SMServiceClient, *api.Demand)) error {
 	ch := clt.getChannel()
 	dmc, err := clt.Client.SubscribeDemand(ctx, ch)
 	//log.Printf("Test3 %v", ch)
-	wg.Done()
+	//wg.Done()
 	if err != nil {
 		log.Printf("%v SubscribeDemand Error %v", clt, err)
 		return err // sender should handle error...

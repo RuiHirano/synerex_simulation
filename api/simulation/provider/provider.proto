@@ -20,7 +20,7 @@ message KillProviderResponse {
 }
 
 message DivideProviderRequest {
-    repeated Provider providers = 1;
+    Provider provider = 1;
 }
 
 message DivideProviderResponse {
@@ -45,7 +45,7 @@ message SendProviderStatusResponse {
 message Provider {
 	uint64 id = 1;
 	string name = 2;
-    ProviderType provider_type = 3;
+    ProviderType type = 3;
 	oneof data {
 		Scenario scenario = 4;
 		Agent agent = 5;
@@ -62,10 +62,13 @@ message ProviderStatus {
 
 
 enum ProviderType {
-    SCENARIO = 0;
-	AGENT = 1;
-	VISUALIZATION = 2;
-	CLOCK = 3;
+    NODE_ID = 0;
+    SYNEREX = 1;
+	MONITOR = 2;
+    SCENARIO = 3;
+	AGENT = 4;
+	VISUALIZATION = 5;
+	CLOCK = 6;
 }
 
 message Scenario {

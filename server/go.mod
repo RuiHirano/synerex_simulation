@@ -19,8 +19,7 @@ require (
 	github.com/sirupsen/logrus v1.2.0
 	github.com/stretchr/objx v0.2.0 // indirect
 	github.com/synerex/synerex_alpha/api v0.0.0
-	github.com/synerex/synerex_alpha/api/simulation/common v0.0.0-00010101000000-000000000000 // indirect
-	github.com/synerex/synerex_alpha/api/simulation/simulation v0.0.0-00010101000000-000000000000 // indirect
+	github.com/synerex/synerex_alpha/api/simulation v0.0.0-00010101000000-000000000000 // indirect
 	github.com/synerex/synerex_alpha/monitor/monitorapi v0.0.0
 	github.com/synerex/synerex_alpha/nodeapi v0.0.0
 	github.com/synerex/synerex_alpha/sxutil v0.0.0
@@ -30,16 +29,16 @@ require (
 	golang.org/x/image v0.0.0-20191206065243-da761ea9ff43 // indirect
 	golang.org/x/lint v0.0.0-20191125180803-fdd1cda4f05f // indirect
 	golang.org/x/mobile v0.0.0-20191130191448-5c0e7e404af8 // indirect
-	golang.org/x/net v0.0.0-20191207000613-e7e4b65ae663 // indirect
+	golang.org/x/net v0.0.0-20200202094626-16171245cfb2 // indirect
 	golang.org/x/oauth2 v0.0.0-20191202225959-858c2ad4c8b6 // indirect
 	golang.org/x/sync v0.0.0-20190911185100-cd5d95a43a6e // indirect
-	golang.org/x/sys v0.0.0-20191206220618-eeba5f6aabab // indirect
+	golang.org/x/sys v0.0.0-20200202164722-d101bd2416d5 // indirect
 	golang.org/x/time v0.0.0-20191024005414-555d28b269f0 // indirect
 	golang.org/x/tools v0.0.0-20191206204035-259af5ff87bd // indirect
 	golang.org/x/xerrors v0.0.0-20191204190536-9bdfabe68543 // indirect
 	google.golang.org/appengine v1.6.5 // indirect
-	google.golang.org/genproto v0.0.0-20191206224255-0243a4be9c8f // indirect
-	google.golang.org/grpc v1.25.1
+	google.golang.org/genproto v0.0.0-20200205142000-a86caf926a67 // indirect
+	google.golang.org/grpc v1.27.1
 	gopkg.in/check.v1 v1.0.0-20190902080502-41f04d3bba15 // indirect
 	gopkg.in/yaml.v2 v2.2.7 // indirect
 )
@@ -47,13 +46,15 @@ require (
 replace (
 	github.com/synerex/synerex_alpha/api => ../api
 	github.com/synerex/synerex_alpha/api/common => ../api/common
+	github.com/synerex/synerex_alpha/api/simulation => ../api/simulation
 	github.com/synerex/synerex_alpha/api/simulation/agent => ../api/simulation/agent
 	github.com/synerex/synerex_alpha/api/simulation/area => ../api/simulation/area
 	github.com/synerex/synerex_alpha/api/simulation/clock => ../api/simulation/clock
 	github.com/synerex/synerex_alpha/api/simulation/common => ../api/simulation/common
 	github.com/synerex/synerex_alpha/api/simulation/provider => ../api/simulation/provider
-	github.com/synerex/synerex_alpha/api/simulation/simulation => ../api/simulation/simulation
 	github.com/synerex/synerex_alpha/monitor/monitorapi => ../monitor/monitorapi
 	github.com/synerex/synerex_alpha/nodeapi => ../nodeapi
 	github.com/synerex/synerex_alpha/sxutil => ../sxutil
 )
+
+go 1.13

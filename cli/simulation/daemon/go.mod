@@ -15,7 +15,6 @@ require (
 	github.com/synerex/synerex_alpha/api/simulation/clock v0.0.0
 	github.com/synerex/synerex_alpha/api/simulation/common v0.0.0-00010101000000-000000000000
 	github.com/synerex/synerex_alpha/api/simulation/daemon v0.0.0-00010101000000-000000000000
-	github.com/synerex/synerex_alpha/api/simulation/synerex v0.0.0-00010101000000-000000000000
 	golang.org/x/sys v0.0.0-20190215142949-d0b11bdaac8a
 	google.golang.org/grpc v1.22.1
 )
@@ -29,7 +28,7 @@ replace (
 	github.com/synerex/synerex_alpha/api/simulation/common => ../../../api/simulation/common
 	github.com/synerex/synerex_alpha/api/simulation/daemon => ../../../api/simulation/daemon
 	github.com/synerex/synerex_alpha/api/simulation/provider => ../../../api/simulation/provider
-	github.com/synerex/synerex_alpha/api/simulation/synerex => ../../../api/simulation/synerex
+	github.com/synerex/synerex_alpha/api/simulation => ../../../api/simulation
 	github.com/synerex/synerex_alpha/nodeapi => ../../../nodeapi
 	github.com/synerex/synerex_alpha/sxutil => ./../../../sxutil
 )

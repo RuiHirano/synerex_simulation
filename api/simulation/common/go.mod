@@ -15,3 +15,5 @@ replace (
 	github.com/synerex/synerex_alpha/nodeapi => ../../../nodeapi
 	github.com/synerex/synerex_alpha/sxutil => ../../../sxutil
 )
+
+go 1.13

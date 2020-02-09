@@ -1,16 +1,19 @@
+package area
 
+import (
+	"github.com/synerex/synerex_alpha/api/simulation/common"
+)
 
-func NewArea(name string, duplicateArea []*common.Coord, controlArea []*common.Coord) *Area{
+func NewArea(name string, duplicateArea []*common.Coord, controlArea []*common.Coord) *Area {
 	a := &Area{
-		Id: 0,
-		Name: name,
+		Id:            0,
+		Name:          name,
 		DuplicateArea: duplicateArea,
-		ControlArea: controlArea,
+		ControlArea:   controlArea,
 	}
 	return a
 }
 
-func (a *Area)Dummy(){
+func (a *Area) Dummy() {
 
 }
-
