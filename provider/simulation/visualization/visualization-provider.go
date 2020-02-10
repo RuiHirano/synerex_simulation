@@ -3,8 +3,10 @@ package main
 import (
 	"flag"
 	"log"
+	"strings"
 	"sync"
 
+	"github.com/golang/protobuf/jsonpb"
 	pb "github.com/synerex/synerex_alpha/api"
 	simapi "github.com/synerex/synerex_alpha/api/simulation"
 	"github.com/synerex/synerex_alpha/api/simulation/agent"
@@ -24,22 +26,34 @@ import (
 )
 
 var (
-	serverAddr = flag.String("server_addr", "127.0.0.1:10000", "The server address in the format of host:port")
-	nodesrv    = flag.String("nodesrv", "127.0.0.1:9990", "Node ID Server")
-	pidFlag    = flag.Int("pid", 2, "Provider Id")
-	port       = flag.Int("port", 10080, "HarmoVis Provider Listening Port")
-	version    = "0.01"
-	mu         sync.Mutex
-	assetsDir  http.FileSystem
-	ioserv     *gosocketio.Server
-	com        *simutil.Communicator
-	sim        *Simulator
-	pid        uint64
+	serverAddr           = flag.String("server_addr", "127.0.0.1:10000", "The server address in the format of host:port")
+	nodesrv              = flag.String("nodeid_addr", "127.0.0.1:9990", "Node ID Server")
+	providerJson         = flag.String("provider_json", "", "Provider Json")
+	scenarioProviderJson = flag.String("scenario_provider_json", "", "Provider Json")
+	port                 = flag.Int("port", 10080, "HarmoVis Provider Listening Port")
+	version              = "0.01"
+	providerInfo         *provider.Provider
+	scenarioProviderInfo *provider.Provider
+	mu                   sync.Mutex
+	assetsDir            http.FileSystem
+	ioserv               *gosocketio.Server
+	com                  *simutil.Communicator
+	sim                  *Simulator
+	providerManager      *simutil.ProviderManager
+	logger               *simutil.Logger
 )
+
+func flagToProviderInfo(pJson string) *provider.Provider {
+	pInfo := &provider.Provider{}
+	jsonpb.Unmarshal(strings.NewReader(pJson), pInfo)
+	return pInfo
+}
 
 func init() {
 	flag.Parse()
-	pid = uint64(*pidFlag)
+	logger = simutil.NewLogger()
+	providerInfo = flagToProviderInfo(*providerJson)
+	scenarioProviderInfo = flagToProviderInfo(*scenarioProviderJson)
 }
 
 func sendAreaToHarmowareVis(areas []*area.Area) {
@@ -77,26 +91,26 @@ func sendToHarmowareVis(sumAgents []*agent.Agent) {
 			// agentInfoTypeによってエージェントを取得
 			switch agentInfo.Type {
 			case agent.AgentType_PEDESTRIAN:
-				ped := agentInfo.GetPedestrian()
+				//ped := agentInfo.GetPedestrian()
 				mm := &MapMarker{
 					mtype: int32(agentInfo.Type),
 					id:    int32(agentInfo.Id),
-					lat:   float32(ped.Route.Position.Latitude),
-					lon:   float32(ped.Route.Position.Longitude),
-					angle: float32(ped.Route.Direction),
-					speed: int32(ped.Route.Speed),
+					lat:   float32(agentInfo.Route.Position.Latitude),
+					lon:   float32(agentInfo.Route.Position.Longitude),
+					angle: float32(agentInfo.Route.Direction),
+					speed: int32(agentInfo.Route.Speed),
 				}
 				jsonAgents = append(jsonAgents, mm.GetJson())
 
 			case agent.AgentType_CAR:
-				car := agentInfo.GetCar()
+				//car := agentInfo.GetCar()
 				mm := &MapMarker{
 					mtype: int32(agentInfo.Type),
 					id:    int32(agentInfo.Id),
-					lat:   float32(car.Route.Position.Latitude),
-					lon:   float32(car.Route.Position.Longitude),
-					angle: float32(car.Route.Direction),
-					speed: int32(car.Route.Speed),
+					lat:   float32(agentInfo.Route.Position.Latitude),
+					lon:   float32(agentInfo.Route.Position.Longitude),
+					angle: float32(agentInfo.Route.Direction),
+					speed: int32(agentInfo.Route.Speed),
 				}
 				jsonAgents = append(jsonAgents, mm.GetJson())
 			}
@@ -110,9 +124,14 @@ func sendToHarmowareVis(sumAgents []*agent.Agent) {
 // callbackForwardClockRequest: クロックを進める関数
 func forwardClock(dm *pb.Demand) {
 	log.Printf("\x1b[30m\x1b[47m \n Start: Clock forwarded \n Time:  %v \x1b[0m\n", sim.Clock.GlobalTime)
-	targetId := dm.GetId()
+	targetId := dm.GetSimDemand().GetPid()
 
-	_, agents := com.GetAgentsRequest(nil)
+	// 同期するIDリスト
+	idList := providerManager.GetIDList([]simutil.IDType{
+		simutil.IDType_AGENT,
+	})
+	pid := providerManager.MyProvider.Id
+	_, agents := com.GetAgentsRequest(pid, idList)
 
 	// Harmowareに送る
 	sendToHarmowareVis(agents)
@@ -121,7 +140,7 @@ func forwardClock(dm *pb.Demand) {
 	sim.ForwardStep()
 
 	// セット完了通知を送る
-	com.ForwardClockResponse(targetId)
+	com.ForwardClockResponse(pid, targetId)
 	log.Printf("\x1b[30m\x1b[47m \n Finish: Clock forwarded \n Time:  %v \x1b[0m\n", sim.Clock.GlobalTime)
 }
 
@@ -183,7 +202,6 @@ func assetsFileHandler(w http.ResponseWriter, r *http.Request) {
 
 // callback for each Supply
 func demandCallback(clt *sxutil.SMServiceClient, dm *pb.Demand) {
-	//tid := dm.GetId()
 	switch dm.GetSimDemand().GetType() {
 	case simapi.DemandType_UPDATE_PROVIDERS_REQUEST:
 		// 参加者リストをセットする要求
@@ -198,21 +216,33 @@ func demandCallback(clt *sxutil.SMServiceClient, dm *pb.Demand) {
 		sim.Clock = clock
 		log.Printf("\x1b[30m\x1b[47m \n Finish: Clock information set. \n GlobalTime:  %v \n TimeStep: %v \x1b[0m\n", sim.Clock.GlobalTime, sim.Clock.TimeStep)
 	}
+
 }
 
 // callback for each Supply
 func supplyCallback(clt *sxutil.SMServiceClient, sp *pb.Supply) {
-	switch sp.GetSimSupply().GetType() {
-	case simapi.SupplyType_GET_CLOCK_RESPONSE:
-		com.SendToWaitCh(sp, sp.GetSimSupply().GetType())
-	case simapi.SupplyType_GET_AGENTS_RESPONSE:
-		com.SendToWaitCh(sp, sp.GetSimSupply().GetType())
-	case simapi.SupplyType_REGIST_PROVIDER_RESPONSE:
-		com.SendToWaitCh(sp, sp.GetSimSupply().GetType())
+	// 自分宛かどうか
+	if sp.GetTargetId() == providerManager.MyProvider.Id {
+		switch sp.GetSimSupply().GetType() {
+		case simapi.SupplyType_GET_CLOCK_RESPONSE:
+			com.SendToWaitCh(sp, sp.GetSimSupply().GetType())
+		case simapi.SupplyType_GET_AGENTS_RESPONSE:
+			com.SendToWaitCh(sp, sp.GetSimSupply().GetType())
+		case simapi.SupplyType_REGIST_PROVIDER_RESPONSE:
+			com.SendToWaitCh(sp, sp.GetSimSupply().GetType())
+		}
 	}
 }
 
 func main() {
+
+	logger.Info("StartUp Provider: SyneServ: %v, NodeServ: %v, AreaJson: %v Pinfo: %v ", *serverAddr, *nodesrv, providerInfo)
+
+	// ProviderManager
+	myProvider := provider.NewProvider("VisualizationProvider", provider.ProviderType_VISUALIZATION)
+	providerManager = simutil.NewProviderManager(myProvider)
+	providerManager.AddProvider(scenarioProviderInfo)
+	providerManager.CreateIDMap()
 
 	// Connect to Node Server
 	sxutil.RegisterNodeName(*nodesrv, "VisualizationProvider", false)
@@ -235,11 +265,29 @@ func main() {
 	sim = NewSimulator(clockInfo)
 
 	// Communicator
-	visInfo := &provider.Visualization{}
-	provider := provider.NewVisualizationProvider("VisualizationProvider", provider.ProviderType_VISUALIZATION, visInfo)
-	com = simutil.NewCommunicator(provider)
+	visInfo := &provider.VisualizationStatus{}
+	provider := provider.NewVisualizationProvider("VisualizationProvider", visInfo)
+	com = simutil.NewCommunicator()
 	com.RegistClients(client, argJson)               // channelごとのClientを作成
 	com.SubscribeAll(demandCallback, supplyCallback) // ChannelにSubscribe
+
+	// 新規参加登録
+	// 同期するIDリスト
+	idList := providerManager.GetIDList([]simutil.IDType{
+		simutil.IDType_SCENARIO,
+	})
+	pid := providerManager.MyProvider.Id
+	logger.Info("Send Provider")
+	com.RegistProviderRequest(pid, idList, provider)
+	logger.Info("Finish Provider Registration.")
+
+	// Clock情報を取得
+	idList = providerManager.GetIDList([]simutil.IDType{
+		simutil.IDType_CLOCK,
+	})
+	_, clockInfo = com.GetClockRequest(pid, idList)
+	sim.Clock = clockInfo
+	logger.Info("Finish Setting Clock. \n GlobalTime:  %v \n TimeStep: %v", sim.Clock.GlobalTime, sim.Clock.TimeStep)
 
 	// Run HarmowareVis Monitor
 	ioserv = runServer()
@@ -259,14 +307,7 @@ func main() {
 	// プロバイダのsetup
 	wg := sync.WaitGroup{}
 	wg.Add(1)
-	// 新規参加登録
-	com.RegistProviderRequest(nil, provider)
-	log.Printf("\x1b[30m\x1b[47m \n Finish: This provider registered in scenario-provider \x1b[0m\n")
 
-	// Clock情報を取得
-	_, clockInfo = com.GetClockRequest(nil)
-	sim.Clock = clockInfo
-	log.Printf("\x1b[30m\x1b[47m \n Finish: Clock information set. \n GlobalTime:  %v \n TimeStep: %v \x1b[0m\n", sim.Clock.GlobalTime, sim.Clock.TimeStep)
 	wg.Wait()
 
 	sxutil.CallDeferFunctions() // cleanup!

@@ -4,6 +4,7 @@ package api.provider;
 
 option go_package="github.com/synerex/synerex_alpha/api/simulation/provider";
 import "simulation/agent/agent.proto";
+import "simulation/area/area.proto";
 
 message RegistProviderRequest {
     Provider provider = 1;
@@ -46,11 +47,12 @@ message Provider {
 	uint64 id = 1;
 	string name = 2;
     ProviderType type = 3;
+	ProviderStatus status = 4;
 	oneof data {
-		Scenario scenario = 4;
-		Agent agent = 5;
-		Visualization visualization = 6;
-		Clock clock = 7;
+		ScenarioStatus scenario_status = 5;
+		AgentStatus agent_status = 6;
+		VisualizationStatus visualization_status = 7;
+		ClockStatus clock_status = 8;
 	}
 }
 
@@ -71,23 +73,19 @@ enum ProviderType {
 	CLOCK = 6;
 }
 
-message Scenario {
-	ProviderStatus status = 1;
+message ScenarioStatus {
 }
 
-message Agent {
-	uint64 area_id = 1;
+message AgentStatus {
+	area.Area area = 1;
     agent.AgentType agent_type = 2;
 	uint64 agent_num = 3;
-	ProviderStatus status = 4;
 }
 
-message Visualization {
-	ProviderStatus status = 1;
+message VisualizationStatus {
 }
 
-message Clock {
-	ProviderStatus status = 1;
+message ClockStatus {
 }
 
 

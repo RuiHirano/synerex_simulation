@@ -3,6 +3,7 @@ module github.com/synerex/synerex_alpha/provider/simulation/ped-area-provider
 require (
 	github.com/RuiHirano/rvo2-go v1.1.1 // indirect
 	github.com/RuiHirano/rvo2-go/src/rvosimulator v0.0.0-20200118052731-21c801eb6c10 // indirect
+	github.com/google/uuid v1.1.1 // indirect
 	github.com/paulmach/orb v0.1.5
 	github.com/synerex/synerex_alpha/api v0.0.0
 	github.com/synerex/synerex_alpha/api/simulation v0.0.0-00010101000000-000000000000 // indirect

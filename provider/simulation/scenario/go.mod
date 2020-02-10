@@ -1,6 +1,7 @@
 module github.com/synerex/synerex_alpha/provider/simulation/scenario-provider
 
 require (
+	github.com/google/logger v1.0.1 // indirect
 	github.com/google/uuid v1.1.1
 	github.com/mtfelian/golang-socketio v1.5.2
 	github.com/paulmach/orb v0.1.5 // indirect

@@ -2,6 +2,7 @@ package provider
 
 import (
 	fmt "fmt"
+	"io"
 	"log"
 	"os"
 	"os/exec"
@@ -9,11 +10,22 @@ import (
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/google/uuid"
+
+	agent "github.com/synerex/synerex_alpha/api/simulation/agent"
+	area "github.com/synerex/synerex_alpha/api/simulation/area"
 )
 
 var (
 	providerMutex sync.RWMutex
+	uid           uuid.UUID
 )
+
+func init() {
+	u, _ := uuid.NewRandom()
+	uid = u
+}
 
 type Source struct {
 	CmdName     string
@@ -24,7 +36,7 @@ type Source struct {
 	BinName     string
 	GoFiles     []string
 	Options     []*Option
-	SubFunc     func(cmd *exec.Cmd)
+	SubFunc     func(pipe io.ReadCloser, name string)
 }
 
 ////////////////////////////////////////////////////////////
@@ -33,82 +45,126 @@ type Source struct {
 
 func NewProvider(name string, providerType ProviderType) *Provider {
 	p := &Provider{
-		Id:   0,
+		Id:   uint64(uid.ID()),
 		Name: name,
 		Type: providerType,
 	}
 	return p
 }
 
-func NewScenarioProvider(name string, providerType ProviderType, scenario *Scenario) *Provider {
+func NewScenarioProvider(name string, scenario *ScenarioStatus) *Provider {
 	p := &Provider{
-		Id:   0,
+		Id:   uint64(uid.ID()),
 		Name: name,
-		Type: providerType,
+		Type: ProviderType_SCENARIO,
 	}
-	p.WithScenario(scenario)
+	p.WithScenarioStatus(scenario)
 	return p
 }
 
-func (p *Provider) WithScenario(s *Scenario) *Provider {
-	p.Data = &Provider_Scenario{s}
+func (p *Provider) WithScenarioStatus(s *ScenarioStatus) *Provider {
+	p.Data = &Provider_ScenarioStatus{s}
 	return p
 }
 
-func NewClockProvider(name string, providerType ProviderType, clock *Clock) *Provider {
+func NewClockProvider(name string, clock *ClockStatus) *Provider {
 	p := &Provider{
-		Id:   0,
+		Id:   uint64(uid.ID()),
 		Name: name,
-		Type: providerType,
+		Type: ProviderType_CLOCK,
 	}
-	p.WithClock(clock)
+	p.WithClockStatus(clock)
 	return p
 }
 
-func (p *Provider) WithClock(c *Clock) *Provider {
-	p.Data = &Provider_Clock{c}
+func (p *Provider) WithClockStatus(c *ClockStatus) *Provider {
+	p.Data = &Provider_ClockStatus{c}
 	return p
 }
 
-func NewVisualizationProvider(name string, providerType ProviderType, vis *Visualization) *Provider {
+func NewVisualizationProvider(name string, vis *VisualizationStatus) *Provider {
 	p := &Provider{
-		Id:   0,
+		Id:   uint64(uid.ID()),
 		Name: name,
-		Type: providerType,
+		Type: ProviderType_VISUALIZATION,
 	}
-	p.WithVisualization(vis)
+	p.WithVisualizationStatus(vis)
 	return p
 }
 
-func (p *Provider) WithVisualization(v *Visualization) *Provider {
-	p.Data = &Provider_Visualization{v}
+func (p *Provider) WithVisualizationStatus(v *VisualizationStatus) *Provider {
+	p.Data = &Provider_VisualizationStatus{v}
 	return p
 }
 
-func NewAgentProvider(name string, providerType ProviderType, agent *Agent) *Provider {
+func NewAgentProvider(name string, agentType agent.AgentType, agent *AgentStatus) *Provider {
 	p := &Provider{
-		Id:   0,
+		Id:   uint64(uid.ID()),
 		Name: name,
-		Type: providerType,
+		Type: ProviderType_AGENT,
 	}
-	p.WithAgent(agent)
+	p.WithAgentStatus(agent)
 	return p
 }
 
-func (p *Provider) WithAgent(a *Agent) *Provider {
-	p.Data = &Provider_Agent{a}
+func (p *Provider) WithAgentStatus(a *AgentStatus) *Provider {
+	p.Data = &Provider_AgentStatus{a}
 	return p
 }
 
 func (p *Provider) Run(source *Source) error {
-	log.Printf("Run '%s'\n", p.Name)
+	log.Printf("Run '%s' %v\n", p.Name, source)
 
 	cmd, err := createCmd(source)
 	if err != nil {
 		return err
 	}
-	runMyCmd(cmd, source)
+	go runMyCmd(cmd, source, p.Name)
 	return nil
+}
+
+////////////////////////////////////////////////////////////
+////////////            Status             ////////////////
+///////////////////////////////////////////////////////////
+
+func NewAgentStatus(areaInfo *area.Area, agentType agent.AgentType, agentNum uint64) *AgentStatus {
+	as := &AgentStatus{
+		Area:      areaInfo,
+		AgentType: agentType,
+		AgentNum:  agentNum,
+	}
+	return as
+}
+
+////////////////////////////////////////////////////////////
+////////////         create Option Class          /////////
+///////////////////////////////////////////////////////////
+
+type Option struct {
+	Key   string
+	Value string
+}
+
+func NewProviderOptions(serverAddr string, nodeIdAddr string, providerJson string, scenarioProviderJson string) []*Option {
+	o := []*Option{
+		&Option{
+			Key:   "server_addr",
+			Value: serverAddr,
+		},
+		&Option{
+			Key:   "nodeid_addr",
+			Value: nodeIdAddr,
+		},
+		&Option{
+			Key:   "provider_json",
+			Value: providerJson,
+		},
+		&Option{
+			Key:   "scenario_provider_json",
+			Value: scenarioProviderJson,
+		},
+	}
+	return o
 }
 
 ////////////////////////////////////////////////////////////
@@ -118,11 +174,6 @@ func (p *Provider) Run(source *Source) error {
 type Log struct {
 	ID          uint64
 	Description string
-}
-
-type Option struct {
-	Key   string
-	Value string
 }
 
 func createCmd(source *Source) (*exec.Cmd, error) {
@@ -169,8 +220,9 @@ func createCmd(source *Source) (*exec.Cmd, error) {
 	return cmd, nil
 }
 
-func runMyCmd(cmd *exec.Cmd, source *Source) {
+func runMyCmd(cmd *exec.Cmd, source *Source, name string) {
 
+	pipe, _ := cmd.StderrPipe()
 	err := cmd.Start()
 	if err != nil {
 		log.Printf("Error for executing %s %v\n", cmd.Args[0], err)
@@ -179,13 +231,13 @@ func runMyCmd(cmd *exec.Cmd, source *Source) {
 	log.Printf("Starting %s..\n", cmd.Args[0])
 
 	// run SubFuncition
-	source.SubFunc(cmd)
+	source.SubFunc(pipe, name)
 
-	log.Printf("[%s]:Now ending...", source.CmdName)
+	log.Printf("[%s]:Now ending...", name)
 
 	cmd.Wait()
 
-	log.Printf("Command [%s] closed\n", source.CmdName)
+	log.Printf("Command [%s] closed\n", name)
 }
 
 func getGoPath() string {

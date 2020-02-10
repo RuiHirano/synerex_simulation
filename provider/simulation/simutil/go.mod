@@ -21,6 +21,7 @@ replace (
 	github.com/synerex/synerex_alpha/api/simulation/provider => ../../../api/simulation/provider
 	github.com/synerex/synerex_alpha/nodeapi => ../../../nodeapi
 	github.com/synerex/synerex_alpha/sxutil => ../../../sxutil
+	github.com/synerex/synerex_alpha/provider/simulation/simutil => ../simutil
 )
 
 go 1.13

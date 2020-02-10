@@ -11,12 +11,12 @@ import (
 	"math/rand"
 	"net/http"
 	"os"
-	"os/exec"
 	"path/filepath"
 	"sort"
 	"sync"
 	"time"
 
+	"github.com/golang/protobuf/jsonpb"
 	"github.com/google/uuid"
 	gosocketio "github.com/mtfelian/golang-socketio"
 	pb "github.com/synerex/synerex_alpha/api"
@@ -33,20 +33,22 @@ import (
 
 var (
 	serverAddr      = flag.String("server_addr", "127.0.0.1:10000", "The server address in the format of host:port")
-	nodesrv         = flag.String("nodesrv", "127.0.0.1:9990", "Node ID Server")
+	nodeIdAddr      = flag.String("nodeid_addr", "127.0.0.1:9990", "Node ID Server")
 	isStart         bool
 	mu              sync.Mutex
 	com             *simutil.Communicator
 	sim             *Simulator
 	providerManager *simutil.ProviderManager
 	pSources        map[provider.ProviderType]*provider.Source
+	logger          *simutil.Logger
 )
 
 const MAX_AGENTS_NUM = 1000
 
 func init() {
 	isStart = false
-
+	logger = simutil.NewLogger()
+	flag.Parse()
 }
 
 var (
@@ -326,7 +328,14 @@ func updateProviderOrder() {
 		for {
 			newProviderNum := providerManager.GetProviderNum()
 			if providerNum != newProviderNum {
-				com.UpdateProvidersRequest(nil, providerManager.Providers)
+				// 同期するIDリスト
+				idList := providerManager.GetIDList([]simutil.IDType{
+					simutil.IDType_CLOCK,
+					simutil.IDType_VISUALIZATION,
+					simutil.IDType_AGENT,
+				})
+				pid := providerManager.MyProvider.Id
+				com.UpdateProvidersRequest(pid, idList, providerManager.Providers)
 				providerNum = newProviderNum
 			}
 		}
@@ -377,59 +386,8 @@ func assetsFileHandler(w http.ResponseWriter, r *http.Request) {
 	http.ServeContent(w, r, file, fi.ModTime(), f)
 }
 
-/*func getGoPath() string{
-	env := os.Environ()
-	for _, ev := range env {
-		if strings.Contains(ev,"GOPATH=") {
-			return ev
-		}
-	}
-	return ""
-}
-
-func getGoEnv() []string { // we need to get/set gopath
-	d, _ := os.Getwd() // may obtain dir of se-daemon
-	gopath := filepath.FromSlash(filepath.ToSlash(d) + "/../../../../")
-	absGopath, _ := filepath.Abs(gopath)
-	env := os.Environ()
-	newenv := make([]string, 0, 1)
-	foundPath := false
-	for _, ev := range env {
-		if strings.Contains(ev, "GOPATH=") {
-			// this might depends on each OS
-			newenv = append(newenv, ev+string(os.PathListSeparator)+filepath.FromSlash(filepath.ToSlash(absGopath)+"/"))
-			foundPath = true
-		} else {
-			newenv = append(newenv, ev)
-		}
-	}
-	if !foundPath { // this might happen at in the daemon..
-		gp := getGoPath()
-		newenv = append(newenv, gp)
-	}
-	return newenv
-}*/
-
-//////// To Order ////////////
-
-/*func decideCoordInGeo(fcs *geojson.FeatureCollection) *common.Coord{
-
-	geoCoords := fcs.Features[0].Geometry.(orb.MultiLineString)[0]
-	transitNum := rand.Int63n(int64(len(geoCoords)-1))
-
-	longitude := geoCoords[transitNum][0] + 0.0001 * rand.Float64()
-	latitude := geoCoords[transitNum][1] + 0.0001 * rand.Float64()
-	coord := &common.Coord{
-		Longitude: longitude,
-		Latitude: latitude,
-	}
-	//log.Printf("coord: ", coord)
-
-	return coord
-}*/
-
 // Agentオブジェクトの変換
-func calcRoute() *agent.PedRoute {
+func calcRoute() *agent.Route {
 
 	var departure, destination *common.Coord
 
@@ -445,7 +403,7 @@ func calcRoute() *agent.PedRoute {
 	transitPoints := make([]*common.Coord, 0)
 	transitPoints = append(transitPoints, destination)
 
-	route := &agent.PedRoute{
+	route := &agent.Route{
 		Position:      departure,
 		Direction:     100 * rand.Float64(),
 		Speed:         100 * rand.Float64(),
@@ -625,15 +583,25 @@ func (o *Order) Send() string {
 // startClock:
 func (o *Order) StartClock() (bool, error) {
 
+	// 同期するIDリスト
+	idList := providerManager.GetIDList([]simutil.IDType{
+		simutil.IDType_CLOCK,
+	})
 	// エージェントを設置するリクエスト
-	com.StartClockRequest(nil)
+	pid := providerManager.MyProvider.Id
+	com.StartClockRequest(pid, idList)
 	return true, nil
 }
 
 // stopClock: Clockを停止する
 func (o *Order) StopClock() (bool, error) {
+	// 同期するIDリスト
+	idList := providerManager.GetIDList([]simutil.IDType{
+		simutil.IDType_CLOCK,
+	})
 	// エージェントを設置するリクエスト
-	com.StopClockRequest(nil)
+	pid := providerManager.MyProvider.Id
+	com.StopClockRequest(pid, idList)
 
 	return true, nil
 }
@@ -647,15 +615,15 @@ func (o *Order) SetAgents(agentNum uint64) (bool, error) {
 		uuid, err := uuid.NewRandom()
 		if err == nil {
 			agent := &agent.Agent{
-				Id:   uint64(uuid.ID()),
-				Type: agent.AgentType_PEDESTRIAN,
+				Id:    uint64(uuid.ID()),
+				Type:  agent.AgentType_PEDESTRIAN,
+				Route: calcRoute(),
 				Data: &agent.Agent_Pedestrian{
 					Pedestrian: &agent.Pedestrian{
 						Status: &agent.PedStatus{
 							Age:  "20",
 							Name: "rui",
 						},
-						Route: calcRoute(),
 					},
 				},
 			}
@@ -663,17 +631,15 @@ func (o *Order) SetAgents(agentNum uint64) (bool, error) {
 		}
 	}
 
-	// agentsに必要なプロバイダを起動
-	//runDividedProvider("Pedestrian", ProviderType_PEDESTRIAN)
-
-	// プロバイダに参加者情報を配布
-	//log.Printf("\x1b[30m\x1b[47m \n Finish: SetAgentRequest! \x1b[0m\n")
-	//com.SetParticipantsRequest()
-
 	// エージェントを設置するリクエスト
-	com.SetAgentsRequest(nil, agents)
+	// 同期するIDリスト
+	idList := providerManager.GetIDList([]simutil.IDType{
+		simutil.IDType_AGENT,
+	})
+	pid := providerManager.MyProvider.Id
+	com.SetAgentsRequest(pid, idList, agents)
 
-	log.Printf("\x1b[30m\x1b[47m \n Finish: Agents set \n Add: %v \x1b[0m\n", len(agents))
+	logger.Info("Finish Setting Agents \n Add: %v", len(agents))
 	return true, nil
 }
 
@@ -684,235 +650,15 @@ func (o *Order) SetClock(globalTime float64, timeStep float64) (bool, error) {
 	sim.Clock = clockInfo
 
 	// クロック情報をプロバイダに送信
-	com.SetClockRequest(nil, sim.Clock)
+	idList := providerManager.GetIDList([]simutil.IDType{
+		simutil.IDType_CLOCK,
+	})
+	pid := providerManager.MyProvider.Id
+	com.SetClockRequest(pid, idList, sim.Clock)
 
-	log.Printf("\x1b[30m\x1b[47m \n Finish: Clock information set. \n GlobalTime:  %v \n TimeStep: %v \x1b[0m\n", sim.Clock.GlobalTime, sim.Clock.TimeStep)
+	logger.Info("Finish Setting Clock. \n GlobalTime:  %v \n TimeStep: %v", sim.Clock.GlobalTime, sim.Clock.TimeStep)
 	return true, nil
 }
-
-/*////////////////////////////////////////////////////////////
-//////////////       Provider Manager Class      //////////
-///////////////////////////////////////////////////////////
-
-type ProviderManager struct{
-	Providers []*Provider
-}
-
-func NewProviderManager() *ProviderManager{
-	pm := &ProviderManager{
-		Providers: make([]*Provider, 0),
-	}
-	return pm
-}
-
-func (pm *ProviderManager)AddProvider(provider *Provider){
-	pm.Providers = append(pm.Providers, provider)
-	//log.Printf("Providers: %v\n", pm.Providers)
-}
-
-func (pm *ProviderManager)SetProvider(index int, provider *Provider){
-	log.Printf("\x1b[31m\x1b[47m \n Provider Registed!!!: %v \x1b[0m\n", provider)
-	pm.Providers[index] = provider
-}
-
-func (pm *ProviderManager)DeleteProvider(id uint64){
-	newProviders := make([]*Provider, 0)
-    for _, provider := range pm.Providers {
-        if provider.ID == id {
-            continue
-        }
-        newProviders = append(newProviders, provider)
-    }
-	pm.Providers = newProviders
-}
-
-////////////////////////////////////////////////////////////
-////////////         Provider Class         ////////////////
-///////////////////////////////////////////////////////////
-
-type Provider struct{
-	*provider.Provider
-}
-
-func NewProvider(name string, providerType provider.ProviderType)*Provider{
-	p := &Provider{
-		Provider: provider.NewProvider(name, providerType)
-	}
-	return p
-}
-
-func (p *Provider) Run(options []*Option) error{
-	log.Printf("Run '%s'\n", p.Name)
-	source := nil
-	for _, sc := range providerSources {
-		if sc.Type == p.Type {
-			if s.Type == provider.ProviderType_AGENT{
-				// Agentだった場合、種類を決定する
-				for _, name := range providerSources{
-					if name == p.Name{
-						source = sc
-					}
-				}
-			}else{
-				source = sc
-			}
-		}
-	}
-	if source == nil{
-		return fmt.Errorf("Error: not exist commmand...")
-	}
-
-	cmd, err := createCmd(source)
-	if err != nil{
-		return err
-	}
-	runMyCmd(cmd, p.Name)
-	return nil
-}
-
-////////////////////////////////////////////////////////////
-////////////         Server Class         ////////////////
-///////////////////////////////////////////////////////////
-
-type Server struct{
-	*provider.Server
-}
-
-func NewServer(name string, serverType provider.ServerType)*Server{
-	s := &Server{
-		Server: provider.NewServer(name, serverType)
-	}
-	return p¥s
-}
-
-func (s *Server) Run(options []*Option) error{
-	log.Printf("Run '%s'\n", p.Name)
-	source := nil
-	for _, sc := range serverSources {
-		if sc.Type == s.Type {
-			source = sc
-		}
-	}
-	if source == nil{
-		return fmt.Errorf("Error: not exist commmand...")
-	}
-
-	cmd, err := createCmd(source)
-	if err != nil{
-		return err
-	}
-	runMyCmd(cmd, s.Name)
-	return nil
-}
-
-////////////////////////////////////////////////////////////
-////////////         Run Commands           ////////////////
-///////////////////////////////////////////////////////////
-
-type Log struct{
-	ID uint64
-	Description string
-}
-
-func createCmd(source *Source) (*exec.Cmd, error){
-
-	d, err := os.Getwd()
-	if err != nil {
-		log.Printf("%s", err.Error())
-		return nil, fmt.Errorf("cannot get dir: %s", err.Error())
-	}
-
-	// get src dir
-	srcpath := filepath.FromSlash(filepath.ToSlash(d) + "/../../../" + source.SrcDir)
-	binpath := filepath.FromSlash(filepath.ToSlash(d) + "/../../../" + source.SrcDir + "/" + source.BinName)
-	//fi, err := os.Stat(binpath)
-	_, err = os.Stat(binpath)
-
-	// バイナリが最新かどうか
-	modTime := time.Date(2018, time.August, 1, 0, 0, 0, 0, time.UTC)
-	for _, fn := range source.GoFiles {
-		sp := filepath.FromSlash(filepath.ToSlash(srcpath) + "/" + fn)
-		ss, _ := os.Stat(sp)
-		if ss.ModTime().After(modTime) {
-			modTime = ss.ModTime()
-		}
-	}
-
-	// 最新でない場合、run
-	var cmd *exec.Cmd
-	if err == nil{ //&& fi.ModTime().After(modTime) { // check binary time
-		cmdArgs := make([]string, 0)
-		for _, option := range options{
-			cmdArgs =  append(cmdArgs, "-" + option.Key)
-			cmdArgs =  append(cmdArgs, option.Value)
-		}
-		cmd = exec.Command("./" + source.BinName, cmdArgs...) // run binary
-	} else {
-		log.Printf("Error: [provider].go file isn't done build command\n")
-		return nil, fmt.Errorf("Error: [provider].go file isn't done build command")
-	}
-
-	cmd.Dir = srcpath
-	cmd.Env = getGoEnv()
-
-	return cmd, nil
-}
-
-func runMyCmd(cmd *exec.Cmd, cmdName string) {
-
-	pipe, err := cmd.StderrPipe()
-	if err != nil {
-		log.Printf("Error for getting stdout pipe %s\n", cmd.Args[0])
-		return
-	}
-	err = cmd.Start()
-	if err != nil {
-		log.Printf("Error for executing %s %v\n", cmd.Args[0], err)
-		return
-	}
-	log.Printf("Starting %s..\n", cmd.Args[0])
-
-	// プロバイダーをリストに追加
-	providerMutex.Lock()
-	providerManager.AddProvider(p)
-	//runProviders[p.ID] = p
-	providerMutex.Unlock()
-
-	// logを読み取る
-	reader := bufio.NewReader(pipe)
-	for {
-		line, _, err := reader.ReadLine()
-		if err == io.EOF {
-			log.Printf("Command [%s] EOF\n", cmdName)
-			break
-		} else if err != nil {
-			log.Printf("Err %v\n", err)
-		}
-
-		logInfo := &Log{
-			ID: p.ID,
-			Description: string(line),
-		}
-
-		bytes, err  := json.Marshal(logInfo)
-		logjson := string(bytes)
-
-		if server != nil {
-			server.BroadcastToAll("log", logjson)
-		}
-		log.Printf("[%s]:%s", cmdName, string(line))
-	}
-
-	log.Printf("[%s]:Now ending...", cmdName)
-
-	cmd.Wait()
-	providerMutex.Lock()
-	providerManager.DeleteProvider(p.ID)
-	//delete(runProviders, p.ID)
-	providerMutex.Unlock()
-
-	log.Printf("Command [%s] closed\n", cmdName)
-}*/
 
 ////////////////////////////////////////////////////////////
 ////////////     Simulator CLI GUI Server    //////////////
@@ -996,9 +742,9 @@ func (ss *SimulatorServer) Run() error {
 	return nil
 }
 
-func SendLog(cmd *exec.Cmd) {
+func SendLog(pipe io.ReadCloser, name string) {
 	// logを読み取る
-	pipe, _ := cmd.StderrPipe()
+
 	reader := bufio.NewReader(pipe)
 	for {
 		line, _, err := reader.ReadLine()
@@ -1020,7 +766,7 @@ func SendLog(cmd *exec.Cmd) {
 		if server != nil {
 			server.BroadcastToAll("log", logjson)
 		}
-		log.Printf("[%s]:%s", "test", string(line))
+		log.Printf("[%s]:\n%s", name, string(line))
 	}
 }
 
@@ -1030,58 +776,43 @@ func SendLog(cmd *exec.Cmd) {
 
 // Supplyのコールバック関数
 func supplyCallback(clt *sxutil.SMServiceClient, sp *pb.Supply) {
-	// check if supply is match with my demand.
-	switch sp.GetSimSupply().GetType() {
-	case simapi.SupplyType_UPDATE_PROVIDERS_RESPONSE:
-		com.SendToWaitCh(sp, sp.GetSimSupply().GetType())
-	case simapi.SupplyType_SET_CLOCK_RESPONSE:
-		com.SendToWaitCh(sp, sp.GetSimSupply().GetType())
-	case simapi.SupplyType_SET_AGENTS_RESPONSE:
-		com.SendToWaitCh(sp, sp.GetSimSupply().GetType())
-	case simapi.SupplyType_START_CLOCK_RESPONSE:
-		com.SendToWaitCh(sp, sp.GetSimSupply().GetType())
-	case simapi.SupplyType_STOP_CLOCK_RESPONSE:
-		com.SendToWaitCh(sp, sp.GetSimSupply().GetType())
+	// 自分宛かどうか
+	if sp.GetTargetId() == providerManager.MyProvider.Id {
+		// check if supply is match with my demand.
+		switch sp.GetSimSupply().GetType() {
+		case simapi.SupplyType_UPDATE_PROVIDERS_RESPONSE:
+			com.SendToWaitCh(sp, sp.GetSimSupply().GetType())
+		case simapi.SupplyType_SET_CLOCK_RESPONSE:
+			com.SendToWaitCh(sp, sp.GetSimSupply().GetType())
+		case simapi.SupplyType_SET_AGENTS_RESPONSE:
+			com.SendToWaitCh(sp, sp.GetSimSupply().GetType())
+		case simapi.SupplyType_START_CLOCK_RESPONSE:
+			com.SendToWaitCh(sp, sp.GetSimSupply().GetType())
+		case simapi.SupplyType_STOP_CLOCK_RESPONSE:
+			com.SendToWaitCh(sp, sp.GetSimSupply().GetType())
+		}
 	}
 }
 
 // Demandのコールバック関数
 func demandCallback(clt *sxutil.SMServiceClient, dm *pb.Demand) {
+	tid := dm.GetSimDemand().GetPid()
+	pid := providerManager.MyProvider.Id
 	// check if supply is match with my demand.
 	switch dm.GetSimDemand().GetType() {
 	case simapi.DemandType_REGIST_PROVIDER_REQUEST:
-		provider := dm.GetSimDemand().GetRegistProviderRequest().GetProvider()
-		providerManager.AddProvider(provider)
+		// providerを追加する
+		p := dm.GetSimDemand().GetRegistProviderRequest().GetProvider()
+		providerManager.AddProvider(p)
+		logger.Debug("2.addProvier: %v, %v ", p, tid)
+		// 登録完了通知
+		com.RegistProviderResponse(pid, tid)
+
 	case simapi.DemandType_DIVIDE_PROVIDER_REQUEST:
 	case simapi.DemandType_KILL_PROVIDER_REQUEST:
 	case simapi.DemandType_SEND_PROVIDER_STATUS_REQUEST:
 
-		//divideArea(dm)
-	/*case synerex.DemandType_REGIST_PARTICIPANT_REQUEST:
-		participantInfo := dm.GetSimDemand().GetRegistParticipantRequest().GetParticipant()
-		log.Printf("\x1b[31m\x1b[47m \n Provider Request: %v %v\x1b[0m\n",participantInfo.Id, participantInfo.ProviderType )
-		for i, provider := range providerManager.Providers{
-			log.Printf("\x1b[31m\x1b[47m \n Provider Request: %v %v\x1b[0m\n",participantInfo.Id, provider.ID )
-			if provider.ID == participantInfo.Id{
-				log.Printf("\x1b[31m\x1b[47m \n Provider Request \x1b[0m\n")
-
-				provider.ParticipantInfo = participantInfo
-				provider.Status = ProviderStatusType_REGISTED
-				providerManager.SetProvider(i, provider)
-				log.Printf("\x1b[30m\x1b[47m \n Start: SetAgentRequest! \x1b[0m\n")
-				com.SetParticipantsRequest()
-			}
-		}
-		// 返信
-		com.RegistParticipantResponse(dm)
-	case synerex.DemandType_DELETE_PARTICIPANT_REQUEST:
-		participantInfo := dm.GetSimDemand().GetRegistParticipantRequest().GetParticipant()
-		providerManager.DeleteProvider(participantInfo.Id)*/
-
-	default:
-		//fmt.Println("order is invalid")
 	}
-
 }
 
 ////////////////////////////////////////////////////////////
@@ -1107,6 +838,9 @@ var mockAreaInfo = &area.Area{
 }
 
 func runInitProvider() {
+	m := jsonpb.Marshaler{}
+	scenarioJson, _ := m.MarshalToString(providerManager.MyProvider)
+
 	// Run Server and Provider
 	nodeServer := provider.NewProvider("NodeIDServer", provider.ProviderType_NODE_ID)
 	nodeServer.Run(pSources[nodeServer.Type])
@@ -1121,36 +855,40 @@ func runInitProvider() {
 
 	time.Sleep(500 * time.Millisecond)
 	clockProvider := provider.NewProvider("Clock", provider.ProviderType_CLOCK)
+	js, _ := m.MarshalToString(clockProvider)
+	options := provider.NewProviderOptions(*serverAddr, *nodeIdAddr, js, scenarioJson)
+	pSources[clockProvider.Type].Options = options
 	clockProvider.Run(pSources[clockProvider.Type])
 
 	time.Sleep(500 * time.Millisecond)
 	visProvider := provider.NewProvider("Visualization", provider.ProviderType_VISUALIZATION)
+	js, _ = m.MarshalToString(visProvider)
+	options = provider.NewProviderOptions(*serverAddr, *nodeIdAddr, js, scenarioJson)
+	pSources[visProvider.Type].Options = options
 	visProvider.Run(pSources[visProvider.Type])
 
 	var INIT_PROVIDER_NUM = uint64(2)
-	var INIT_AGENT_NAMES = []string{"Pedestrian", "Car"}
+	var INIT_AGENT_TYPES = map[string]agent.AgentType{
+		"Pedestrian": agent.AgentType_PEDESTRIAN,
+		"Car":        agent.AgentType_CAR,
+	}
 
-	for _, name := range INIT_AGENT_NAMES {
+	for name, agentType := range INIT_AGENT_TYPES {
 		areaInfos := divideArea(mockAreaInfo, INIT_PROVIDER_NUM)
 		for _, areaInfo := range areaInfos {
 			fmt.Printf("areaInfo: %v\n", areaInfo)
-			options := make([]*provider.Option, 0)
-			options = append(options, &provider.Option{
-				Key:   "server_addr",
-				Value: "127.0.0.1:10000",
-			})
-			options = append(options, &provider.Option{
-				Key:   "nodesrv",
-				Value: "127.0.0.1:9990",
-			})
-			bytes, _ := json.Marshal(areaInfo)
-			options = append(options, &provider.Option{
-				Key:   "area_json",
-				Value: string(bytes),
-			})
-			provider := provider.NewProvider(name, provider.ProviderType_AGENT)
-			pSources[provider.Type].Options = options
-			provider.Run(pSources[provider.Type])
+			agentStatus := &provider.AgentStatus{
+				Area:      areaInfo,
+				AgentType: agentType,
+				AgentNum:  0,
+			}
+			p := provider.NewAgentProvider(name, agentType, agentStatus)
+			js, _ = m.MarshalToString(p)
+			options = provider.NewProviderOptions(*serverAddr, *nodeIdAddr, js, scenarioJson)
+
+			time.Sleep(500 * time.Millisecond)
+			pSources[p.Type].Options = options
+			p.Run(pSources[p.Type])
 
 		}
 	}
@@ -1159,14 +897,20 @@ func runInitProvider() {
 
 func main() {
 
-	flag.Parse()
+	// ProviderManager
+	myProvider := provider.NewProvider("ScenarioProvider", provider.ProviderType_SCENARIO)
+	providerManager = simutil.NewProviderManager(myProvider)
+	providerManager.CreateIDMap()
 
 	// CLI, GUIの受信サーバ
 	simulatorServer := NewSimulatorServer()
 	simulatorServer.Run()
 
+	// 初期プロバイダ起動
+	runInitProvider()
+
 	// Connect to Node Server
-	sxutil.RegisterNodeName(*nodesrv, "ScenarioProvider", false)
+	sxutil.RegisterNodeName(*nodeIdAddr, "ScenarioProvider", false)
 	go sxutil.HandleSigInt()
 	sxutil.RegisterDeferFunction(sxutil.UnRegisterNode)
 
@@ -1186,14 +930,9 @@ func main() {
 	sim = NewSimulator(clockInfo)
 
 	// Communicator
-	provider := provider.NewProvider("ScenarioProvider", provider.ProviderType_SCENARIO)
-	com = simutil.NewCommunicator(provider)
+	com = simutil.NewCommunicator()
 	com.RegistClients(client, argJson)               // channelごとのClientを作成
 	com.SubscribeAll(demandCallback, supplyCallback) // ChannelにSubscribe
-
-	// ProviderManager
-	providerManager = simutil.NewProviderManager()
-	providerManager.AddProvider(provider)
 
 	wg := sync.WaitGroup{}
 	wg.Add(1)

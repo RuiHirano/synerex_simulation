@@ -6,8 +6,6 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"github.com/google/gops/agent"
-	"github.com/synerex/synerex_alpha/nodeapi"
 	"log"
 	"net"
 	"net/http"
@@ -17,9 +15,12 @@ import (
 	"strings"
 	"time"
 
+	"github.com/google/gops/agent"
+	"github.com/synerex/synerex_alpha/nodeapi"
+
 	monitorpb "github.com/synerex/synerex_alpha/monitor/monitorapi"
 	//	nodeapi "../nodeapi"
-	"github.com/mtfelian/golang-socketio"
+	gosocketio "github.com/mtfelian/golang-socketio"
 	"google.golang.org/grpc"
 )
 
@@ -30,11 +31,10 @@ type monitorInfo struct {
 var (
 	port      = flag.Int("port", 9999, "Monitor Server Listening Port")
 	mesPort   = flag.Int("mesPort", 9998, "Monitor gRPC Port")
-	nodesrv = flag.String("nodesrv", "127.0.0.1:9990", "Node ID Server")
+	nodesrv   = flag.String("nodesrv", "127.0.0.1:9990", "Node ID Server")
 	mInfo     monitorInfo
 	assetsDir http.FileSystem
 )
-
 
 // assetsFileHandler for static Data
 func assetsFileHandler(w http.ResponseWriter, r *http.Request) {
@@ -75,7 +75,7 @@ func message(serv *gosocketio.Server) {
 
 // SendReport send a monitor Message to each Socket.IO clients
 func (s *monitorInfo) SendReport(ctx context.Context, m *monitorpb.Mes) (*monitorpb.Response, error) {
-	log.Printf("BC: %s",m.GetJson())
+	log.Printf("BC: %s", m.GetJson())
 	s.serv.BroadcastToAll("event", m.GetJson())
 
 	// broadcast always success (?)
@@ -87,7 +87,6 @@ func prepareGrpcServer(opts ...grpc.ServerOption) *grpc.Server {
 	monitorpb.RegisterMonitorServer(monitorServer, &mInfo)
 	return monitorServer
 }
-
 
 func GetNodeName(n int) string {
 	var opts []grpc.DialOption
@@ -102,12 +101,12 @@ func GetNodeName(n int) string {
 
 	ni, err := nsv_clt.QueryNode(context.Background(), &nodeapi.NodeID{NodeId: int32(n)})
 	if err != nil {
-			log.Printf("Error on QueryNode %v", err)
-			return "None:-1"
+		log.Printf("Error on QueryNode %v", err)
+		return "None:-1"
 	}
 
-	rs := strings.Replace( ni.NodeName,"Provider","",-1)
-	rs2 := strings.Replace(rs, "Server", "",-1)
+	rs := strings.Replace(ni.NodeName, "Provider", "", -1)
+	rs2 := strings.Replace(rs, "Server", "", -1)
 	return rs2 + ":" + strconv.Itoa(n)
 
 }
@@ -129,6 +128,8 @@ func main() {
 
 	flag.Parse()
 	lis, err := net.Listen("tcp", fmt.Sprintf("localhost:%d", *mesPort))
+	defer lis.Close()
+
 	if err != nil {
 		log.Fatalf("failed to listen: %v", err)
 	}
@@ -156,16 +157,16 @@ func main() {
 	})
 	server.On("node", func(c *gosocketio.Channel, param interface{}) []string {
 
-		snid ,_ := param.(string)
-//		log.Printf("Get node query '%v' -> %s",param, snid)
+		snid, _ := param.(string)
+		//		log.Printf("Get node query '%v' -> %s",param, snid)
 
-		nid , _ := strconv.Atoi(snid)
-//		nid := int(int64(snid) & nodeMask >> nodeShift) // already converted nodes.
+		nid, _ := strconv.Atoi(snid)
+		//		nid := int(int64(snid) & nodeMask >> nodeShift) // already converted nodes.
 
 		nm := GetNodeName(nid)
-//		c.Emit("nodename",nm)
-		str := make([]string,1)
-		str[0]=nm
+		//		c.Emit("nodename",nm)
+		str := make([]string, 1)
+		str[0] = nm
 		return str
 	})
 

@@ -253,6 +253,8 @@ func main() {
 	flag.Parse()
 	//	lis, err := net.Listen("tcp", fmt.Sprintf("localhost:%d", *port))
 	lis, err := net.Listen("tcp", fmt.Sprintf("0.0.0.0:%d", *port))
+	//defer func() { fmt.Printf("defer!!!!!!!!!!!!!!!!!!!") }()
+	defer lis.Close()
 
 	if err != nil {
 		log.Fatalf("failed to listen: %v", err)
@@ -263,4 +265,5 @@ func main() {
 	nodeServer := prepareGrpcServer(opts...)
 	log.Printf("Start waiting Node Server at port :%d ...", *port)
 	nodeServer.Serve(lis)
+
 }
