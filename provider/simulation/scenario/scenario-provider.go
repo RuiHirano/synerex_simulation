@@ -422,6 +422,7 @@ func calcRoute() *agent.Route {
 }
 
 func divideArea(areaInfo *area.Area, num uint64) []*area.Area {
+	DUPLICATE_RANGE := 5.0
 	// エリアを分割する
 	// 最初は単純にエリアを半分にする
 	//providerStats := mockProviderStats
@@ -435,29 +436,53 @@ func divideArea(areaInfo *area.Area, num uint64) []*area.Area {
 	divPoint1 := Div(point1vecs[2], 2)                     //分割点1
 	divPoint2 := Add(Div(point1vecs[2], 2), point1vecs[1]) //分割点2
 	// 二つに分割
-	coords1 := []*common.Coord{
+	control1 := []*common.Coord{
 		Add(point1vecs[0], point1), Add(point1vecs[1], point1), Add(divPoint1, point1), Add(divPoint2, point1),
 	}
-	coords2 := []*common.Coord{
+	control2 := []*common.Coord{
 		Add(point1vecs[2], point1), Add(point1vecs[3], point1), Add(divPoint1, point1), Add(divPoint2, point1),
 	}
-	areaInfos := []*area.Area{&area.Area{
-		Id:            1,
-		Name:          "aaa",
-		DuplicateArea: coords1,
-		ControlArea:   coords1,
-	}, &area.Area{
-		Id:            1,
-		Name:          "bbb",
-		DuplicateArea: coords2,
-		ControlArea:   coords2,
-	}}
+	controls := [][]*common.Coord{control1, control2}
 
-	for _, coord := range coords1 {
-		fmt.Printf("coord: %v\n", coord)
+	// calc duplicate area
+	var duplicates [][]*common.Coord
+	for _, control := range controls {
+		maxLat, maxLon := math.Inf(-1), math.Inf(-1)
+		minLat, minLon := math.Inf(0), math.Inf(0)
+		for _, coord := range control {
+			if coord.Latitude > maxLat {
+				maxLat = coord.Latitude
+			}
+			if coord.Longitude > maxLon {
+				maxLon = coord.Longitude
+			}
+			if coord.Latitude < minLat {
+				minLat = coord.Latitude
+			}
+			if coord.Longitude < minLon {
+				minLon = coord.Longitude
+			}
+		}
+		duplicate := []*common.Coord{
+			&common.Coord{Latitude: minLat - DUPLICATE_RANGE, Longitude: minLon - DUPLICATE_RANGE},
+			&common.Coord{Latitude: minLat - DUPLICATE_RANGE, Longitude: maxLon + DUPLICATE_RANGE},
+			&common.Coord{Latitude: maxLat + DUPLICATE_RANGE, Longitude: maxLon + DUPLICATE_RANGE},
+			&common.Coord{Latitude: maxLat + DUPLICATE_RANGE, Longitude: minLon - DUPLICATE_RANGE},
+		}
+		duplicates = append(duplicates, duplicate)
 	}
-	for _, coord := range coords2 {
-		fmt.Printf("coord: %v\n", coord)
+
+	// calc areaInfo
+	areaInfos := make([]*area.Area, 0)
+	for i, control := range controls {
+		uid, _ := uuid.NewRandom()
+		areaInfos = append(areaInfos, &area.Area{
+			Id:            uint64(uid.ID()),
+			Name:          "test",
+			DuplicateArea: duplicates[i],
+			ControlArea:   control,
+			NeighborAreaIds: []uint64{}
+		})
 	}
 
 	return areaInfos
@@ -812,6 +837,16 @@ func demandCallback(clt *sxutil.SMServiceClient, dm *pb.Demand) {
 		//logger.Debug("RegistProviderRequest: Send from %v to %v\n", pid, tid)
 		com.RegistProviderResponse(pid, tid)
 
+		// UpdateRequest
+		idList := providerManager.GetIDList([]simutil.IDType{
+			simutil.IDType_CLOCK,
+			simutil.IDType_VISUALIZATION,
+			simutil.IDType_AGENT,
+		})
+		pid := providerManager.MyProvider.Id
+		com.UpdateProvidersRequest(pid, idList, providerManager.Providers)
+		logger.Info("Success Update Providers")
+
 	case simapi.DemandType_DIVIDE_PROVIDER_REQUEST:
 	case simapi.DemandType_KILL_PROVIDER_REQUEST:
 	case simapi.DemandType_SEND_PROVIDER_STATUS_REQUEST:
@@ -838,6 +873,24 @@ var mockAreaInfo = &area.Area{
 		{Latitude: 35.156431, Longitude: 136.981308},
 		{Latitude: 35.153578, Longitude: 136.981308},
 		{Latitude: 35.153578, Longitude: 136.97285},
+	},
+}
+
+// 担当するAreaの範囲
+var mockAreaInfo2 = &area.Area{
+	Id:   uint64(0),
+	Name: "Area1",
+	DuplicateArea: []*common.Coord{
+		{Latitude: 1, Longitude: 1},
+		{Latitude: 1, Longitude: 100},
+		{Latitude: 100, Longitude: 100},
+		{Latitude: 100, Longitude: 1},
+	},
+	ControlArea: []*common.Coord{
+		{Latitude: 1, Longitude: 1},
+		{Latitude: 1, Longitude: 100},
+		{Latitude: 100, Longitude: 100},
+		{Latitude: 100, Longitude: 1},
 	},
 }
 
@@ -881,9 +934,11 @@ func runInitProvider() {
 	}
 
 	for name, agentType := range INIT_AGENT_TYPES {
-		areaInfos := divideArea(mockAreaInfo, INIT_PROVIDER_NUM)
+		areaInfos := divideArea(mockAreaInfo2, INIT_PROVIDER_NUM)
+		//logger.Error("mockAreaInfo: %v\n", mockAreaInfo2.ControlArea)
 		for _, areaInfo := range areaInfos {
-			fmt.Printf("areaInfo: %v\n", areaInfo)
+			//logger.Error("areaInfo: %v\n", areaInfo.ControlArea)
+			//logger.Error("duplicateInfo: %v\n", areaInfo.DuplicateArea)
 			agentStatus := &provider.AgentStatus{
 				Area:      areaInfo,
 				AgentType: agentType,
@@ -898,6 +953,7 @@ func runInitProvider() {
 			p.Run(pSources[p.Type])
 
 		}
+		//logger.Fatal("error")
 	}
 
 }

@@ -11,4 +11,5 @@ message Area {
     string name = 2;
     repeated common.Coord duplicate_area = 3;
     repeated common.Coord control_area = 4;
+    repeated uint64 neighbor_area_ids = 5;
 }
