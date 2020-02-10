@@ -17,11 +17,15 @@ func (l *Logger) Info(format string, args ...interface{}) {
 }
 
 func (l *Logger) Error(format string, args ...interface{}) {
-	log.Fatalf("\x1b[31m\x1b[40m \n [Error] \x1b[0m"+format, args...)
+	log.Printf("\x1b[31m\x1b[40m \n [Error] \x1b[0m"+format, args...)
 }
 
 func (l *Logger) Warn(format string, args ...interface{}) {
 	log.Printf("\x1b[33m\x1b[40m \n [Warn] \x1b[0m"+format, args...)
+}
+
+func (l *Logger) Fatal(format string, args ...interface{}) {
+	log.Fatalf("\x1b[31m\x1b[40m \n [Error] \x1b[0m"+format, args...)
 }
 
 func (l *Logger) Debug(format string, args ...interface{}) {

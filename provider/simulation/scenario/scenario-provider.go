@@ -326,8 +326,12 @@ func updateProviderOrder() {
 	go func() {
 		providerNum := providerManager.GetProviderNum()
 		for {
+			mu.Lock()
 			newProviderNum := providerManager.GetProviderNum()
 			if providerNum != newProviderNum {
+				providerNum = newProviderNum
+				// IDMapを再作成
+				providerManager.CreateIDMap()
 				// 同期するIDリスト
 				idList := providerManager.GetIDList([]simutil.IDType{
 					simutil.IDType_CLOCK,
@@ -336,8 +340,9 @@ func updateProviderOrder() {
 				})
 				pid := providerManager.MyProvider.Id
 				com.UpdateProvidersRequest(pid, idList, providerManager.Providers)
-				providerNum = newProviderNum
+				logger.Info("Success Update Providers")
 			}
+			mu.Unlock()
 		}
 	}()
 }
@@ -655,7 +660,6 @@ func (o *Order) SetClock(globalTime float64, timeStep float64) (bool, error) {
 	})
 	pid := providerManager.MyProvider.Id
 	com.SetClockRequest(pid, idList, sim.Clock)
-
 	logger.Info("Finish Setting Clock. \n GlobalTime:  %v \n TimeStep: %v", sim.Clock.GlobalTime, sim.Clock.TimeStep)
 	return true, nil
 }
@@ -804,8 +808,8 @@ func demandCallback(clt *sxutil.SMServiceClient, dm *pb.Demand) {
 		// providerを追加する
 		p := dm.GetSimDemand().GetRegistProviderRequest().GetProvider()
 		providerManager.AddProvider(p)
-		logger.Debug("2.addProvier: %v, %v ", p, tid)
 		// 登録完了通知
+		//logger.Debug("RegistProviderRequest: Send from %v to %v\n", pid, tid)
 		com.RegistProviderResponse(pid, tid)
 
 	case simapi.DemandType_DIVIDE_PROVIDER_REQUEST:
@@ -837,30 +841,33 @@ var mockAreaInfo = &area.Area{
 	},
 }
 
-func runInitProvider() {
-	m := jsonpb.Marshaler{}
-	scenarioJson, _ := m.MarshalToString(providerManager.MyProvider)
-
+func runInitServer() {
 	// Run Server and Provider
 	nodeServer := provider.NewProvider("NodeIDServer", provider.ProviderType_NODE_ID)
 	nodeServer.Run(pSources[nodeServer.Type])
 
-	time.Sleep(500 * time.Millisecond)
+	time.Sleep(100 * time.Millisecond)
 	monitorServer := provider.NewProvider("MonitorServer", provider.ProviderType_MONITOR)
 	monitorServer.Run(pSources[monitorServer.Type])
 
-	time.Sleep(500 * time.Millisecond)
+	time.Sleep(100 * time.Millisecond)
 	synerexServer := provider.NewProvider("SynerexServer", provider.ProviderType_SYNEREX)
 	synerexServer.Run(pSources[synerexServer.Type])
+	time.Sleep(100 * time.Millisecond)
 
-	time.Sleep(500 * time.Millisecond)
+}
+
+func runInitProvider() {
+	m := jsonpb.Marshaler{}
+	scenarioJson, _ := m.MarshalToString(providerManager.MyProvider)
+
 	clockProvider := provider.NewProvider("Clock", provider.ProviderType_CLOCK)
 	js, _ := m.MarshalToString(clockProvider)
 	options := provider.NewProviderOptions(*serverAddr, *nodeIdAddr, js, scenarioJson)
 	pSources[clockProvider.Type].Options = options
 	clockProvider.Run(pSources[clockProvider.Type])
 
-	time.Sleep(500 * time.Millisecond)
+	time.Sleep(100 * time.Millisecond)
 	visProvider := provider.NewProvider("Visualization", provider.ProviderType_VISUALIZATION)
 	js, _ = m.MarshalToString(visProvider)
 	options = provider.NewProviderOptions(*serverAddr, *nodeIdAddr, js, scenarioJson)
@@ -886,7 +893,7 @@ func runInitProvider() {
 			js, _ = m.MarshalToString(p)
 			options = provider.NewProviderOptions(*serverAddr, *nodeIdAddr, js, scenarioJson)
 
-			time.Sleep(500 * time.Millisecond)
+			time.Sleep(100 * time.Millisecond)
 			pSources[p.Type].Options = options
 			p.Run(pSources[p.Type])
 
@@ -907,7 +914,7 @@ func main() {
 	simulatorServer.Run()
 
 	// 初期プロバイダ起動
-	runInitProvider()
+	runInitServer()
 
 	// Connect to Node Server
 	sxutil.RegisterNodeName(*nodeIdAddr, "ScenarioProvider", false)
@@ -936,6 +943,9 @@ func main() {
 
 	wg := sync.WaitGroup{}
 	wg.Add(1)
+	updateProviderOrder()
+	// 初期プロバイダ起動
+	runInitProvider()
 	wg.Wait()
 	sxutil.CallDeferFunctions() // cleanup!
 

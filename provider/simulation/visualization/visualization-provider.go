@@ -32,8 +32,8 @@ var (
 	scenarioProviderJson = flag.String("scenario_provider_json", "", "Provider Json")
 	port                 = flag.Int("port", 10080, "HarmoVis Provider Listening Port")
 	version              = "0.01"
-	providerInfo         *provider.Provider
-	scenarioProviderInfo *provider.Provider
+	myProvider           *provider.Provider
+	scenarioProvider     *provider.Provider
 	mu                   sync.Mutex
 	assetsDir            http.FileSystem
 	ioserv               *gosocketio.Server
@@ -52,8 +52,8 @@ func flagToProviderInfo(pJson string) *provider.Provider {
 func init() {
 	flag.Parse()
 	logger = simutil.NewLogger()
-	providerInfo = flagToProviderInfo(*providerJson)
-	scenarioProviderInfo = flagToProviderInfo(*scenarioProviderJson)
+	myProvider = flagToProviderInfo(*providerJson)
+	scenarioProvider = flagToProviderInfo(*scenarioProviderJson)
 }
 
 func sendAreaToHarmowareVis(areas []*area.Area) {
@@ -202,8 +202,15 @@ func assetsFileHandler(w http.ResponseWriter, r *http.Request) {
 
 // callback for each Supply
 func demandCallback(clt *sxutil.SMServiceClient, dm *pb.Demand) {
+	tid := dm.GetSimDemand().GetPid()
+	pid := providerManager.MyProvider.Id
 	switch dm.GetSimDemand().GetType() {
 	case simapi.DemandType_UPDATE_PROVIDERS_REQUEST:
+		providers := dm.GetSimDemand().GetUpdateProvidersRequest().GetProviders()
+		//logger.Error("Update Provider %v\n", providers)
+		providerManager.UpdateProviders(providers)
+		providerManager.CreateIDMap()
+		com.UpdateProvidersResponse(pid, tid)
 		// 参加者リストをセットする要求
 		//callbackSetParticipantsRequest(dm)
 	case simapi.DemandType_FORWARD_CLOCK_REQUEST:
@@ -212,9 +219,10 @@ func demandCallback(clt *sxutil.SMServiceClient, dm *pb.Demand) {
 
 	case simapi.DemandType_UPDATE_CLOCK_REQUEST:
 		// Clockをセットする
-		clock := dm.GetSimDemand().GetSetClockRequest().GetClock()
-		sim.Clock = clock
-		log.Printf("\x1b[30m\x1b[47m \n Finish: Clock information set. \n GlobalTime:  %v \n TimeStep: %v \x1b[0m\n", sim.Clock.GlobalTime, sim.Clock.TimeStep)
+		clockInfo := dm.GetSimDemand().GetSetClockRequest().GetClock()
+		sim.Clock = clockInfo
+		logger.Info("Finish Update Clock %v, %v", pid, tid)
+		com.UpdateClockResponse(pid, tid)
 	}
 
 }
@@ -236,12 +244,11 @@ func supplyCallback(clt *sxutil.SMServiceClient, sp *pb.Supply) {
 
 func main() {
 
-	logger.Info("StartUp Provider: SyneServ: %v, NodeServ: %v, AreaJson: %v Pinfo: %v ", *serverAddr, *nodesrv, providerInfo)
-
+	logger.Info("StartUp Provider")
 	// ProviderManager
-	myProvider := provider.NewProvider("VisualizationProvider", provider.ProviderType_VISUALIZATION)
+	//myProvider := provider.NewProvider("VisualizationProvider", provider.ProviderType_VISUALIZATION)
 	providerManager = simutil.NewProviderManager(myProvider)
-	providerManager.AddProvider(scenarioProviderInfo)
+	providerManager.AddProvider(scenarioProvider)
 	providerManager.CreateIDMap()
 
 	// Connect to Node Server
@@ -265,8 +272,8 @@ func main() {
 	sim = NewSimulator(clockInfo)
 
 	// Communicator
-	visInfo := &provider.VisualizationStatus{}
-	provider := provider.NewVisualizationProvider("VisualizationProvider", visInfo)
+	//visInfo := &provider.VisualizationStatus{}
+	//provider := provider.NewVisualizationProvider("VisualizationProvider", visInfo)
 	com = simutil.NewCommunicator()
 	com.RegistClients(client, argJson)               // channelごとのClientを作成
 	com.SubscribeAll(demandCallback, supplyCallback) // ChannelにSubscribe
@@ -277,17 +284,17 @@ func main() {
 		simutil.IDType_SCENARIO,
 	})
 	pid := providerManager.MyProvider.Id
-	logger.Info("Send Provider")
-	com.RegistProviderRequest(pid, idList, provider)
+	com.RegistProviderRequest(pid, idList, myProvider)
 	logger.Info("Finish Provider Registration.")
 
 	// Clock情報を取得
+	logger.Debug("Clock Request: VisPID %v Wait Response from ClockPID %v\n", pid, idList)
 	idList = providerManager.GetIDList([]simutil.IDType{
 		simutil.IDType_CLOCK,
 	})
 	_, clockInfo = com.GetClockRequest(pid, idList)
 	sim.Clock = clockInfo
-	logger.Info("Finish Setting Clock. \n GlobalTime:  %v \n TimeStep: %v", sim.Clock.GlobalTime, sim.Clock.TimeStep)
+	logger.Info("Finish Setting Clock. \n")
 
 	// Run HarmowareVis Monitor
 	ioserv = runServer()

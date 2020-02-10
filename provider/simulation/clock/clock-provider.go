@@ -31,8 +31,8 @@ var (
 	scenarioProviderJson = flag.String("scenario_provider_json", "", "Provider Json")
 	port                 = flag.Int("port", 10080, "HarmoVis Provider Listening Port")
 	isStart              bool
-	providerInfo         *provider.Provider
-	scenarioProviderInfo *provider.Provider
+	myProvider           *provider.Provider
+	scenarioProvider     *provider.Provider
 	mu                   sync.Mutex
 	com                  *simutil.Communicator
 	sim                  *Simulator
@@ -49,9 +49,8 @@ func flagToProviderInfo(pJson string) *provider.Provider {
 func init() {
 	flag.Parse()
 	logger = simutil.NewLogger()
-	providerInfo = flagToProviderInfo(*providerJson)
-	scenarioProviderInfo = flagToProviderInfo(*scenarioProviderJson)
-	logger.Debug("Provider %v, %v", *providerJson, *scenarioProviderJson)
+	myProvider = flagToProviderInfo(*providerJson)
+	scenarioProvider = flagToProviderInfo(*scenarioProviderJson)
 	isStart = false
 }
 
@@ -114,14 +113,27 @@ func demandCallback(clt *sxutil.SMServiceClient, dm *pb.Demand) {
 	pid := providerManager.MyProvider.Id
 	switch dm.GetSimDemand().GetType() {
 	case simapi.DemandType_GET_CLOCK_REQUEST:
+		logger.Debug("GetClock: ClockPID %v to PID %v\n", pid, tid)
 		// Clock情報を提供する
 		com.GetClockResponse(pid, tid, sim.Clock)
 
 	case simapi.DemandType_SET_CLOCK_REQUEST:
 		// Clockをセットする
-		clock := dm.GetSimDemand().GetSetClockRequest().GetClock()
-		sim.Clock = clock
-		log.Printf("\x1b[30m\x1b[47m \n Finish: Clock information set. \n GlobalTime:  %v \n TimeStep: %v \x1b[0m\n", sim.Clock.GlobalTime, sim.Clock.TimeStep)
+		clockInfo := dm.GetSimDemand().GetSetClockRequest().GetClock()
+		sim.Clock = clockInfo
+		//log.Printf("\x1b[30m\x1b[47m \n Finish: Clock information set. \n GlobalTime:  %v \n TimeStep: %v \x1b[0m\n", sim.Clock.GlobalTime, sim.Clock.TimeStep)
+
+		// Request
+		idList := providerManager.GetIDList([]simutil.IDType{
+			simutil.IDType_VISUALIZATION,
+			simutil.IDType_AGENT,
+		})
+		logger.Info("Request Update Clock %v", idList)
+		com.UpdateClockRequest(pid, idList, clockInfo)
+		logger.Info("Finish Update Clock")
+
+		// Response to Scenario
+		com.SetClockResponse(pid, tid)
 
 	case simapi.DemandType_START_CLOCK_REQUEST:
 		// Clockをスタートする
@@ -136,6 +148,10 @@ func demandCallback(clt *sxutil.SMServiceClient, dm *pb.Demand) {
 		com.StopClockResponse(pid, tid)
 
 	case simapi.DemandType_UPDATE_PROVIDERS_REQUEST:
+		providers := dm.GetSimDemand().GetUpdateProvidersRequest().GetProviders()
+		providerManager.UpdateProviders(providers)
+		providerManager.CreateIDMap()
+		com.UpdateProvidersResponse(pid, tid)
 		// プロバイダーを更新する
 		//setClock(dm)
 
@@ -144,15 +160,14 @@ func demandCallback(clt *sxutil.SMServiceClient, dm *pb.Demand) {
 }
 
 func main() {
-	logger.Info("StartUp Provider: SyneServ: %v, NodeServ: %v, AreaJson: %v Pinfo: %v ", *serverAddr, *nodesrv, scenarioProviderInfo)
+	logger.Info("StartUp Provider")
 
 	// ProviderManager
-	myProvider := provider.NewProvider("ClockProvider", provider.ProviderType_CLOCK)
+	//myProvider := provider.NewProvider("ClockProvider", provider.ProviderType_CLOCK)
 	providerManager = simutil.NewProviderManager(myProvider)
-	providerManager.AddProvider(scenarioProviderInfo)
+	providerManager.AddProvider(scenarioProvider)
 	providerManager.CreateIDMap()
-	logger.Debug("Providers: %v, %v", providerManager.Providers)
-	logger.Debug("IDMap: %v, %v", providerManager.ProviderIDMap, providerManager.ProviderIDMap[simutil.IDType_CLOCK])
+	logger.Debug("ClockPID %v \n", myProvider.Id)
 
 	// connect to node server
 	sxutil.RegisterNodeName(*nodesrv, "ClockProvider", false)
@@ -175,8 +190,8 @@ func main() {
 	sim = NewSimulator(clockInfo)
 
 	// Communicator
-	clockProviderInfo := &provider.ClockStatus{}
-	provider := provider.NewClockProvider("ClockProvider", clockProviderInfo)
+	//clockProviderInfo := &provider.ClockStatus{}
+	//provider := provider.NewClockProvider("ClockProvider", clockProviderInfo)
 	com = simutil.NewCommunicator()
 	com.RegistClients(client, argJson)               // channelごとのClientを作成
 	com.SubscribeAll(demandCallback, supplyCallback) // ChannelにSubscribe
@@ -190,7 +205,7 @@ func main() {
 		simutil.IDType_SCENARIO,
 	})
 	pid := providerManager.MyProvider.Id
-	com.RegistProviderRequest(pid, idList, provider)
+	com.RegistProviderRequest(pid, idList, myProvider)
 	logger.Info("Finish Provider Registration.")
 
 	wg.Wait()

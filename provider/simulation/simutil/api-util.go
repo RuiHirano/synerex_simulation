@@ -133,7 +133,6 @@ func (c *Communicator) SendToWaitCh(sp *pb.Supply, supplyType simapi.SupplyType)
 	waitCh := waitChMap[supplyType]
 	//waitCh, _ := waitChMap2.Load(supplyType)
 	mu.Unlock()
-	logger.Debug("3.sendChannel----: %v, %v", supplyType, waitChMap)
 	waitCh <- sp
 }
 
@@ -145,7 +144,6 @@ func wait(idList []uint64, supplyType simapi.SupplyType) map[uint64]*pb.Supply {
 	waitChMap[supplyType] = waitCh
 	//waitChMap2.Store(supplyType, waitCh)
 	mu.Unlock()
-	logger.Debug("1.sendChannel-----------------: %v, %v", supplyType, idList)
 
 	wg := sync.WaitGroup{}
 	wg.Add(1)
@@ -154,7 +152,6 @@ func wait(idList []uint64, supplyType simapi.SupplyType) map[uint64]*pb.Supply {
 		for {
 			select {
 			case psp := <-waitCh:
-				logger.Debug("GetPSP: %v, %v\n", psp.GetSimSupply(), idList)
 				mu.Lock()
 				// spのidがidListに入っているか
 				if isPidInIdList(psp, idList) {

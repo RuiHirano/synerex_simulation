@@ -19,12 +19,9 @@ import (
 
 var (
 	providerMutex sync.RWMutex
-	uid           uuid.UUID
 )
 
 func init() {
-	u, _ := uuid.NewRandom()
-	uid = u
 }
 
 type Source struct {
@@ -44,6 +41,7 @@ type Source struct {
 ///////////////////////////////////////////////////////////
 
 func NewProvider(name string, providerType ProviderType) *Provider {
+	uid, _ := uuid.NewRandom()
 	p := &Provider{
 		Id:   uint64(uid.ID()),
 		Name: name,
@@ -53,6 +51,7 @@ func NewProvider(name string, providerType ProviderType) *Provider {
 }
 
 func NewScenarioProvider(name string, scenario *ScenarioStatus) *Provider {
+	uid, _ := uuid.NewRandom()
 	p := &Provider{
 		Id:   uint64(uid.ID()),
 		Name: name,
@@ -68,6 +67,7 @@ func (p *Provider) WithScenarioStatus(s *ScenarioStatus) *Provider {
 }
 
 func NewClockProvider(name string, clock *ClockStatus) *Provider {
+	uid, _ := uuid.NewRandom()
 	p := &Provider{
 		Id:   uint64(uid.ID()),
 		Name: name,
@@ -83,6 +83,7 @@ func (p *Provider) WithClockStatus(c *ClockStatus) *Provider {
 }
 
 func NewVisualizationProvider(name string, vis *VisualizationStatus) *Provider {
+	uid, _ := uuid.NewRandom()
 	p := &Provider{
 		Id:   uint64(uid.ID()),
 		Name: name,
@@ -98,6 +99,7 @@ func (p *Provider) WithVisualizationStatus(v *VisualizationStatus) *Provider {
 }
 
 func NewAgentProvider(name string, agentType agent.AgentType, agent *AgentStatus) *Provider {
+	uid, _ := uuid.NewRandom()
 	p := &Provider{
 		Id:   uint64(uid.ID()),
 		Name: name,
@@ -113,7 +115,7 @@ func (p *Provider) WithAgentStatus(a *AgentStatus) *Provider {
 }
 
 func (p *Provider) Run(source *Source) error {
-	log.Printf("Run '%s' %v\n", p.Name, source)
+	log.Printf("Run '%s'\n", p.Name)
 
 	cmd, err := createCmd(source)
 	if err != nil {
@@ -231,7 +233,13 @@ func runMyCmd(cmd *exec.Cmd, source *Source, name string) {
 	log.Printf("Starting %s..\n", cmd.Args[0])
 
 	// run SubFuncition
-	source.SubFunc(pipe, name)
+	if source.Type != ProviderType_SYNEREX && source.Type != ProviderType_NODE_ID && source.Type != ProviderType_MONITOR {
+		source.SubFunc(pipe, name)
+	} else {
+		for {
+
+		}
+	}
 
 	log.Printf("[%s]:Now ending...", name)
 

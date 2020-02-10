@@ -32,8 +32,8 @@ var (
 	providerJson         = flag.String("provider_json", "", "Provider Json")
 	scenarioProviderJson = flag.String("scenario_provider_json", "", "Provider Json")
 	areaInfo             *area.Area
-	providerInfo         *provider.Provider
-	scenarioProviderInfo *provider.Provider
+	myProvider           *provider.Provider
+	scenarioProvider     *provider.Provider
 	agentType            = agent.AgentType_PEDESTRIAN // PEDESTRIAN
 	com                  *simutil.Communicator
 	sim                  *Simulator
@@ -51,9 +51,9 @@ func flagToProviderInfo(pJson string) *provider.Provider {
 func init() {
 	flag.Parse()
 	logger = simutil.NewLogger()
-	providerInfo = flagToProviderInfo(*providerJson)
-	scenarioProviderInfo = flagToProviderInfo(*scenarioProviderJson)
-	log.Printf("\x1b[31m\x1b[47m \nProviderInfo: %v \x1b[0m\n", providerInfo.GetStatus())
+	myProvider = flagToProviderInfo(*providerJson)
+	scenarioProvider = flagToProviderInfo(*scenarioProviderJson)
+	//log.Printf("\x1b[31m\x1b[47m \nProviderInfo: %v \x1b[0m\n", providerInfo.GetStatus())
 
 }
 
@@ -119,8 +119,13 @@ func forwardClock(dm *pb.Demand) {
 // callback for each Supply
 func demandCallback(clt *sxutil.SMServiceClient, dm *pb.Demand) {
 	tid := dm.GetSimDemand().GetPid()
+	pid := providerManager.MyProvider.Id
 	switch dm.GetSimDemand().GetType() {
 	case simapi.DemandType_UPDATE_PROVIDERS_REQUEST:
+		providers := dm.GetSimDemand().GetUpdateProvidersRequest().GetProviders()
+		providerManager.UpdateProviders(providers)
+		providerManager.CreateIDMap()
+		com.UpdateProvidersResponse(pid, tid)
 		// 参加者リストをセットする要求
 	case simapi.DemandType_SET_AGENTS_REQUEST:
 		// Agentをセットする
@@ -130,9 +135,10 @@ func demandCallback(clt *sxutil.SMServiceClient, dm *pb.Demand) {
 		forwardClock(dm)
 	case simapi.DemandType_UPDATE_CLOCK_REQUEST:
 		// Clockをセットする
-		clock := dm.GetSimDemand().GetSetClockRequest().GetClock()
-		sim.Clock = clock
-		log.Printf("\x1b[30m\x1b[47m \n Finish: Clock information set. \n GlobalTime:  %v \n TimeStep: %v \x1b[0m\n", sim.Clock.GlobalTime, sim.Clock.TimeStep)
+		clockInfo := dm.GetSimDemand().GetSetClockRequest().GetClock()
+		sim.Clock = clockInfo
+		logger.Info("Finish Update Clock %v, %v", pid, tid)
+		com.UpdateClockResponse(pid, tid)
 
 	case simapi.DemandType_GET_AGENTS_REQUEST:
 		// エージェント情報を送る
@@ -158,17 +164,17 @@ func supplyCallback(clt *sxutil.SMServiceClient, sp *pb.Supply) {
 }
 
 func main() {
-	logger.Info("StartUp Provider: SyneServ: %v, NodeServ: %v, AreaJson: %v Pinfo: %v ", *serverAddr, *nodesrv, providerInfo)
+	logger.Info("StartUp Provider")
 	//log.Printf("area id is: %v, agent type is %v", areaId, agentType)
 
 	// ProviderManager
-	myProvider := provider.NewProvider("AgentProvider", provider.ProviderType_AGENT)
+	//myProvider := provider.NewProvider("AgentProvider", provider.ProviderType_AGENT)
 	providerManager = simutil.NewProviderManager(myProvider)
-	providerManager.AddProvider(scenarioProviderInfo)
+	providerManager.AddProvider(scenarioProvider)
 	providerManager.CreateIDMap()
 
 	// Connect to Node Server
-	sxutil.RegisterNodeName(*nodesrv, providerInfo.GetName(), false)
+	sxutil.RegisterNodeName(*nodesrv, myProvider.GetName(), false)
 	go sxutil.HandleSigInt()
 	sxutil.RegisterDeferFunction(sxutil.UnRegisterNode)
 
@@ -188,7 +194,7 @@ func main() {
 	sim = NewSimulator(clockInfo, areaInfo, agentType)
 
 	// Communicator
-	p := provider.NewProvider("AgentProvider", provider.ProviderType_AGENT)
+	//p := provider.NewProvider("AgentProvider", provider.ProviderType_AGENT)
 	com = simutil.NewCommunicator()
 	com.RegistClients(client, argJson)               // channelごとのClientを作成
 	com.SubscribeAll(demandCallback, supplyCallback) // ChannelにSubscribe
@@ -203,7 +209,7 @@ func main() {
 		simutil.IDType_SCENARIO,
 	})
 	pid := providerManager.MyProvider.Id
-	com.RegistProviderRequest(pid, idList, p)
+	com.RegistProviderRequest(pid, idList, myProvider)
 	logger.Info("Finish Provider Registration.")
 
 	// Clock情報を取得
@@ -212,7 +218,7 @@ func main() {
 	})
 	_, clockInfo = com.GetClockRequest(pid, idList)
 	sim.Clock = clockInfo
-	logger.Info("Finish Setting Clock. \n GlobalTime:  %v \n TimeStep: %v", sim.Clock.GlobalTime, sim.Clock.TimeStep)
+	logger.Info("Finish Setting Clock. \n")
 
 	wg.Wait()
 	sxutil.CallDeferFunctions() // cleanup!

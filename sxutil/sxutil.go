@@ -224,12 +224,11 @@ func (clt *SMServiceClient) ProposeSupply(spo *SupplyOpts) uint64 {
 
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-	resp, err := clt.Client.ProposeSupply(ctx, sp)
+	_, err := clt.Client.ProposeSupply(ctx, sp)
 	if err != nil {
 		log.Printf("%v.ProposeSupply err %v, [%v]", clt, err, sp)
 		return 0 // should check...
 	}
-	log.Println("ProposeSupply Response:", resp, ":PID ", pid)
 	return pid
 }
 

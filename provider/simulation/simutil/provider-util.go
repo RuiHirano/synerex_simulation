@@ -1,8 +1,6 @@
 package simutil
 
 import (
-	"fmt"
-
 	"github.com/synerex/synerex_alpha/api/simulation/provider"
 )
 
@@ -37,15 +35,20 @@ func NewProviderManager(myProvider *provider.Provider) *ProviderManager {
 
 func (pm *ProviderManager) AddProvider(p *provider.Provider) {
 	mu.Lock()
-	fmt.Printf("addProvier: %v, %v", pm.Providers, p)
 	pm.Providers = append(pm.Providers, p)
+	mu.Unlock()
+	//log.Printf("Providers: %v\n", pm.Providers)
+}
+
+func (pm *ProviderManager) UpdateProviders(ps []*provider.Provider) {
+	mu.Lock()
+	pm.Providers = ps
 	mu.Unlock()
 	//log.Printf("Providers: %v\n", pm.Providers)
 }
 
 func (pm *ProviderManager) GetProviders() []*provider.Provider {
 	mu.Lock()
-	fmt.Printf("getProvier: %v", pm)
 	providers := pm.Providers
 	mu.Unlock()
 	return providers
@@ -89,7 +92,6 @@ func (pm *ProviderManager) CreateIDMap() {
 	neighborIDs := make([]uint64, 0)
 	agentIDs := make([]uint64, 0)
 	for _, p := range pm.Providers {
-		fmt.Printf("PTYPE: %v\n", p.GetType())
 		switch p.GetType() {
 		case provider.ProviderType_SCENARIO:
 			providerIDMap[IDType_SCENARIO] = []uint64{p.GetId()}
