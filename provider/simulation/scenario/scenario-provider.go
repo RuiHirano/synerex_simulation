@@ -7,12 +7,10 @@ import (
 	"fmt"
 	"io"
 	"log"
-	"math"
 	"math/rand"
 	"net/http"
 	"os"
 	"path/filepath"
-	"sort"
 	"sync"
 	"time"
 
@@ -39,6 +37,7 @@ var (
 	com             *simutil.Communicator
 	sim             *Simulator
 	providerManager *simutil.ProviderManager
+	areaManager     *simutil.AreaManager
 	pSources        map[provider.ProviderType]*provider.Source
 	logger          *simutil.Logger
 )
@@ -63,129 +62,6 @@ var (
 	orderInfos      []OrderInfo
 )
 
-/*func loadGeoJson(fname string) *geojson.FeatureCollection{
-
-	bytes, err := ioutil.ReadFile(fname)
-	if err != nil {
-		log.Print("Can't read file:", err)
-		panic("load json")
-	}
-	fc, _ := geojson.UnmarshalFeatureCollection(bytes)
-
-	return fc
-}*/
-
-// エリア分割の閾値(100人超えたら分割)
-var areaAgentNum = 100
-
-/*var mockProviderStats = []*ProviderStats{
-	{
-		AgentNum: 50,
-		Time: 0.0,
-	},
-}*/
-
-func Sub(coord1 *common.Coord, coord2 *common.Coord) *common.Coord {
-	return &common.Coord{Latitude: coord1.Latitude - coord2.Latitude, Longitude: coord1.Longitude - coord2.Longitude}
-}
-
-func Mul(coord1 *common.Coord, coord2 *common.Coord) float64 {
-	return coord1.Latitude*coord2.Latitude + coord1.Longitude*coord2.Longitude
-}
-
-func Abs(coord1 *common.Coord) float64 {
-	return math.Sqrt(Mul(coord1, coord1))
-}
-
-func Add(coord1 *common.Coord, coord2 *common.Coord) *common.Coord {
-	return &common.Coord{Latitude: coord1.Latitude + coord2.Latitude, Longitude: coord1.Longitude + coord2.Longitude}
-}
-
-func Div(coord *common.Coord, s float64) *common.Coord {
-	return &common.Coord{Latitude: coord.Latitude / s, Longitude: coord.Longitude / s}
-}
-
-type ByAbs struct {
-	Coords []*common.Coord
-}
-
-func (b ByAbs) Less(i, j int) bool {
-	return Abs(b.Coords[i]) < Abs(b.Coords[j])
-}
-func (b ByAbs) Len() int {
-	return len(b.Coords)
-}
-
-func (b ByAbs) Swap(i, j int) {
-	b.Coords[i], b.Coords[j] = b.Coords[j], b.Coords[i]
-}
-
-/*func updateProvider(newProviderStats []*ProviderStats) []*ProviderStats{
-	// write area devide algorithm
-	updatedProviderStats := make([]*ProviderStats, 0)
-	for _, state := range newProviderStats{
-		if state.AgentNum > areaAgentNum{
-			// devide area
-			//vectors := make([]*common.Coord, 0)
-
-			point1, point2, point3, point4 := state.Area[0], state.Area[1], state.Area[2], state.Area[3]
-			point1vecs := []*common.Coord{Sub(point1, point1), Sub(point2, point1), Sub(point3, point1), Sub(point4, point1)}
-			// 昇順にする
-			sort.Sort(ByAbs{point1vecs})
-			devPoint1 := Div(point1vecs[2], 2)	//分割点1
-			divPoint2 := Add(Div(point1vecs[2], 2), point1vecs[1]) //分割点2
-			// 二つに分割
-			coords1 := []*common.Coord{
-				Add(point1vecs[0], point1), Add(point1vecs[1], point1), Add(devPoint1, point1), Add(divPoint2, point1),
-			}
-			coords2 := []*common.Coord{
-				Add(point1vecs[2], point1), Add(point1vecs[3], point1), Add(devPoint1, point1), Add(divPoint2, point1),
-			}
-			// 追加
-			state1 := &ProviderStats{
-				Area: coords1,
-				AgentNum: state.AgentNum/2,
-				Time: state.Time,
-			}
-			state2 := &ProviderStats{
-				Area: coords2,
-				AgentNum: state.AgentNum/2,
-				Time: state.Time,
-			}
-
-			updatedProviderStats = append(updatedProviderStats, state1)
-			updatedProviderStats = append(updatedProviderStats, state2)
-		}else{
-			updatedProviderStats = append(updatedProviderStats, state)
-		}
-	}
-	return updatedProviderStats
-}
-
-func areaTest(){
-	go func(){
-		for{
-			log.Printf("time: ---\n")
-			time.Sleep(1 * time.Second)
-			// change provider stats
-			newProviderStats := make([]*ProviderStatus, 0)
-			for i, state := range mockProviderStats{
-				if i == 0{
-					log.Printf("agentNum: %v, providerNum: %v\n", state.AgentNum, len(mockProviderStats))
-				}
-				log.Printf("area: %v\n", state.Area)
-				state.AgentNum += 30
-				newProviderStats = append(newProviderStats, state)
-			}
-			// update provider
-			mockProviderStats = updateProvider(newProviderStats)
-
-			// startup provider
-			//log.Printf("providerStats: %v\n", providerStats)
-		}
-	}()
-}*/
-
 type Option struct {
 	Key   string
 	Value string
@@ -208,11 +84,6 @@ type OrderInfo struct {
 }
 
 func init() {
-	//areaTest()
-	//geofile = "transit_points.geojson"
-	//fcs = loadGeoJson(geofile)
-	//runProviders = make(map[uint64]*Provider)
-	//providerMap = make(map[string]*exec.Cmd)
 	providerMutex = sync.RWMutex{}
 	pSources = make(map[provider.ProviderType]*provider.Source)
 	pSources[provider.ProviderType_CLOCK] = &provider.Source{
@@ -321,32 +192,6 @@ func init() {
 //////////////////        Util          ///////////////////
 ///////////////////////////////////////////////////////////
 
-// providerが変化した場合に更新通知をする
-func updateProviderOrder() {
-	go func() {
-		providerNum := providerManager.GetProviderNum()
-		for {
-			mu.Lock()
-			newProviderNum := providerManager.GetProviderNum()
-			if providerNum != newProviderNum {
-				providerNum = newProviderNum
-				// IDMapを再作成
-				providerManager.CreateIDMap()
-				// 同期するIDリスト
-				idList := providerManager.GetIDList([]simutil.IDType{
-					simutil.IDType_CLOCK,
-					simutil.IDType_VISUALIZATION,
-					simutil.IDType_AGENT,
-				})
-				pid := providerManager.MyProvider.Id
-				com.UpdateProvidersRequest(pid, idList, providerManager.Providers)
-				logger.Info("Success Update Providers")
-			}
-			mu.Unlock()
-		}
-	}()
-}
-
 // providerに変化があった場合にGUIに情報を送る
 /*func sendRunnningProviders() {
 	providerMutex.RLock()
@@ -419,73 +264,6 @@ func calcRoute() *agent.Route {
 	}
 
 	return route
-}
-
-func divideArea(areaInfo *area.Area, num uint64) []*area.Area {
-	DUPLICATE_RANGE := 5.0
-	// エリアを分割する
-	// 最初は単純にエリアを半分にする
-	//providerStats := mockProviderStats
-	//duplicateRate := 0.1	// areaCoordの10%の範囲
-	// 二等分にするアルゴリズム
-	areaCoord := areaInfo.ControlArea
-	point1, point2, point3, point4 := areaCoord[0], areaCoord[1], areaCoord[2], areaCoord[3]
-	point1vecs := []*common.Coord{Sub(point1, point1), Sub(point2, point1), Sub(point3, point1), Sub(point4, point1)}
-	// 昇順にする
-	sort.Sort(ByAbs{point1vecs})
-	divPoint1 := Div(point1vecs[2], 2)                     //分割点1
-	divPoint2 := Add(Div(point1vecs[2], 2), point1vecs[1]) //分割点2
-	// 二つに分割
-	control1 := []*common.Coord{
-		Add(point1vecs[0], point1), Add(point1vecs[1], point1), Add(divPoint1, point1), Add(divPoint2, point1),
-	}
-	control2 := []*common.Coord{
-		Add(point1vecs[2], point1), Add(point1vecs[3], point1), Add(divPoint1, point1), Add(divPoint2, point1),
-	}
-	controls := [][]*common.Coord{control1, control2}
-
-	// calc duplicate area
-	var duplicates [][]*common.Coord
-	for _, control := range controls {
-		maxLat, maxLon := math.Inf(-1), math.Inf(-1)
-		minLat, minLon := math.Inf(0), math.Inf(0)
-		for _, coord := range control {
-			if coord.Latitude > maxLat {
-				maxLat = coord.Latitude
-			}
-			if coord.Longitude > maxLon {
-				maxLon = coord.Longitude
-			}
-			if coord.Latitude < minLat {
-				minLat = coord.Latitude
-			}
-			if coord.Longitude < minLon {
-				minLon = coord.Longitude
-			}
-		}
-		duplicate := []*common.Coord{
-			&common.Coord{Latitude: minLat - DUPLICATE_RANGE, Longitude: minLon - DUPLICATE_RANGE},
-			&common.Coord{Latitude: minLat - DUPLICATE_RANGE, Longitude: maxLon + DUPLICATE_RANGE},
-			&common.Coord{Latitude: maxLat + DUPLICATE_RANGE, Longitude: maxLon + DUPLICATE_RANGE},
-			&common.Coord{Latitude: maxLat + DUPLICATE_RANGE, Longitude: minLon - DUPLICATE_RANGE},
-		}
-		duplicates = append(duplicates, duplicate)
-	}
-
-	// calc areaInfo
-	areaInfos := make([]*area.Area, 0)
-	for i, control := range controls {
-		uid, _ := uuid.NewRandom()
-		areaInfos = append(areaInfos, &area.Area{
-			Id:            uint64(uid.ID()),
-			Name:          "test",
-			DuplicateArea: duplicates[i],
-			ControlArea:   control,
-			NeighborAreaIds: []uint64{}
-		})
-	}
-
-	return areaInfos
 }
 
 ////////////////////////////////////////////////////////////
@@ -833,6 +611,7 @@ func demandCallback(clt *sxutil.SMServiceClient, dm *pb.Demand) {
 		// providerを追加する
 		p := dm.GetSimDemand().GetRegistProviderRequest().GetProvider()
 		providerManager.AddProvider(p)
+		providerManager.CreateIDMap()
 		// 登録完了通知
 		//logger.Debug("RegistProviderRequest: Send from %v to %v\n", pid, tid)
 		com.RegistProviderResponse(pid, tid)
@@ -927,14 +706,15 @@ func runInitProvider() {
 	pSources[visProvider.Type].Options = options
 	visProvider.Run(pSources[visProvider.Type])
 
-	var INIT_PROVIDER_NUM = uint64(2)
+	//var INIT_PROVIDER_NUM = uint64(2)
 	var INIT_AGENT_TYPES = map[string]agent.AgentType{
 		"Pedestrian": agent.AgentType_PEDESTRIAN,
 		"Car":        agent.AgentType_CAR,
 	}
 
+	areaInfos := areaManager.DivideArea(mockAreaInfo)
 	for name, agentType := range INIT_AGENT_TYPES {
-		areaInfos := divideArea(mockAreaInfo2, INIT_PROVIDER_NUM)
+
 		//logger.Error("mockAreaInfo: %v\n", mockAreaInfo2.ControlArea)
 		for _, areaInfo := range areaInfos {
 			//logger.Error("areaInfo: %v\n", areaInfo.ControlArea)
@@ -964,6 +744,9 @@ func main() {
 	myProvider := provider.NewProvider("ScenarioProvider", provider.ProviderType_SCENARIO)
 	providerManager = simutil.NewProviderManager(myProvider)
 	providerManager.CreateIDMap()
+
+	//AreaManager
+	areaManager = simutil.NewAreaManager(mockAreaInfo)
 
 	// CLI, GUIの受信サーバ
 	simulatorServer := NewSimulatorServer()
@@ -999,7 +782,7 @@ func main() {
 
 	wg := sync.WaitGroup{}
 	wg.Add(1)
-	updateProviderOrder()
+	//updateProviderOrder()
 	// 初期プロバイダ起動
 	runInitProvider()
 	wg.Wait()

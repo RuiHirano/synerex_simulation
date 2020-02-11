@@ -235,11 +235,11 @@ func runMyCmd(cmd *exec.Cmd, source *Source, name string) {
 	// run SubFuncition
 	if source.Type != ProviderType_SYNEREX && source.Type != ProviderType_NODE_ID && source.Type != ProviderType_MONITOR {
 		source.SubFunc(pipe, name)
-	} else {
-		for {
-
-		}
 	}
+
+	wg := sync.WaitGroup{}
+	wg.Add(1)
+	wg.Wait()
 
 	log.Printf("[%s]:Now ending...", name)
 
