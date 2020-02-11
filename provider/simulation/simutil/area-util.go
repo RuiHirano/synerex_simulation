@@ -146,7 +146,7 @@ func (am *AreaManager) AddDevidedArea(sourceArea *area.Area, dividedArea []*area
 	// 分割されたエリアの隣接エリアを対象に隣接判定を行う
 	for _, area1 := range dividedArea {
 		for _, areaInfo := range am.Areas {
-			if contains(areaInfo.NeighborAreaIds, sourceArea.Id) {
+			if Contains(areaInfo.NeighborAreaIds, sourceArea.Id) {
 				isNeighbor := isNeighbor(area1, areaInfo)
 				if isNeighbor {
 					// 隣接していた場合、加える
@@ -180,21 +180,13 @@ func (am *AreaManager) CreateNeighborIds() {
 	}
 }
 
-// 配列に値があるかどうか
-func contains(s []uint64, e uint64) bool {
-	for _, v := range s {
-		if e == v {
-			return true
-		}
-	}
-	return false
-}
+
 
 // 隣接しているかどうか
 func isNeighbor(area1 *area.Area, area2 *area.Area) bool {
 	// latかlonが等しい時に、逆(latならlon,lonならlat)が重なっていれば隣接している
-	maxLat1, maxLon1, minLat1, minLon1 := getCoordRange(area1.ControlArea)
-	maxLat2, maxLon2, minLat2, minLon2 := getCoordRange(area2.ControlArea)
+	maxLat1, maxLon1, minLat1, minLon1 := GetCoordRange(area1.ControlArea)
+	maxLat2, maxLon2, minLat2, minLon2 := GetCoordRange(area2.ControlArea)
 
 	for _, coord1 := range area1.ControlArea {
 		for _, coord2 := range area2.ControlArea {
@@ -213,7 +205,7 @@ func isNeighbor(area1 *area.Area, area2 *area.Area) bool {
 	return false
 }
 
-func getCoordRange(coords []*common.Coord) (float64, float64, float64, float64) {
+func GetCoordRange(coords []*common.Coord) (float64, float64, float64, float64) {
 	maxLon, maxLat := math.Inf(-1), math.Inf(-1)
 	minLon, minLat := math.Inf(0), math.Inf(0)
 	for _, coord := range coords {

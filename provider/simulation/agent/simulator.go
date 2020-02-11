@@ -1,11 +1,15 @@
 package main
 
 import (
+	//"log"
+
 	"github.com/paulmach/orb/geojson"
 	"github.com/synerex/synerex_alpha/api/simulation/agent"
 	"github.com/synerex/synerex_alpha/api/simulation/area"
 	"github.com/synerex/synerex_alpha/api/simulation/clock"
+	"github.com/synerex/synerex_alpha/api/simulation/common"
 	algo "github.com/synerex/synerex_alpha/provider/simulation/agent/algorithm"
+	"github.com/synerex/synerex_alpha/provider/simulation/simutil"
 )
 
 var (
@@ -35,6 +39,7 @@ func NewSimulator(clockInfo *clock.Clock, areaInfo *area.Area, agentType agent.A
 
 // ForwardClock :
 func (sim *Simulator) ForwardClock() {
+	//log.Printf("-------clock %v", sim.Clock)
 	sim.Clock.Forward()
 }
 
@@ -62,8 +67,9 @@ func (sim *Simulator) GetArea() *area.Area {
 func (sim *Simulator) AddAgents(agentsInfo []*agent.Agent) {
 	newAgents := make([]*agent.Agent, 0)
 	for _, agentInfo := range agentsInfo {
-		if agentInfo.Type == agent.AgentType_PEDESTRIAN {
-			if agentInfo.IsInArea(sim.Area.DuplicateArea) {
+		if agentInfo.Type == sim.AgentType {
+			position := agentInfo.Route.Position
+			if IsAgentInArea(position, sim.Area.DuplicateArea) {
 				newAgents = append(newAgents, agentInfo)
 			}
 		}
@@ -75,7 +81,7 @@ func (sim *Simulator) AddAgents(agentsInfo []*agent.Agent) {
 func (sim *Simulator) SetAgents(agentsInfo []*agent.Agent) {
 	newAgents := make([]*agent.Agent, 0)
 	for _, agentInfo := range agentsInfo {
-		if agentInfo.Type == agent.AgentType_PEDESTRIAN {
+		if agentInfo.Type == sim.AgentType {
 			newAgents = append(newAgents, agentInfo)
 		}
 	}
@@ -98,8 +104,8 @@ func (sim *Simulator) UpdateDuplicateAgents(nextControlAgents []*agent.Agent, ne
 	for _, neighborAgent := range neighborAgents {
 		//　隣のエージェントが自分のエリアにいてかつ自分のエリアのエージェントと被ってない場合更新
 		if len(nextControlAgents) == 0 {
-			//
-			if neighborAgent.IsInArea(sim.Area.DuplicateArea) {
+			position := neighborAgent.Route.Position
+			if IsAgentInArea(position, sim.Area.DuplicateArea) {
 				nextAgents = append(nextAgents, neighborAgent)
 			}
 		} else {
@@ -120,7 +126,7 @@ func (sim *Simulator) UpdateDuplicateAgents(nextControlAgents []*agent.Agent, ne
 
 // ForwardStep :　次の時刻のエージェントを計算する関数
 func (sim *Simulator) ForwardStep(sameAreaAgents []*agent.Agent) []*agent.Agent {
-	IsRVO2 := true
+	IsRVO2 := false
 	nextControlAgents := sim.GetAgents()
 
 	if IsRVO2 {
@@ -136,4 +142,16 @@ func (sim *Simulator) ForwardStep(sameAreaAgents []*agent.Agent) []*agent.Agent 
 
 	}
 	return nextControlAgents
+}
+
+// エージェントがエリアの中にいるかどうか
+func IsAgentInArea(position *common.Coord, areaCoords []*common.Coord) bool {
+	lat := position.Latitude
+	lon := position.Longitude
+	maxLat, maxLon, minLat, minLon := simutil.GetCoordRange(areaCoords)
+	if minLat < lat && lat < maxLat && minLon < lon && lon < maxLon {
+		return true
+	} else {
+		return false
+	}
 }

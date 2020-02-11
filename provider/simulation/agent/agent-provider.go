@@ -17,8 +17,6 @@ import (
 	"github.com/golang/protobuf/jsonpb"
 	pb "github.com/synerex/synerex_alpha/api"
 	simapi "github.com/synerex/synerex_alpha/api/simulation"
-	"github.com/synerex/synerex_alpha/api/simulation/agent"
-	"github.com/synerex/synerex_alpha/api/simulation/area"
 	"github.com/synerex/synerex_alpha/api/simulation/clock"
 	"github.com/synerex/synerex_alpha/api/simulation/provider"
 	"github.com/synerex/synerex_alpha/provider/simulation/simutil"
@@ -31,13 +29,10 @@ var (
 	nodesrv              = flag.String("nodeid_addr", "127.0.0.1:9990", "Node ID Server")
 	providerJson         = flag.String("provider_json", "", "Provider Json")
 	scenarioProviderJson = flag.String("scenario_provider_json", "", "Provider Json")
-	areaInfo             *area.Area
 	myProvider           *provider.Provider
 	scenarioProvider     *provider.Provider
-	agentType            = agent.AgentType_PEDESTRIAN // PEDESTRIAN
 	com                  *simutil.Communicator
 	sim                  *Simulator
-	areaId               uint64
 	providerManager      *simutil.ProviderManager
 	logger               *simutil.Logger
 )
@@ -57,24 +52,10 @@ func init() {
 
 }
 
-// callbackSetAgents: Agent情報をセットする要求
-func setAgents(dm *pb.Demand) {
-	agents := dm.GetSimDemand().GetSetAgentsRequest().GetAgents()
-	targetId := dm.GetId()
-
-	// Agent情報を追加する
-	sim.AddAgents(agents)
-
-	// セット完了通知を送る
-	pid := providerManager.MyProvider.Id
-	com.SetAgentsResponse(pid, targetId)
-	log.Printf("\x1b[30m\x1b[47m \n Finish: Agents information set. \n Total:  %v \n Add: %v \x1b[0m\n", len(sim.GetAgents()), len(agents))
-}
-
 // callbackForwardClock: Agentを計算し、クロックを進める要求
 func forwardClock(dm *pb.Demand) {
 
-	targetId := dm.GetSimDemand().GetPid()
+	tid := dm.GetSimDemand().GetPid()
 	pid := providerManager.MyProvider.Id
 
 	// 同じエリアのAgent情報を取得する
@@ -96,7 +77,6 @@ func forwardClock(dm *pb.Demand) {
 
 	// 重複エリアのエージェントを更新する
 	nextDuplicateAgents := sim.UpdateDuplicateAgents(nextControlAgents, neighborAreaAgents)
-
 	// Agentsをセットする
 	sim.SetAgents(nextDuplicateAgents)
 
@@ -111,9 +91,10 @@ func forwardClock(dm *pb.Demand) {
 	com.SetAgentsRequest(pid, idList, nextControlAgents)
 
 	// セット完了通知を送る
-	com.ForwardClockResponse(pid, targetId)
+	com.ForwardClockResponse(pid, tid)
 
-	log.Printf("\x1b[30m\x1b[47m \n Finish: Clock forwarded. \n Time:  %v \n Agents Num: %v \x1b[0m\n", sim.Clock.GlobalTime, len(nextControlAgents))
+	//logger.Info("Finish: Clock Forwarded. \n Time:  %v \n Agents Num: %v", sim.Clock.GlobalTime, len(nextControlAgents))
+	logger.Info("Finish: Clock Forwarded.  AgentNum:  %v", len(sim.Agents))
 }
 
 // callback for each Supply
@@ -122,14 +103,33 @@ func demandCallback(clt *sxutil.SMServiceClient, dm *pb.Demand) {
 	pid := providerManager.MyProvider.Id
 	switch dm.GetSimDemand().GetType() {
 	case simapi.DemandType_UPDATE_PROVIDERS_REQUEST:
+		// 参加者リストをセットする要求
 		providers := dm.GetSimDemand().GetUpdateProvidersRequest().GetProviders()
 		providerManager.UpdateProviders(providers)
 		providerManager.CreateIDMap()
 		com.UpdateProvidersResponse(pid, tid)
-		// 参加者リストをセットする要求
+
 	case simapi.DemandType_SET_AGENTS_REQUEST:
-		// Agentをセットする
-		setAgents(dm)
+		// NOTE: Vis宛のSetAgentsRequestを拾ってしまい、エージェントが増えていく、、
+		// Mbusにするか、自分宛しか受け取らない処理が必要
+		// synerex-alphaではDemandでTargetIDを使えない、、
+
+		idList := providerManager.GetIDList([]simutil.IDType{
+			simutil.IDType_AGENT,
+		})
+		if !simutil.Contains(idList, tid) {
+
+			// Agentをセットする
+			agents := dm.GetSimDemand().GetSetAgentsRequest().GetAgents()
+
+			// Agent情報を追加する
+			sim.AddAgents(agents)
+
+			// セット完了通知を送る
+			com.SetAgentsResponse(pid, tid)
+			logger.Info("Finish: Set Agents Add: %v", len(sim.Agents))
+		}
+
 	case simapi.DemandType_FORWARD_CLOCK_REQUEST:
 		// クロックを進める要求
 		forwardClock(dm)
@@ -142,9 +142,8 @@ func demandCallback(clt *sxutil.SMServiceClient, dm *pb.Demand) {
 
 	case simapi.DemandType_GET_AGENTS_REQUEST:
 		// エージェント情報を送る
-		pid := providerManager.MyProvider.Id
 		com.GetAgentsResponse(pid, tid, sim.Agents, sim.AgentType, sim.Area.Id)
-
+		logger.Info("Finish: Send Agents")
 	}
 }
 
@@ -157,6 +156,8 @@ func supplyCallback(clt *sxutil.SMServiceClient, sp *pb.Supply) {
 			com.SendToWaitCh(sp, sp.GetSimSupply().GetType())
 		case simapi.SupplyType_GET_AGENTS_RESPONSE:
 			com.SendToWaitCh(sp, sp.GetSimSupply().GetType())
+		case simapi.SupplyType_SET_AGENTS_RESPONSE:
+			com.SendToWaitCh(sp, sp.GetSimSupply().GetType())
 		case simapi.SupplyType_REGIST_PROVIDER_RESPONSE:
 			com.SendToWaitCh(sp, sp.GetSimSupply().GetType())
 		}
@@ -165,6 +166,7 @@ func supplyCallback(clt *sxutil.SMServiceClient, sp *pb.Supply) {
 
 func main() {
 	logger.Info("StartUp Provider")
+	logger.Error("AgentType %v, AreaID: %v, NeighborIDs: %v", myProvider.GetAgentStatus().GetAgentType(), myProvider.GetAgentStatus().GetArea().GetId(), myProvider.GetAgentStatus().GetArea().GetNeighborAreaIds())
 	//log.Printf("area id is: %v, agent type is %v", areaId, agentType)
 
 	// ProviderManager
@@ -187,10 +189,12 @@ func main() {
 	}
 	sxutil.RegisterDeferFunction(func() { conn.Close() })
 	client := pb.NewSynerexClient(conn)
-	argJson := fmt.Sprintf("{Client:Ped, AreaId: %d}", areaId)
+	argJson := fmt.Sprintf("{Client:Agent}")
 
 	// Simulator
 	clockInfo := clock.NewClock(0, 1, 1)
+	areaInfo := myProvider.GetAgentStatus().GetArea()
+	agentType := myProvider.GetAgentStatus().GetAgentType()
 	sim = NewSimulator(clockInfo, areaInfo, agentType)
 
 	// Communicator
@@ -218,7 +222,7 @@ func main() {
 	})
 	_, clockInfo = com.GetClockRequest(pid, idList)
 	sim.Clock = clockInfo
-	logger.Info("Finish Setting Clock. \n")
+	logger.Info("Finish Setting Clock. %v\n", clockInfo)
 
 	wg.Wait()
 	sxutil.CallDeferFunctions() // cleanup!

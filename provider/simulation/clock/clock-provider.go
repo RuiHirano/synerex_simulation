@@ -59,10 +59,11 @@ func startClock() {
 
 	// 同期するIDリスト
 	idList := providerManager.GetIDList([]simutil.IDType{
-		simutil.IDType_SCENARIO,
+		//simutil.IDType_SCENARIO,
 		simutil.IDType_VISUALIZATION,
 		simutil.IDType_AGENT,
 	})
+	logger.Info("Send Forward Clock Request %v", idList)
 	pid := providerManager.MyProvider.Id
 	com.ForwardClockRequest(pid, idList)
 
@@ -88,12 +89,14 @@ func startClock() {
 // Supplyのコールバック関数
 func supplyCallback(clt *sxutil.SMServiceClient, sp *pb.Supply) {
 	// 自分宛かどうか
+	//logger.Info("Get Forward Clock Response2")
 	if sp.GetTargetId() == providerManager.MyProvider.Id {
 		// check if supply is match with my demand.
 		switch sp.GetSimSupply().GetType() {
 		case simapi.SupplyType_UPDATE_CLOCK_RESPONSE:
 			com.SendToWaitCh(sp, sp.GetSimSupply().GetType())
 		case simapi.SupplyType_FORWARD_CLOCK_RESPONSE:
+			//logger.Info("Get Forward Clock Response")
 			com.SendToWaitCh(sp, sp.GetSimSupply().GetType())
 		case simapi.SupplyType_BACK_CLOCK_RESPONSE:
 			com.SendToWaitCh(sp, sp.GetSimSupply().GetType())
@@ -113,7 +116,7 @@ func demandCallback(clt *sxutil.SMServiceClient, dm *pb.Demand) {
 	pid := providerManager.MyProvider.Id
 	switch dm.GetSimDemand().GetType() {
 	case simapi.DemandType_GET_CLOCK_REQUEST:
-		logger.Debug("GetClock: ClockPID %v to PID %v\n", pid, tid)
+		logger.Debug("GetClock: Clock %v\n", sim.Clock)
 		// Clock情報を提供する
 		com.GetClockResponse(pid, tid, sim.Clock)
 
@@ -140,6 +143,8 @@ func demandCallback(clt *sxutil.SMServiceClient, dm *pb.Demand) {
 		if isStart == false {
 			isStart = true
 			go startClock()
+		} else {
+			logger.Warn("Clock is already started.")
 		}
 
 	case simapi.DemandType_STOP_CLOCK_REQUEST:

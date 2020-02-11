@@ -123,14 +123,15 @@ func sendToHarmowareVis(sumAgents []*agent.Agent) {
 
 // callbackForwardClockRequest: クロックを進める関数
 func forwardClock(dm *pb.Demand) {
-	log.Printf("\x1b[30m\x1b[47m \n Start: Clock forwarded \n Time:  %v \x1b[0m\n", sim.Clock.GlobalTime)
+	//log.Printf("\x1b[30m\x1b[47m \n Start: Clock forwarded \n Time:  %v \x1b[0m\n", sim.Clock.GlobalTime)
 	targetId := dm.GetSimDemand().GetPid()
+	pid := providerManager.MyProvider.Id
 
 	// 同期するIDリスト
 	idList := providerManager.GetIDList([]simutil.IDType{
 		simutil.IDType_AGENT,
 	})
-	pid := providerManager.MyProvider.Id
+
 	_, agents := com.GetAgentsRequest(pid, idList)
 
 	// Harmowareに送る
@@ -141,7 +142,7 @@ func forwardClock(dm *pb.Demand) {
 
 	// セット完了通知を送る
 	com.ForwardClockResponse(pid, targetId)
-	log.Printf("\x1b[30m\x1b[47m \n Finish: Clock forwarded \n Time:  %v \x1b[0m\n", sim.Clock.GlobalTime)
+	logger.Info("Finish: Clock Forwarded. \n Time:  %v \n Agents Num: %v", sim.Clock.GlobalTime)
 }
 
 func runServer() *gosocketio.Server {
@@ -216,6 +217,13 @@ func demandCallback(clt *sxutil.SMServiceClient, dm *pb.Demand) {
 	case simapi.DemandType_FORWARD_CLOCK_REQUEST:
 		// クロックを進める
 		forwardClock(dm)
+
+	case simapi.DemandType_SET_AGENTS_REQUEST:
+		logger.Debug("Get AgentsInfo")
+		// Agentをセットする
+
+		// セット完了通知
+		com.SetAgentsResponse(pid, tid)
 
 	case simapi.DemandType_UPDATE_CLOCK_REQUEST:
 		// Clockをセットする

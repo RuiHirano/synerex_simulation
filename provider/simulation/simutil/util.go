@@ -5,6 +5,10 @@ import (
 	"sync"
 )
 
+////////////////////////////////////////////////////////////
+/////////////        Logger Class               ////////////
+///////////////////////////////////////////////////////////
+
 type Logger struct {
 }
 
@@ -13,23 +17,23 @@ func NewLogger() *Logger {
 }
 
 func (l *Logger) Info(format string, args ...interface{}) {
-	log.Printf("\x1b[32m\x1b[40m \n [Info] \x1b[0m"+format, args...)
+	log.Printf("\x1b[32m\x1b[40m [Info] \x1b[0m"+format, args...)
 }
 
 func (l *Logger) Error(format string, args ...interface{}) {
-	log.Printf("\x1b[31m\x1b[40m \n [Error] \x1b[0m"+format, args...)
+	log.Printf("\x1b[31m\x1b[40m [Error] \x1b[0m"+format, args...)
 }
 
 func (l *Logger) Warn(format string, args ...interface{}) {
-	log.Printf("\x1b[33m\x1b[40m \n [Warn] \x1b[0m"+format, args...)
+	log.Printf("\x1b[33m\x1b[40m [Warn] \x1b[0m"+format, args...)
 }
 
 func (l *Logger) Fatal(format string, args ...interface{}) {
-	log.Fatalf("\x1b[31m\x1b[40m \n [Error] \x1b[0m"+format, args...)
+	log.Fatalf("\x1b[31m\x1b[40m [Error] \x1b[0m"+format, args...)
 }
 
 func (l *Logger) Debug(format string, args ...interface{}) {
-	log.Printf("\x1b[36m\x1b[40m \n [Debug] \x1b[0m"+format, args...)
+	log.Printf("\x1b[36m\x1b[40m [Debug] \x1b[0m"+format, args...)
 }
 
 type SyncMap struct {
@@ -53,4 +57,18 @@ func (thisMap *SyncMap) Load(key interface{}) (value interface{}, ok bool) {
 // Delete mapにあるデータを削除
 func (thisMap *SyncMap) Delete(key interface{}) {
 	thisMap.mapData.Delete(key)
+}
+
+////////////////////////////////////////////////////////////
+/////////////               Utis               ////////////
+///////////////////////////////////////////////////////////
+
+// 配列に値があるかどうか
+func Contains(s []uint64, e uint64) bool {
+	for _, v := range s {
+		if e == v {
+			return true
+		}
+	}
+	return false
 }

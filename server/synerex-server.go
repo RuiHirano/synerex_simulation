@@ -5,7 +5,6 @@ package main
 //go:generate protoc -I ../api  --go_out=paths=source_relative:../api simulation/agent/pedestrian.proto
 //go:generate protoc -I ../api  --go_out=paths=source_relative:../api simulation/agent/car.proto
 //go:generate protoc -I ../api  --go_out=paths=source_relative:../api simulation/agent/agent.proto
-//go:generate protoc -I ../api  --go_out=paths=source_relative:../api simulation/area/area.proto
 //go:generate protoc -I ../api  --go_out=paths=source_relative:../api simulation/clock/clock.proto
 //go:generate protoc -I ../api  --go_out=paths=source_relative:../api simulation/common/common.proto
 //go:generate protoc -I ../api  --go_out=paths=source_relative:../api simulation/provider/provider.proto
@@ -645,7 +644,6 @@ func main() {
 
 	lis, err := net.Listen("tcp", fmt.Sprintf("0.0.0.0:%d", *port))
 	defer lis.Close()
-
 	if err != nil {
 		log.Fatalf("failed to listen: %v", err)
 	}

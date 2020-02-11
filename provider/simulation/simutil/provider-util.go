@@ -134,8 +134,10 @@ func (pm *ProviderManager) IsSameArea(p *provider.Provider) bool {
 
 // FIX
 func (pm *ProviderManager) IsNeighborArea(p *provider.Provider) bool {
-	if pm.MyProvider.GetAgentStatus().GetArea().GetId() == p.GetAgentStatus().GetArea().GetId() {
-		// エリアIDが等しければtrue
+	myNeighborIds := pm.MyProvider.GetAgentStatus().GetArea().GetNeighborAreaIds()
+	opAreaId := p.GetAgentStatus().GetArea().GetId()
+	if Contains(myNeighborIds, opAreaId) {
+		// エリアIDがNeighborIdsにあればtrue
 		return true
 	}
 	return false

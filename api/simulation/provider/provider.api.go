@@ -224,27 +224,28 @@ func createCmd(source *Source) (*exec.Cmd, error) {
 
 func runMyCmd(cmd *exec.Cmd, source *Source, name string) {
 
-	pipe, _ := cmd.StderrPipe()
-	err := cmd.Start()
-	if err != nil {
-		log.Printf("Error for executing %s %v\n", cmd.Args[0], err)
-		return
-	}
 	log.Printf("Starting %s..\n", cmd.Args[0])
 
 	// run SubFuncition
 	if source.Type != ProviderType_SYNEREX && source.Type != ProviderType_NODE_ID && source.Type != ProviderType_MONITOR {
+		pipe, _ := cmd.StderrPipe()
+		err := cmd.Start()
+		if err != nil {
+			log.Printf("Error for executing %s %v\n", cmd.Args[0], err)
+			return
+		}
 		source.SubFunc(pipe, name)
+	} else {
+		err := cmd.Start()
+		if err != nil {
+			log.Printf("Error for executing %s %v\n", cmd.Args[0], err)
+			return
+		}
 	}
-
-	wg := sync.WaitGroup{}
-	wg.Add(1)
-	wg.Wait()
-
-	log.Printf("[%s]:Now ending...", name)
 
 	cmd.Wait()
 
+	log.Printf("[%s]:Now ending...", name)
 	log.Printf("Command [%s] closed\n", name)
 }
 

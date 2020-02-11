@@ -17,14 +17,12 @@ import (
 var (
 	mu                  sync.Mutex
 	waitChMap           map[simapi.SupplyType]chan *pb.Supply
-	waitChMap2          sync.Map
 	CHANNEL_BUFFER_SIZE int
 	logger              *Logger
 )
 
 func init() {
 	waitChMap = make(map[simapi.SupplyType]chan *pb.Supply)
-	waitChMap2 = sync.Map{}
 	CHANNEL_BUFFER_SIZE = 10
 	logger = NewLogger()
 }
@@ -76,7 +74,7 @@ func (c *Communicator) SubscribeAll(demandCallback func(*sxutil.SMServiceClient,
 
 	go subscribeSupply(c.MyClients.AgentClient, supplyCallback)
 
-	time.Sleep(3 * time.Second)
+	time.Sleep(1 * time.Second)
 	return nil
 }
 
@@ -118,6 +116,7 @@ func sendSupply(sclient *sxutil.SMServiceClient, tid uint64, simSupply *simapi.S
 	opts := &sxutil.SupplyOpts{Target: tid, Name: nm, JSON: js, SimSupply: simSupply}
 
 	mu.Lock()
+	logger.Debug("Test 2")
 	id := sclient.ProposeSupply(opts)
 	mu.Unlock()
 	return id
@@ -131,7 +130,6 @@ func sendSupply(sclient *sxutil.SMServiceClient, tid uint64, simSupply *simapi.S
 func (c *Communicator) SendToWaitCh(sp *pb.Supply, supplyType simapi.SupplyType) {
 	mu.Lock()
 	waitCh := waitChMap[supplyType]
-	//waitCh, _ := waitChMap2.Load(supplyType)
 	mu.Unlock()
 	waitCh <- sp
 }
@@ -142,7 +140,6 @@ func wait(idList []uint64, supplyType simapi.SupplyType) map[uint64]*pb.Supply {
 	mu.Lock()
 	waitCh := make(chan *pb.Supply, CHANNEL_BUFFER_SIZE)
 	waitChMap[supplyType] = waitCh
-	//waitChMap2.Store(supplyType, waitCh)
 	mu.Unlock()
 
 	wg := sync.WaitGroup{}
@@ -151,7 +148,10 @@ func wait(idList []uint64, supplyType simapi.SupplyType) map[uint64]*pb.Supply {
 	go func() {
 		for {
 			select {
-			case psp := <-waitCh:
+			case psp, ok := <-waitCh:
+				if !ok {
+					logger.Info("Channel is Closed!")
+				}
 				mu.Lock()
 				// spのidがidListに入っているか
 				if isPidInIdList(psp, idList) {
@@ -592,7 +592,11 @@ func (c *Communicator) GetClockRequest(pid uint64, idList []uint64) (uint64, *cl
 	if idList != nil {
 		supplyType := simapi.SupplyType_GET_CLOCK_RESPONSE
 		spMap := wait(idList, supplyType)
-		clockInfo = spMap[0].GetSimSupply().GetGetClockResponse().GetClock()
+		//var clockInfo *clock.Clock
+		for _, sp := range spMap {
+			clockInfo = sp.GetSimSupply().GetGetClockResponse().GetClock()
+		}
+		logger.Info("Clock Info: %v", clockInfo)
 	}
 
 	return id, clockInfo
@@ -648,6 +652,7 @@ func (c *Communicator) ForwardClockResponse(pid uint64, tid uint64) uint64 {
 		Data:   &simapi.SimSupply_ForwardClockResponse{forwardClockResponse},
 	}
 
+	logger.Debug("Test 1")
 	id := sendSupply(c.MyClients.ClockClient, tid, simSupply)
 
 	return id

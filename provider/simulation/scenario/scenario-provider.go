@@ -396,6 +396,7 @@ func (o *Order) StartClock() (bool, error) {
 		simutil.IDType_CLOCK,
 	})
 	// エージェントを設置するリクエスト
+	logger.Debug("Start Clock Request")
 	pid := providerManager.MyProvider.Id
 	com.StartClockRequest(pid, idList)
 	return true, nil
@@ -573,7 +574,7 @@ func SendLog(pipe io.ReadCloser, name string) {
 		if server != nil {
 			server.BroadcastToAll("log", logjson)
 		}
-		log.Printf("[%s]:\n%s", name, string(line))
+		log.Printf("[%s]:%s", name, string(line))
 	}
 }
 
