@@ -69,6 +69,7 @@ func (sim *Simulator) AddAgents(agentsInfo []*agent.Agent) {
 	for _, agentInfo := range agentsInfo {
 		if agentInfo.Type == sim.AgentType {
 			position := agentInfo.Route.Position
+			//("Debug %v, %v", position, sim.Area.DuplicateArea)
 			if IsAgentInArea(position, sim.Area.DuplicateArea) {
 				newAgents = append(newAgents, agentInfo)
 			}
@@ -81,7 +82,7 @@ func (sim *Simulator) AddAgents(agentsInfo []*agent.Agent) {
 func (sim *Simulator) SetAgents(agentsInfo []*agent.Agent) {
 	newAgents := make([]*agent.Agent, 0)
 	for _, agentInfo := range agentsInfo {
-		if agentInfo.Type == sim.AgentType {
+		if agentInfo.Type == sim.AgentType && IsAgentInArea(agentInfo.Route.Position, sim.Area.DuplicateArea) {
 			newAgents = append(newAgents, agentInfo)
 		}
 	}
@@ -112,7 +113,8 @@ func (sim *Simulator) UpdateDuplicateAgents(nextControlAgents []*agent.Agent, ne
 			isAppendAgent := false
 			for _, sameAreaAgent := range nextControlAgents {
 				// 自分の管理しているエージェントではなく管理エリアに入っていた場合更新する
-				if neighborAgent.Id != sameAreaAgent.Id && neighborAgent.IsInArea(sim.Area.ControlArea) {
+				//FIX Duplicateじゃない？
+				if neighborAgent.Id != sameAreaAgent.Id && neighborAgent.IsInArea(sim.Area.DuplicateArea) {
 					isAppendAgent = true
 				}
 			}
@@ -136,6 +138,13 @@ func (sim *Simulator) ForwardStep(sameAreaAgents []*agent.Agent) []*agent.Agent 
 		nextControlAgents = rvo2route.CalcNextAgents()
 
 	} else {
+		newAgents := make([]*agent.Agent, 0)
+		for _, agentInfo := range nextControlAgents {
+			if IsAgentInArea(agentInfo.Route.Position, sim.Area.ControlArea) {
+				newAgents = append(newAgents, agentInfo)
+			}
+		}
+		nextControlAgents = newAgents
 		// 干渉なしで目的地へ進む
 		//simpleRoute := NewSimpleRoute(sim.TimeStep, sim.GlobalTime, sim.Map, sim.Agents, sim.AgentType)
 		//nextControlAgents = simpleRoute.CalcNextAgentsBySimple()

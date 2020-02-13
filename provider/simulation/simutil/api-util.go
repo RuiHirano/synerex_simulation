@@ -15,14 +15,16 @@ import (
 )
 
 var (
-	mu                  sync.Mutex
-	waitChMap           map[simapi.SupplyType]chan *pb.Supply
+	mu        sync.Mutex
+	waitChMap map[simapi.SupplyType]chan *pb.Supply
+	//spMesMap            map[simapi.SupplyType]*Message
 	CHANNEL_BUFFER_SIZE int
 	logger              *Logger
 )
 
 func init() {
 	waitChMap = make(map[simapi.SupplyType]chan *pb.Supply)
+	//spMesMap = make(map[simapi.SupplyType]*Message)
 	CHANNEL_BUFFER_SIZE = 10
 	logger = NewLogger()
 }
@@ -122,9 +124,76 @@ func sendSupply(sclient *sxutil.SMServiceClient, tid uint64, simSupply *simapi.S
 	return id
 }
 
+/*////////////////////////////////////////////////////////////
+////////////            Message Class           ///////////
+///////////////////////////////////////////////////////////
+
+type Message struct {
+	Ready  chan struct{}
+	SpCh   chan *pb.Supply
+	SpList []*pb.Supply
+}
+
+func NewMessage() *Message {
+	return &Message{Ready: make(chan struct{}), SpCh: make(chan *pb.Supply)}
+}
+
+func (m *Message) Add(sp *pb.Supply) {
+	m.SpList = append(m.SpList, sp)
+}
+
+func (m *Message) Get(idList []uint64) []*pb.Supply {
+	go func() {
+		for {
+			sp := <-m.SpCh
+			if isPidInIdList(sp, idList) {
+				m.SpList = append(m.SpList, sp)
+				if isFinishSync2(m.SpList, idList) {
+					close(m.Ready)
+					return
+				}
+			}
+		}
+	}()
+	<-m.Ready
+	return m.SpList
+}
+
 ////////////////////////////////////////////////////////////
 ////////////        Wait Function       ///////////////////
 ///////////////////////////////////////////////////////////
+
+// SendToSetAgentsResponse : SetAgentsResponseを送る
+func (c *Communicator) SendToWaitCh(sp *pb.Supply, supplyType simapi.SupplyType) {
+	mu.Lock()
+	//waitCh := waitChMap[supplyType]
+	spMes := spMesMap[supplyType]
+	if spMes == nil {
+		spMes = NewMessage()
+	}
+	spMes.Add(sp)
+	spMesMap[supplyType] = spMes
+	mu.Unlock()
+}
+
+// Wait: 同期が完了するまで待機する関数
+func wait(idList []uint64, supplyType simapi.SupplyType) []*pb.Supply {
+	mu.Lock()
+	spMes := spMesMap[supplyType]
+	if spMes == nil {
+		spMes = NewMessage()
+	}
+	mu.Unlock()
+	var wg sync.WaitGroup
+	wg.Add(1)
+	var spList []*pb.Supply
+	go func() {
+		spList = spMes.Get(idList)
+		wg.Done()
+	}()
+	wg.Wait()
+	return spList
+}*/
 
 // SendToSetAgentsResponse : SetAgentsResponseを送る
 func (c *Communicator) SendToWaitCh(sp *pb.Supply, supplyType simapi.SupplyType) {
@@ -148,10 +217,7 @@ func wait(idList []uint64, supplyType simapi.SupplyType) map[uint64]*pb.Supply {
 	go func() {
 		for {
 			select {
-			case psp, ok := <-waitCh:
-				if !ok {
-					logger.Info("Channel is Closed!")
-				}
+			case psp, _ := <-waitCh:
 				mu.Lock()
 				// spのidがidListに入っているか
 				if isPidInIdList(psp, idList) {
@@ -181,6 +247,23 @@ func isPidInIdList(sp *pb.Supply, idlist []uint64) bool {
 	}
 	return false
 }
+
+/*// isFinishSync : 必要な全てのSupplyを受け取り同期が完了したかどうか
+func isFinishSync2(spList []*pb.Supply, idlist []uint64) bool {
+	for _, id := range idlist {
+		isMatch := false
+		for _, sp := range spList {
+			pid := sp.GetSimSupply().GetPid()
+			if id == pid {
+				isMatch = true
+			}
+		}
+		if isMatch == false {
+			return false
+		}
+	}
+	return true
+}*/
 
 // isFinishSync : 必要な全てのSupplyを受け取り同期が完了したかどうか
 func isFinishSync(pspMap map[uint64]*pb.Supply, idlist []uint64) bool {

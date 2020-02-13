@@ -242,12 +242,12 @@ func calcRoute() *agent.Route {
 	var departure, destination *common.Coord
 
 	departure = &common.Coord{
-		Latitude:  35.12532,
-		Longitude: 135.235231,
+		Latitude:  35.1542,
+		Longitude: 136.975231,
 	}
 	destination = &common.Coord{
-		Latitude:  35.12532,
-		Longitude: 135.235231,
+		Latitude:  35.1542,
+		Longitude: 136.975231,
 	}
 
 	transitPoints := make([]*common.Coord, 0)
@@ -718,7 +718,7 @@ func runInitProvider() {
 
 		//logger.Error("mockAreaInfo: %v\n", mockAreaInfo2.ControlArea)
 		for _, areaInfo := range areaInfos {
-			//logger.Error("areaInfo: %v\n", areaInfo.ControlArea)
+			logger.Error("areaInfo: %v\n", areaInfo.ControlArea)
 			//logger.Error("duplicateInfo: %v\n", areaInfo.DuplicateArea)
 			agentStatus := &provider.AgentStatus{
 				Area:      areaInfo,

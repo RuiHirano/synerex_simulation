@@ -61,7 +61,7 @@ func (am *AreaManager) DeleteArea(areaId uint64) {
 }
 
 func (am *AreaManager) DivideArea(areaInfo *area.Area) []*area.Area {
-	DUPLICATE_RANGE := 5.0
+	DUPLICATE_RANGE := 0.01
 	// エリアを分割する
 	// 最初は単純にエリアを半分にする
 	//providerStats := mockProviderStats
@@ -179,8 +179,6 @@ func (am *AreaManager) CreateNeighborIds() {
 		}
 	}
 }
-
-
 
 // 隣接しているかどうか
 func isNeighbor(area1 *area.Area, area2 *area.Area) bool {

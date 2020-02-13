@@ -133,6 +133,9 @@ func forwardClock(dm *pb.Demand) {
 	})
 
 	_, agents := com.GetAgentsRequest(pid, idList)
+	for _, ai := range agents {
+		logger.Error("AgentNum2: %v", ai.Id)
+	}
 
 	// Harmowareに送る
 	sendToHarmowareVis(agents)
@@ -142,7 +145,7 @@ func forwardClock(dm *pb.Demand) {
 
 	// セット完了通知を送る
 	com.ForwardClockResponse(pid, targetId)
-	logger.Info("Finish: Clock Forwarded. \n Time:  %v \n Agents Num: %v", sim.Clock.GlobalTime)
+	logger.Info("Finish: Clock Forwarded. \n Time:  %v \n Agents Num: %v", sim.Clock.GlobalTime, len(agents))
 }
 
 func runServer() *gosocketio.Server {

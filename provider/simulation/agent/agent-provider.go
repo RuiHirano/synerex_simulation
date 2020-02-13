@@ -17,6 +17,7 @@ import (
 	"github.com/golang/protobuf/jsonpb"
 	pb "github.com/synerex/synerex_alpha/api"
 	simapi "github.com/synerex/synerex_alpha/api/simulation"
+	"github.com/synerex/synerex_alpha/api/simulation/agent"
 	"github.com/synerex/synerex_alpha/api/simulation/clock"
 	"github.com/synerex/synerex_alpha/api/simulation/provider"
 	"github.com/synerex/synerex_alpha/provider/simulation/simutil"
@@ -35,6 +36,8 @@ var (
 	sim                  *Simulator
 	providerManager      *simutil.ProviderManager
 	logger               *simutil.Logger
+	mu                   sync.Mutex
+	agentsMessage        *Message
 )
 
 func flagToProviderInfo(pJson string) *provider.Provider {
@@ -48,8 +51,31 @@ func init() {
 	logger = simutil.NewLogger()
 	myProvider = flagToProviderInfo(*providerJson)
 	scenarioProvider = flagToProviderInfo(*scenarioProviderJson)
+	agentsMessage = NewMessage()
 	//log.Printf("\x1b[31m\x1b[47m \nProviderInfo: %v \x1b[0m\n", providerInfo.GetStatus())
 
+}
+
+////////////////////////////////////////////////////////////
+////////////            Message Class           ///////////
+///////////////////////////////////////////////////////////
+
+type Message struct {
+	ready  chan struct{}
+	agents []*agent.Agent
+}
+
+func NewMessage() *Message {
+	return &Message{ready: make(chan struct{})}
+}
+func (m *Message) Set(a []*agent.Agent) {
+	m.agents = a
+	close(m.ready)
+}
+
+func (m *Message) Get() []*agent.Agent {
+	<-m.ready
+	return m.agents
 }
 
 // callbackForwardClock: Agentを計算し、クロックを進める要求
@@ -58,43 +84,38 @@ func forwardClock(dm *pb.Demand) {
 	tid := dm.GetSimDemand().GetPid()
 	pid := providerManager.MyProvider.Id
 
-	// 同じエリアのAgent情報を取得する
-	// 同期するIDリスト
+	// [1. Get Same Area Agents]同じエリアの異種Agent情報を取得する
 	idList := providerManager.GetIDList([]simutil.IDType{
 		simutil.IDType_SAME,
 	})
 	_, sameAreaAgents := com.GetAgentsRequest(pid, idList)
 
-	// 次の時間のエージェントを計算する
+	// [2. Calculation]次の時間のエージェントを計算する
 	nextControlAgents := sim.ForwardStep(sameAreaAgents)
+	agentsMessage.Set(nextControlAgents)
+	logger.Error("ForwardAgents %v", nextControlAgents)
 
-	// 隣接エリアのエージェントの情報を取得
+	// [3. Get Neighbor Area Agents]隣接エリアのエージェントの情報を取得
 	// 同期するIDリスト
 	idList = providerManager.GetIDList([]simutil.IDType{
 		simutil.IDType_NEIGHBOR,
 	})
 	_, neighborAreaAgents := com.GetAgentsRequest(pid, idList)
 
-	// 重複エリアのエージェントを更新する
+	// [4. Update Agents]重複エリアのエージェントを更新する
 	nextDuplicateAgents := sim.UpdateDuplicateAgents(nextControlAgents, neighborAreaAgents)
 	// Agentsをセットする
 	sim.SetAgents(nextDuplicateAgents)
 
-	// クロックを進める
+	// [5. Forward Clock]クロックを進める
 	sim.ForwardClock()
 
-	// 可視化プロバイダへ送信
-	// 同期するIDリスト
-	idList = providerManager.GetIDList([]simutil.IDType{
-		simutil.IDType_VISUALIZATION,
-	})
-	com.SetAgentsRequest(pid, idList, nextControlAgents)
-
-	// セット完了通知を送る
+	// [6. Send Finish Forward Response]セット完了通知を送る
 	com.ForwardClockResponse(pid, tid)
 
 	//logger.Info("Finish: Clock Forwarded. \n Time:  %v \n Agents Num: %v", sim.Clock.GlobalTime, len(nextControlAgents))
 	logger.Info("Finish: Clock Forwarded.  AgentNum:  %v", len(sim.Agents))
+	agentsMessage = NewMessage()
 }
 
 // callback for each Supply
@@ -110,25 +131,15 @@ func demandCallback(clt *sxutil.SMServiceClient, dm *pb.Demand) {
 		com.UpdateProvidersResponse(pid, tid)
 
 	case simapi.DemandType_SET_AGENTS_REQUEST:
-		// NOTE: Vis宛のSetAgentsRequestを拾ってしまい、エージェントが増えていく、、
-		// Mbusにするか、自分宛しか受け取らない処理が必要
-		// synerex-alphaではDemandでTargetIDを使えない、、
+		// Agentをセットする
+		agents := dm.GetSimDemand().GetSetAgentsRequest().GetAgents()
 
-		idList := providerManager.GetIDList([]simutil.IDType{
-			simutil.IDType_AGENT,
-		})
-		if !simutil.Contains(idList, tid) {
+		// Agent情報を追加する
+		sim.AddAgents(agents)
 
-			// Agentをセットする
-			agents := dm.GetSimDemand().GetSetAgentsRequest().GetAgents()
-
-			// Agent情報を追加する
-			sim.AddAgents(agents)
-
-			// セット完了通知を送る
-			com.SetAgentsResponse(pid, tid)
-			logger.Info("Finish: Set Agents Add: %v", len(sim.Agents))
-		}
+		// セット完了通知を送る
+		com.SetAgentsResponse(pid, tid)
+		logger.Info("Finish: Set Agents Add: %v", len(sim.Agents))
 
 	case simapi.DemandType_FORWARD_CLOCK_REQUEST:
 		// クロックを進める要求
@@ -141,8 +152,27 @@ func demandCallback(clt *sxutil.SMServiceClient, dm *pb.Demand) {
 		com.UpdateClockResponse(pid, tid)
 
 	case simapi.DemandType_GET_AGENTS_REQUEST:
-		// エージェント情報を送る
-		com.GetAgentsResponse(pid, tid, sim.Agents, sim.AgentType, sim.Area.Id)
+		// vis, neighborProviderからの場合
+		idList := providerManager.GetIDList([]simutil.IDType{
+			simutil.IDType_VISUALIZATION,
+			simutil.IDType_NEIGHBOR,
+		})
+		if simutil.Contains(idList, tid) {
+			go func() {
+				agentsInfo := agentsMessage.Get()
+				com.GetAgentsResponse(pid, tid, agentsInfo, sim.AgentType, sim.Area.Id)
+				//logger.Error("Finish: Send Agents2 %v", dm.GetSimDemand().GetPid())
+			}()
+
+		}
+		// sameAreaProviderからの場合
+		idList = providerManager.GetIDList([]simutil.IDType{
+			simutil.IDType_SAME,
+		})
+		if simutil.Contains(idList, tid) {
+			com.GetAgentsResponse(pid, tid, sim.Agents, sim.AgentType, sim.Area.Id)
+		}
+
 		logger.Info("Finish: Send Agents")
 	}
 }
@@ -151,7 +181,8 @@ func demandCallback(clt *sxutil.SMServiceClient, dm *pb.Demand) {
 func supplyCallback(clt *sxutil.SMServiceClient, sp *pb.Supply) {
 	// 自分宛かどうか
 	if sp.GetTargetId() == providerManager.MyProvider.Id {
-		switch sp.GetSimSupply().GetType() {
+		com.SendToWaitCh(sp, sp.GetSimSupply().GetType())
+		/*switch sp.GetSimSupply().GetType() {
 		case simapi.SupplyType_GET_CLOCK_RESPONSE:
 			com.SendToWaitCh(sp, sp.GetSimSupply().GetType())
 		case simapi.SupplyType_GET_AGENTS_RESPONSE:
@@ -160,13 +191,13 @@ func supplyCallback(clt *sxutil.SMServiceClient, sp *pb.Supply) {
 			com.SendToWaitCh(sp, sp.GetSimSupply().GetType())
 		case simapi.SupplyType_REGIST_PROVIDER_RESPONSE:
 			com.SendToWaitCh(sp, sp.GetSimSupply().GetType())
-		}
+		}*/
 	}
 }
 
 func main() {
 	logger.Info("StartUp Provider")
-	logger.Error("AgentType %v, AreaID: %v, NeighborIDs: %v", myProvider.GetAgentStatus().GetAgentType(), myProvider.GetAgentStatus().GetArea().GetId(), myProvider.GetAgentStatus().GetArea().GetNeighborAreaIds())
+	//logger.Error("AgentType %v, AreaID: %v, NeighborIDs: %v", myProvider.GetAgentStatus().GetAgentType(), myProvider.GetAgentStatus().GetArea().GetId(), myProvider.GetAgentStatus().GetArea().GetNeighborAreaIds())
 	//log.Printf("area id is: %v, agent type is %v", areaId, agentType)
 
 	// ProviderManager
