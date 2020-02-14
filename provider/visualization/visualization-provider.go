@@ -133,9 +133,6 @@ func forwardClock(dm *pb.Demand) {
 	})
 
 	_, agents := com.GetAgentsRequest(pid, idList)
-	for _, ai := range agents {
-		logger.Error("AgentNum2: %v", ai.Id)
-	}
 
 	// Harmowareに送る
 	sendToHarmowareVis(agents)
@@ -222,7 +219,6 @@ func demandCallback(clt *sxutil.SMServiceClient, dm *pb.Demand) {
 		forwardClock(dm)
 
 	case simapi.DemandType_SET_AGENTS_REQUEST:
-		logger.Debug("Get AgentsInfo")
 		// Agentをセットする
 
 		// セット完了通知
@@ -299,7 +295,6 @@ func main() {
 	logger.Info("Finish Provider Registration.")
 
 	// Clock情報を取得
-	logger.Debug("Clock Request: VisPID %v Wait Response from ClockPID %v\n", pid, idList)
 	idList = providerManager.GetIDList([]simutil.IDType{
 		simutil.IDType_CLOCK,
 	})

@@ -118,7 +118,6 @@ func sendSupply(sclient *sxutil.SMServiceClient, tid uint64, simSupply *simapi.S
 	opts := &sxutil.SupplyOpts{Target: tid, Name: nm, JSON: js, SimSupply: simSupply}
 
 	mu.Lock()
-	logger.Debug("Test 2")
 	id := sclient.ProposeSupply(opts)
 	mu.Unlock()
 	return id
@@ -735,7 +734,6 @@ func (c *Communicator) ForwardClockResponse(pid uint64, tid uint64) uint64 {
 		Data:   &simapi.SimSupply_ForwardClockResponse{forwardClockResponse},
 	}
 
-	logger.Debug("Test 1")
 	id := sendSupply(c.MyClients.ClockClient, tid, simSupply)
 
 	return id

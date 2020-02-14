@@ -1,4 +1,4 @@
-module github.com/synerex/synerex_alpha/provider/simulation/pedestrian/simulator
+module github.com/synerex/synerex_alpha/provider/agent/algorithm
 
 require (
 	github.com/synerex/synerex_alpha/api v0.0.0
@@ -11,15 +11,15 @@ require (
 )
 
 replace (
-	github.com/synerex/synerex_alpha/api => ../../../../api
-	github.com/synerex/synerex_alpha/api/simulation/agent => ../../../../api/simulation/agent
-	github.com/synerex/synerex_alpha/api/simulation/area => ../../../../api/simulation/area
-	github.com/synerex/synerex_alpha/api/simulation/clock => ../../../../api/simulation/clock
-	github.com/synerex/synerex_alpha/api/simulation/common => ../../../../api/simulation/common
-	github.com/synerex/synerex_alpha/api/simulation/provider => ../../../../api/simulation/provider
-	github.com/synerex/synerex_alpha/provider/simulation/simutil/agent => ../agent
-	github.com/synerex/synerex_alpha/nodeapi => ../../../../nodeapi
-	github.com/synerex/synerex_alpha/sxutil => ../../../../sxutil
+	github.com/synerex/synerex_alpha/api => ../../../api
+	github.com/synerex/synerex_alpha/api/simulation/agent => ../../../api/simulation/agent
+	github.com/synerex/synerex_alpha/api/simulation/area => ../../../api/simulation/area
+	github.com/synerex/synerex_alpha/api/simulation/clock => ../../../api/simulation/clock
+	github.com/synerex/synerex_alpha/api/simulation/common => ../../../api/simulation/common
+	github.com/synerex/synerex_alpha/api/simulation/provider => ../../../api/simulation/provider
+	github.com/synerex/synerex_alpha/provider/simutil => ../../../provider/simutil
+	github.com/synerex/synerex_alpha/nodeapi => ../../../nodeapi
+	github.com/synerex/synerex_alpha/sxutil => ../../../sxutil
 )
 
 go 1.13

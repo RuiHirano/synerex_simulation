@@ -236,27 +236,41 @@ func assetsFileHandler(w http.ResponseWriter, r *http.Request) {
 	http.ServeContent(w, r, file, fi.ModTime(), f)
 }
 
+func createRandomCoord(areaCoords []*common.Coord) *common.Coord {
+
+	maxLat, maxLon, minLat, minLon := simutil.GetCoordRange(areaCoords)
+	longitude := minLon + (maxLon-minLon)*rand.Float64()
+	latitude := minLat + (maxLat-minLat)*rand.Float64()
+	coord := &common.Coord{
+		Longitude: longitude,
+		Latitude:  latitude,
+	}
+
+	return coord
+}
+
 // Agentオブジェクトの変換
 func calcRoute() *agent.Route {
 
-	var departure, destination *common.Coord
+	departure := createRandomCoord(mockAreaInfo.ControlArea)
+	destination := createRandomCoord(mockAreaInfo.ControlArea)
 
-	departure = &common.Coord{
+	/*departure = &common.Coord{
 		Latitude:  35.1542,
 		Longitude: 136.975231,
 	}
 	destination = &common.Coord{
 		Latitude:  35.1542,
 		Longitude: 136.975231,
-	}
+	}*/
 
 	transitPoints := make([]*common.Coord, 0)
 	transitPoints = append(transitPoints, destination)
 
 	route := &agent.Route{
 		Position:      departure,
-		Direction:     100 * rand.Float64(),
-		Speed:         100 * rand.Float64(),
+		Direction:     0.0001 * rand.Float64(),
+		Speed:         10 + 10*rand.Float64(),
 		Departure:     departure,
 		Destination:   destination,
 		TransitPoints: transitPoints,
@@ -360,9 +374,9 @@ func (o *Order) Send() string {
 		return "ok"
 
 	case "SetAgents":
-		fmt.Printf("SetAgents\n")
+		fmt.Printf("SetAgents option %v\n", o.Option)
 		//agentNum, _ := strconv.Atoi(order.Option)
-		agentNum := uint64(1)
+		agentNum := uint64(10)
 		o.SetAgents(agentNum)
 		return "ok"
 
@@ -396,7 +410,6 @@ func (o *Order) StartClock() (bool, error) {
 		simutil.IDType_CLOCK,
 	})
 	// エージェントを設置するリクエスト
-	logger.Debug("Start Clock Request")
 	pid := providerManager.MyProvider.Id
 	com.StartClockRequest(pid, idList)
 	return true, nil
@@ -614,7 +627,6 @@ func demandCallback(clt *sxutil.SMServiceClient, dm *pb.Demand) {
 		providerManager.AddProvider(p)
 		providerManager.CreateIDMap()
 		// 登録完了通知
-		//logger.Debug("RegistProviderRequest: Send from %v to %v\n", pid, tid)
 		com.RegistProviderResponse(pid, tid)
 
 		// UpdateRequest
@@ -625,6 +637,7 @@ func demandCallback(clt *sxutil.SMServiceClient, dm *pb.Demand) {
 		})
 		pid := providerManager.MyProvider.Id
 		com.UpdateProvidersRequest(pid, idList, providerManager.Providers)
+
 		logger.Info("Success Update Providers")
 
 	case simapi.DemandType_DIVIDE_PROVIDER_REQUEST:
@@ -718,7 +731,6 @@ func runInitProvider() {
 
 		//logger.Error("mockAreaInfo: %v\n", mockAreaInfo2.ControlArea)
 		for _, areaInfo := range areaInfos {
-			logger.Error("areaInfo: %v\n", areaInfo.ControlArea)
 			//logger.Error("duplicateInfo: %v\n", areaInfo.DuplicateArea)
 			agentStatus := &provider.AgentStatus{
 				Area:      areaInfo,

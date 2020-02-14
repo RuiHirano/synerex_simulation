@@ -93,7 +93,6 @@ func forwardClock(dm *pb.Demand) {
 	// [2. Calculation]次の時間のエージェントを計算する
 	nextControlAgents := sim.ForwardStep(sameAreaAgents)
 	agentsMessage.Set(nextControlAgents)
-	logger.Error("ForwardAgents %v", nextControlAgents)
 
 	// [3. Get Neighbor Area Agents]隣接エリアのエージェントの情報を取得
 	// 同期するIDリスト
@@ -114,7 +113,7 @@ func forwardClock(dm *pb.Demand) {
 	com.ForwardClockResponse(pid, tid)
 
 	//logger.Info("Finish: Clock Forwarded. \n Time:  %v \n Agents Num: %v", sim.Clock.GlobalTime, len(nextControlAgents))
-	logger.Info("Finish: Clock Forwarded.  AgentNum:  %v", len(sim.Agents))
+	logger.Info("Finish: Clock Forwarded.  AgentNum:  %v", len(nextControlAgents))
 	agentsMessage = NewMessage()
 }
 

@@ -61,7 +61,7 @@ func (am *AreaManager) DeleteArea(areaId uint64) {
 }
 
 func (am *AreaManager) DivideArea(areaInfo *area.Area) []*area.Area {
-	DUPLICATE_RANGE := 0.01
+	DUPLICATE_RANGE := 0.001
 	// エリアを分割する
 	// 最初は単純にエリアを半分にする
 	//providerStats := mockProviderStats
@@ -135,7 +135,6 @@ func (am *AreaManager) DivideArea(areaInfo *area.Area) []*area.Area {
 	areaInfos := make([]*area.Area, 0)
 	for _, aInfo := range dividedAreaInfos {
 		areaInfos = append(areaInfos, am.GetArea(aInfo.Id))
-		logger.Debug("AreaInfo: %v, %v\n", am.GetArea(aInfo.Id).Id, am.GetArea(aInfo.Id).NeighborAreaIds)
 	}
 
 	return areaInfos

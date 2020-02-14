@@ -114,7 +114,8 @@ func (sim *Simulator) UpdateDuplicateAgents(nextControlAgents []*agent.Agent, ne
 			for _, sameAreaAgent := range nextControlAgents {
 				// 自分の管理しているエージェントではなく管理エリアに入っていた場合更新する
 				//FIX Duplicateじゃない？
-				if neighborAgent.Id != sameAreaAgent.Id && neighborAgent.IsInArea(sim.Area.DuplicateArea) {
+				position := neighborAgent.Route.Position
+				if neighborAgent.Id != sameAreaAgent.Id && IsAgentInArea(position, sim.Area.DuplicateArea) {
 					isAppendAgent = true
 				}
 			}
@@ -128,7 +129,7 @@ func (sim *Simulator) UpdateDuplicateAgents(nextControlAgents []*agent.Agent, ne
 
 // ForwardStep :　次の時刻のエージェントを計算する関数
 func (sim *Simulator) ForwardStep(sameAreaAgents []*agent.Agent) []*agent.Agent {
-	IsRVO2 := false
+	IsRVO2 := true
 	nextControlAgents := sim.GetAgents()
 
 	if IsRVO2 {
@@ -138,13 +139,16 @@ func (sim *Simulator) ForwardStep(sameAreaAgents []*agent.Agent) []*agent.Agent 
 		nextControlAgents = rvo2route.CalcNextAgents()
 
 	} else {
-		newAgents := make([]*agent.Agent, 0)
+		// 干渉なしで目的地へ進む
+		simpleRoute := algo.NewSimpleRoute(sim.Clock.TimeStep, sim.Clock.GlobalTime, sim.Area, sim.Agents, sim.AgentType)
+		nextControlAgents = simpleRoute.CalcNextAgents()
+		/*newAgents := make([]*agent.Agent, 0)
 		for _, agentInfo := range nextControlAgents {
 			if IsAgentInArea(agentInfo.Route.Position, sim.Area.ControlArea) {
 				newAgents = append(newAgents, agentInfo)
 			}
 		}
-		nextControlAgents = newAgents
+		nextControlAgents = newAgents*/
 		// 干渉なしで目的地へ進む
 		//simpleRoute := NewSimpleRoute(sim.TimeStep, sim.GlobalTime, sim.Map, sim.Agents, sim.AgentType)
 		//nextControlAgents = simpleRoute.CalcNextAgentsBySimple()

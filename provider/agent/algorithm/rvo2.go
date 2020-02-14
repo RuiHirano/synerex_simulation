@@ -1,4 +1,4 @@
-package simulator
+package algorithm
 
 import (
 	//"fmt"
@@ -173,7 +173,8 @@ func (rvo2route *RVO2Route) CalcNextAgents() []*agent.Agent {
 	for rvoId, agentInfo := range currentAgents {
 		//nextRVOAgent := sim.GetAgent(int(agentInfo.Id))
 		// 計算する前に自エリアにいる場合、次のルートを計算する
-		if rvo2route.IsAgentInControlArea(agentInfo) {
+		position := agentInfo.Route.Position
+		if IsAgentInArea(position, rvo2route.Area.ControlArea) {
 			destination := agentInfo.Route.Destination
 
 			// rvoの位置情報を緯度経度に変換する
@@ -213,36 +214,4 @@ func (rvo2route *RVO2Route) CalcNextAgents() []*agent.Agent {
 	}
 
 	return nextControlAgents
-}
-
-// IsAgentInControlArea: エージェントが管理エリアにいるかどうか
-func (rvo2route *RVO2Route) IsAgentInControlArea(agentInfo *agent.Agent) bool {
-
-	areaInfo := rvo2route.Area
-	agentType := rvo2route.AgentType
-	lat := agentInfo.Route.Position.Latitude
-	lon := agentInfo.Route.Position.Longitude
-	areaCoords := areaInfo.ControlArea
-	deg := 0.0
-	for i, coord := range areaCoords {
-		p2lat := coord.Latitude
-		p2lon := coord.Longitude
-		p3lat := areaCoords[i+1].Latitude
-		p3lon := areaCoords[i+1].Longitude
-		if i == len(areaCoords)-1 {
-			p3lat = areaCoords[0].Latitude
-			p3lon = areaCoords[0].Longitude
-		}
-		alat := p2lat - lat
-		alon := p2lon - lon
-		blat := p3lat - lat
-		blon := p3lon - lon
-		cos := (alat*blat + alon*blon) / (math.Sqrt(alat*alat+alon+alon) * math.Sqrt(blat*blat+blon+blon))
-		deg += math.Acos(cos) * float64(180) / math.Pi
-	}
-	if agentInfo.Type == agentType && math.Round(deg) == 360 {
-		return true
-	} else {
-		return false
-	}
 }

@@ -116,7 +116,6 @@ func demandCallback(clt *sxutil.SMServiceClient, dm *pb.Demand) {
 	pid := providerManager.MyProvider.Id
 	switch dm.GetSimDemand().GetType() {
 	case simapi.DemandType_GET_CLOCK_REQUEST:
-		logger.Debug("GetClock: Clock %v\n", sim.Clock)
 		// Clock情報を提供する
 		com.GetClockResponse(pid, tid, sim.Clock)
 
@@ -124,14 +123,12 @@ func demandCallback(clt *sxutil.SMServiceClient, dm *pb.Demand) {
 		// Clockをセットする
 		clockInfo := dm.GetSimDemand().GetSetClockRequest().GetClock()
 		sim.Clock = clockInfo
-		//log.Printf("\x1b[30m\x1b[47m \n Finish: Clock information set. \n GlobalTime:  %v \n TimeStep: %v \x1b[0m\n", sim.Clock.GlobalTime, sim.Clock.TimeStep)
 
 		// Request
 		idList := providerManager.GetIDList([]simutil.IDType{
 			simutil.IDType_VISUALIZATION,
 			simutil.IDType_AGENT,
 		})
-		logger.Info("Request Update Clock %v", idList)
 		com.UpdateClockRequest(pid, idList, clockInfo)
 		logger.Info("Finish Update Clock")
 
@@ -174,7 +171,6 @@ func main() {
 	providerManager = simutil.NewProviderManager(myProvider)
 	providerManager.AddProvider(scenarioProvider)
 	providerManager.CreateIDMap()
-	logger.Debug("ClockPID %v \n", myProvider.Id)
 
 	// connect to node server
 	sxutil.RegisterNodeName(*nodesrv, "ClockProvider", false)
