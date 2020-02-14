@@ -1,0 +1,494 @@
+
+
+@startuml
+
+'12/23までに行うこと'
+'Todo: geojson通りに壁を設置する'
+'FIX: エージェントの動きがおかしい'
+'Todo: geojson内にエージェントをランダムに設置'
+'Todo: geojson内のランダムな地点へ移動'
+'FIX: Pedestrianを停止するとscenarioまで停止してしまう'
+'Todo: daemon,モニタ上で操作できるようにする'
+'Todo: 連携するエリアの大きさプロバイダ数の自動調整'
+
+'http://plantuml.com/ja/guide'
+
+
+title SynerexSimulationSequence
+
+actor User
+participant SE
+box "Synerex" #LightBlue
+participant Scenario
+participant Area
+control ClockAPI
+control AgentAPI
+control AreaAPI
+control ParticipantAPI
+'control RouteAPI
+participant PedA
+participant CarA
+participant PedB
+participant CarB
+end box 
+participant Visualization
+
+
+== SetClock ==
+User -> SE: SetClock
+SE -> Scenario: StartUp
+note over Scenario: StartUp
+note over Scenario: Set Clock
+
+== SetArea, SetDomain ==
+User -> SE: SetArea(A,B),Domain(Ped,Car)
+SE --> Area: StartUp
+SE --> Visualization: StartUp
+
+note over SE: calc startup provider
+
+SE --> PedA: StartUp
+activate PedA #c0c0c0
+'Area情報を取得'
+PedA -> AreaAPI: RD(GetAreaDemand)
+AreaAPI -> Area: 
+activate Area #c0c0c0
+Area -> AreaAPI: PS(SendAreaSupply)
+deactivate Area
+AreaAPI -> PedA: 
+note over PedA: Set Area
+deactivate PedA
+'Participantとして登録'
+PedA -> ParticipantAPI: RD(RegistParticipantDemand)
+activate PedA #c0c0c0
+ParticipantAPI -> Scenario: 
+activate Scenario #FFBBBB
+Scenario -> ParticipantAPI: RD(SetParticipantsDemand)
+note over Scenario: Set ParticipantID
+ParticipantAPI -> PedA: 
+note over PedA: Set Participant
+PedA -> ParticipantAPI: PS(SetParticipantsSupply)
+ParticipantAPI -> Scenario: 
+Scenario -> ParticipantAPI: PS(RegistParticipantsSupply)
+deactivate Scenario 
+ParticipantAPI -> PedA: 
+deactivate PedA
+'Clock情報を取得'
+PedA -> ClockAPI: RD(GetClockDemand)
+activate PedA #c0c0c0
+ClockAPI -> Scenario: 
+activate Scenario #c0c0c0
+note over Scenario: if participant ?
+Scenario -> ClockAPI: PS(SendClockSupply)
+deactivate Scenario
+ClockAPI -> PedA: 
+note over PedA: Set Clock
+deactivate PedA
+
+
+SE --> CarA: StartUp
+activate CarA #c0c0c0
+'Area情報を取得'
+CarA -> AreaAPI: RD(GetAreaDemand)
+AreaAPI -> Area: 
+activate Area #c0c0c0
+Area -> AreaAPI: PS(SendAreaSupply)
+deactivate Area
+AreaAPI -> CarA: 
+note over CarA: Set Area
+deactivate CarA
+'Participantとして登録'
+CarA -> ParticipantAPI: RD(RegistParticipantDemand)
+activate CarA #c0c0c0
+ParticipantAPI -> Scenario: 
+activate Scenario #FFBBBB
+Scenario -> ParticipantAPI: RD(SetParticipantsDemand)
+note over Scenario: Set ParticipantID
+ParticipantAPI -> PedA: 
+activate PedA #c0c0c0
+note over PedA: Set Participant
+PedA -> ParticipantAPI: PS(SetParticipantsSupply)
+deactivate PedA
+ParticipantAPI -> Scenario: 
+ParticipantAPI -> CarA: 
+note over CarA: Set Participant
+CarA -> ParticipantAPI: PS(SetParticipantsSupply)
+ParticipantAPI -> Scenario: 
+Scenario -> ParticipantAPI: PS(RegistParticipantsSupply)
+deactivate Scenario 
+ParticipantAPI -> CarA: 
+deactivate CarA
+'Clock情報を取得'
+CarA -> ClockAPI: RD(GetClockDemand)
+activate CarA #c0c0c0
+ClockAPI -> Scenario: 
+activate Scenario #c0c0c0
+note over Scenario: if participant ?
+Scenario -> ClockAPI: PS(SendClockSupply)
+deactivate Scenario
+ClockAPI -> CarA: 
+note over CarA: Set Clock
+deactivate CarA
+
+SE --> PedB: StartUp
+activate PedB #c0c0c0
+'Area情報を取得'
+PedB -> AreaAPI: RD(GetAreaDemand)
+AreaAPI -> Area: 
+activate Area #c0c0c0
+Area -> AreaAPI: PS(SendAreaSupply)
+deactivate Area
+AreaAPI -> PedB: 
+note over PedB: Set Area
+deactivate PedB
+'Participantとして登録'
+PedB -> ParticipantAPI: RD(RegistParticipantDemand)
+activate PedB #c0c0c0
+ParticipantAPI -> Scenario: 
+activate Scenario #FFBBBB
+Scenario -> ParticipantAPI: RD(SetParticipantsDemand)
+note over Scenario: Set ParticipantID
+ParticipantAPI -> PedA: 
+activate PedA #c0c0c0
+note over PedA: Set Participant
+PedA -> ParticipantAPI: PS(SetParticipantsSupply)
+deactivate PedA
+ParticipantAPI -> Scenario: 
+ParticipantAPI -> CarA: 
+activate CarA #c0c0c0
+note over CarA: Set Participant
+CarA -> ParticipantAPI: PS(SetParticipantsSupply)
+deactivate CarA
+ParticipantAPI -> Scenario: 
+ParticipantAPI -> PedB: 
+note over PedB: Set Participant
+PedB -> ParticipantAPI: PS(SetParticipantsSupply)
+ParticipantAPI -> Scenario: 
+Scenario -> ParticipantAPI: PS(RegistParticipantsSupply)
+deactivate Scenario 
+ParticipantAPI -> PedB: 
+deactivate PedB
+'Clock情報を取得'
+PedB -> ClockAPI: RD(GetClockDemand)
+activate PedB #c0c0c0
+ClockAPI -> Scenario: 
+activate Scenario #c0c0c0
+note over Scenario: if participant ?
+Scenario -> ClockAPI: PS(SendClockSupply)
+deactivate Scenario
+ClockAPI -> PedB: 
+note over PedB: Set Clock
+deactivate PedB
+
+SE --> CarB: StartUp
+activate CarB #c0c0c0
+'Area情報を取得'
+CarB -> AreaAPI: RD(GetAreaDemand)
+AreaAPI -> Area: 
+activate Area #c0c0c0
+Area -> AreaAPI: PS(SendAreaSupply)
+deactivate Area
+AreaAPI -> CarB: 
+note over CarB: Set Area
+deactivate CarB
+'Participantとして登録'
+CarB -> ParticipantAPI: RD(RegistParticipantDemand)
+activate CarB #c0c0c0
+ParticipantAPI -> Scenario: 
+activate Scenario #FFBBBB
+Scenario -> ParticipantAPI: RD(SetParticipantsDemand)
+note over Scenario: Set ParticipantID
+ParticipantAPI -> PedA: 
+activate PedA #c0c0c0
+note over PedA: Set Participant
+PedA -> ParticipantAPI: PS(SetParticipantsSupply)
+deactivate PedA
+ParticipantAPI -> Scenario: 
+ParticipantAPI -> CarA: 
+activate CarA #c0c0c0
+note over CarA: Set Participant
+CarA -> ParticipantAPI: PS(SetParticipantsSupply)
+deactivate CarA
+ParticipantAPI -> Scenario: 
+ParticipantAPI -> PedB: 
+activate PedB #c0c0c0
+note over PedB: Set Participant
+PedB -> ParticipantAPI: PS(SetParticipantsSupply)
+deactivate PedB
+ParticipantAPI -> Scenario: 
+ParticipantAPI -> CarB: 
+note over CarB: Set Participant
+CarB -> ParticipantAPI: PS(SetParticipantsSupply)
+ParticipantAPI -> Scenario: 
+Scenario -> ParticipantAPI: PS(RegistParticipantsSupply)
+deactivate Scenario 
+ParticipantAPI -> CarB: 
+deactivate CarB
+'Clock情報を取得'
+CarB -> ClockAPI: RD(GetClockDemand)
+activate CarB #c0c0c0
+ClockAPI -> Scenario: 
+activate Scenario #c0c0c0
+note over Scenario: if participant ?
+Scenario -> ClockAPI: PS(SendClockSupply)
+deactivate Scenario
+ClockAPI -> CarB: 
+note over CarB: Set Clock
+deactivate CarB
+
+== SetAgent ==
+'Set Agent Ped A'
+SE -> Scenario: SetAgent
+activate Scenario #FFBBBB
+Scenario -> AgentAPI: RS(SetAgentsDemand) A Ped
+activate AgentAPI
+
+'SetAgent Ped A To PedA'
+AgentAPI -> PedA: 
+activate PedA #c0c0c0
+note over PedA: if coord A Ped?
+PedA -> AgentAPI: PS(SetAgentsSupply)
+deactivate PedA
+AgentAPI -> Scenario: 
+
+'SetAgent Ped A To CarA'
+AgentAPI -> CarA: 
+activate CarA #c0c0c0
+note over CarA: if coord A Car?
+CarA -> AgentAPI: PS(SetAgentsSupply)
+deactivate CarA
+AgentAPI -> Scenario:
+
+'SetAgent Ped A To PedB'
+AgentAPI -> PedB: 
+activate PedB #c0c0c0
+note over PedB: if coord B Ped?
+PedB -> AgentAPI: PS(SetAgentsSupply)
+deactivate PedB
+AgentAPI -> Scenario:
+
+'SetAgent Ped A To CarB'
+AgentAPI -> CarB: 
+activate CarB #c0c0c0
+note over CarB: if coord B Car?
+CarB -> AgentAPI: PS(SetAgentsSupply)
+deactivate CarB
+AgentAPI -> Scenario:
+
+deactivate AgentAPI
+Scenario -> SE: OK
+deactivate Scenario
+
+'エリアA, BにCarを設置する場合' 
+'Set Agent Car A and B'
+SE -> Scenario: SetAgent
+activate Scenario #FFBBBB
+Scenario -> AgentAPI: RS(SetAgentsDemand) A,B Car
+activate AgentAPI
+
+'SetAgent Car A B To PedA'
+AgentAPI -> PedA: 
+activate PedA #c0c0c0
+note over PedA: if coord A Ped?
+PedA -> AgentAPI: PS(SetAgentsSupply)
+deactivate PedA
+AgentAPI -> Scenario: 
+
+'SetAgent Car A B To CarA'
+AgentAPI -> CarA: 
+activate CarA #c0c0c0
+note over CarA: if coord A Car?
+CarA -> AgentAPI: PS(SetAgentsSupply)
+deactivate CarA
+AgentAPI -> Scenario: 
+
+'SetAgent Car A B To PedB'
+AgentAPI -> PedB: 
+activate PedB #c0c0c0
+note over PedB: if coord B Ped?
+PedB -> AgentAPI: PS(SetAgentsSupply)
+deactivate PedB
+AgentAPI -> Scenario: 
+
+'SetAgent Car A B To CarB'
+AgentAPI -> CarB: 
+activate CarB #c0c0c0
+note over CarB: if coord B Car?
+CarB -> AgentAPI: PS(SetAgentsSupply)
+deactivate CarB
+AgentAPI -> Scenario: 
+
+deactivate AgentAPI
+Scenario -> SE: OK
+deactivate Scenario
+
+
+== Start ==
+SE -> Scenario: Start
+activate Scenario #FFBBBB
+Scenario -> ClockAPI: RD(ForwardClockDemand)
+
+'PedAのForward処理'
+ClockAPI -> PedA: Forward
+activate ClockAPI
+activate PedA #FFBBBB
+
+'同じエリアのエージェントを取得'
+PedA -> AgentAPI: RD(GetSameAreaAgentsDemand)
+activate AgentAPI
+AgentAPI -> CarA: 
+activate CarA #c0c0c0
+CarA -> AgentAPI: PS(SendSameAreaAgentsSupply)
+deactivate CarA
+AgentAPI -> PedA:
+deactivate AgentAPI
+
+note over PedA: calculation
+'隣のエージェントに情報を送信'
+PedA -> AgentAPI: RS(SendNeighborAreaAgentsSupply)
+
+'隣のエージェントから情報を取得'
+PedB -> AgentAPI: RS(SendNeighborAreaAgentsSupply)
+activate AgentAPI
+AgentAPI -> PedA: 
+deactivate AgentAPI
+
+'エージェントの更新' 
+note over PedA: update
+
+'可視化プロバイダへ送信'
+PedA -> AgentAPI: PS(SendAgentsSupply)
+activate AgentAPI
+AgentAPI -> Visualization: 
+deactivate AgentAPI
+
+PedA -> ClockAPI: PS(ForwardClockSupply)
+deactivate PedA
+ClockAPI -> Scenario:
+deactivate ClockAPI
+
+'CarAのForward処理'
+ClockAPI -> CarA: Forward
+activate ClockAPI
+activate CarA #FFBBBB
+
+'同じエリアのエージェントを取得'
+CarA -> AgentAPI: RD(GetSameAreaAgentsDemand)
+activate AgentAPI
+AgentAPI -> PedA: 
+activate PedA #c0c0c0
+PedA -> AgentAPI: PS(SendSameAreaAgentsSupply)
+deactivate PedA
+AgentAPI -> CarA: 
+deactivate AgentAPI
+
+note over CarA: calculation
+'隣のエージェントに情報を送信'
+CarA -> AgentAPI: RS(SendNeighborAreaAgentsSupply)
+
+'隣のエージェントから情報を取得'
+CarB -> AgentAPI: RS(SendNeighborAreaAgentsSupply)
+activate AgentAPI
+AgentAPI -> CarA: 
+deactivate AgentAPI
+
+'エージェントの更新' 
+note over CarA: update
+
+'可視化プロバイダへ送信'
+CarA -> AgentAPI: RS(SendAgentsSupply)
+activate AgentAPI
+AgentAPI -> Visualization: 
+deactivate AgentAPI
+
+CarA -> ClockAPI: PS(ForwardClockSupply)
+deactivate CarA
+ClockAPI -> Scenario: ClockInfo(Forward, OK, t+1)
+deactivate ClockAPI
+
+'PedBのForward処理'
+ClockAPI -> PedB: Forward
+activate ClockAPI
+activate PedB #FFBBBB
+
+'同じエリアのエージェントを取得'
+PedB -> AgentAPI: RD(GetSameAreaAgentsDemand)
+activate AgentAPI
+AgentAPI -> CarB: 
+activate CarB #c0c0c0
+CarB -> AgentAPI: PS(SendSameAreaAgentsSupply)
+deactivate CarB
+AgentAPI -> PedB:
+deactivate AgentAPI
+
+note over PedB: calculation
+'隣のエージェントに情報を送信'
+PedB -> AgentAPI: RS(SendNeighborAreaAgentsSupply)
+
+'隣のエージェントから情報を取得'
+PedA -> AgentAPI: RS(SendNeighborAreaAgentsSupply)
+activate AgentAPI
+AgentAPI -> PedB: 
+deactivate AgentAPI
+
+'エージェントの更新' 
+note over PedB: update
+
+'可視化プロバイダへ送信'
+PedB -> AgentAPI: RS(SendAgentsSupply)
+activate AgentAPI
+AgentAPI -> Visualization: 
+deactivate AgentAPI
+
+PedB -> ClockAPI: PS(ForwardClockSupply)
+deactivate PedB
+ClockAPI -> Scenario: ClockInfo(Forward, OK, t+1)
+deactivate ClockAPI
+
+'CarAのForward処理'
+ClockAPI -> CarB: Forward
+activate ClockAPI
+activate CarB #FFBBBB
+
+'同じエリアのエージェントを取得'
+CarB -> AgentAPI: RD(GetSameAreaAgentsDemand)
+activate AgentAPI
+AgentAPI -> PedB:
+activate PedB #c0c0c0
+PedB -> AgentAPI: PS(SendSameAreaAgentsSupply)
+deactivate PedB
+AgentAPI -> CarB:
+deactivate AgentAPI
+
+note over CarB: calculation
+'隣のエージェントに情報を送信'
+CarB -> AgentAPI: RS(SendNeighborAreaAgentsSupply)
+
+'隣のエージェントから情報を取得'
+CarA -> AgentAPI: RS(SendNeighborAreaAgentsSupply)
+activate AgentAPI
+AgentAPI -> CarB:
+deactivate AgentAPI
+
+'エージェントの更新' 
+note over CarB: update
+
+'可視化プロバイダへ送信'
+CarB -> AgentAPI: RS(SendAgentsSupply)
+activate AgentAPI
+AgentAPI -> Visualization: 
+deactivate AgentAPI
+
+CarB -> ClockAPI: PS(ForwardClockSupply)
+deactivate CarB
+ClockAPI -> Scenario: ClockInfo(Forward, OK, t+1)
+deactivate ClockAPI
+
+note over Scenario: sleep
+note over Scenario: cycle 2 ...repeat
+
+== Stop ==
+SE -> Scenario: Stop
+note over Scenario: Stop
+
+@enduml

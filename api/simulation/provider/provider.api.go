@@ -187,10 +187,11 @@ func createCmd(source *Source) (*exec.Cmd, error) {
 	}
 
 	// get src dir
-	srcpath := filepath.FromSlash(filepath.ToSlash(d) + "/../../../" + source.SrcDir)
-	binpath := filepath.FromSlash(filepath.ToSlash(d) + "/../../../" + source.SrcDir + "/" + source.BinName)
+	srcpath := filepath.FromSlash(filepath.ToSlash(d) + "/../../" + source.SrcDir)
+	binpath := filepath.FromSlash(filepath.ToSlash(d) + "/../../" + source.SrcDir + "/" + source.BinName)
 	//fi, err := os.Stat(binpath)
 	_, err = os.Stat(binpath)
+	fmt.Printf("ModTime", source)
 
 	// バイナリが最新かどうか
 	modTime := time.Date(2018, time.August, 1, 0, 0, 0, 0, time.UTC)
