@@ -32,7 +32,6 @@ func init() {
 type Clients struct {
 	AgentClient    *sxutil.SMServiceClient
 	ClockClient    *sxutil.SMServiceClient
-	AreaClient     *sxutil.SMServiceClient
 	ProviderClient *sxutil.SMServiceClient
 }
 
@@ -220,15 +219,40 @@ func wait(idList []uint64, supplyType simapi.SupplyType) map[uint64]*pb.Supply {
 				mu.Lock()
 				// spのidがidListに入っているか
 				if isPidInIdList(psp, idList) {
-					pspMap[psp.SenderId] = psp
+					//logger.Debug("isPidInIDList %v, %v", psp.GetSimSupply().GetPid(), idList)
+					pspMap[psp.GetSimSupply().GetPid()] = psp
+					//logger.Debug("isFinishSync %v, %v", isFinishSync(pspMap, idList), idList)
+					//for _, sp := range pspMap {
+					//	logger.Debug("pspMap %v", sp.GetSimSupply().GetPid(), idList)
+					//}
 					// 同期が終了したかどうか
 					if isFinishSync(pspMap, idList) {
+						//logger.Debug("isFinishSync")
 						mu.Unlock()
 						wg.Done()
 						return
 					}
 				}
 				mu.Unlock()
+			case <-time.After(1500 * time.Millisecond):
+				noIds := make([]uint64, 0)
+				for _, id := range idList {
+					noFlag := true
+					for _, sp := range pspMap {
+						if sp.GetSimSupply().GetPid() == id {
+							noFlag = false
+						}
+
+					}
+					if noFlag {
+						noIds = append(noIds, id)
+					}
+				}
+				for _, sp := range pspMap {
+
+					logger.Error("pspMap %v", sp.GetSimSupply().GetPid(), idList)
+				}
+				logger.Error("Sync Error: NoIds: %v", noIds)
 			}
 		}
 	}()
@@ -286,14 +310,16 @@ func isFinishSync(pspMap map[uint64]*pb.Supply, idlist []uint64) bool {
 //////////////////////////////////////////
 
 // Agentを取得するDemand
-func (c *Communicator) GetAgentsRequest(pid uint64, idList []uint64) (uint64, []*agent.Agent) {
+func (c *Communicator) GetAgentsRequest(senderInfo *provider.Provider, targets []uint64, pid uint64, idList []uint64) (uint64, []*agent.Agent) {
 	getAgentsRequest := &agent.GetAgentsRequest{}
 
 	simDemand := &simapi.SimDemand{
-		Pid:    pid,
-		Type:   simapi.DemandType_GET_AGENTS_REQUEST,
-		Status: simapi.StatusType_NONE,
-		Data:   &simapi.SimDemand_GetAgentsRequest{getAgentsRequest},
+		Pid:        pid,
+		Type:       simapi.DemandType_GET_AGENTS_REQUEST,
+		Status:     simapi.StatusType_NONE,
+		Data:       &simapi.SimDemand_GetAgentsRequest{getAgentsRequest},
+		SenderInfo: senderInfo,
+		Targets:    targets,
 	}
 
 	id := sendDemand(c.MyClients.AgentClient, simDemand)
@@ -313,7 +339,7 @@ func (c *Communicator) GetAgentsRequest(pid uint64, idList []uint64) (uint64, []
 }
 
 // Agentを取得するSupply
-func (c *Communicator) GetAgentsResponse(pid uint64, tid uint64, agents []*agent.Agent, agentType agent.AgentType, areaId uint64) uint64 {
+func (c *Communicator) GetAgentsResponse(senderInfo *provider.Provider, targets []uint64, pid uint64, tid uint64, agents []*agent.Agent, agentType agent.AgentType, areaId uint64) uint64 {
 	getAgentsResponse := &agent.GetAgentsResponse{
 		Agents:    agents,
 		AgentType: agentType,
@@ -321,10 +347,12 @@ func (c *Communicator) GetAgentsResponse(pid uint64, tid uint64, agents []*agent
 	}
 
 	simSupply := &simapi.SimSupply{
-		Pid:    pid,
-		Type:   simapi.SupplyType_GET_AGENTS_RESPONSE,
-		Status: simapi.StatusType_NONE,
-		Data:   &simapi.SimSupply_GetAgentsResponse{getAgentsResponse},
+		Pid:        pid,
+		Type:       simapi.SupplyType_GET_AGENTS_RESPONSE,
+		Status:     simapi.StatusType_NONE,
+		Data:       &simapi.SimSupply_GetAgentsResponse{getAgentsResponse},
+		SenderInfo: senderInfo,
+		Targets:    targets,
 	}
 
 	id := sendSupply(c.MyClients.AgentClient, tid, simSupply)
@@ -333,16 +361,18 @@ func (c *Communicator) GetAgentsResponse(pid uint64, tid uint64, agents []*agent
 }
 
 // AgentをセットするDemand
-func (c *Communicator) SetAgentsRequest(pid uint64, idList []uint64, agents []*agent.Agent) uint64 {
+func (c *Communicator) SetAgentsRequest(senderInfo *provider.Provider, targets []uint64, pid uint64, idList []uint64, agents []*agent.Agent) uint64 {
 	setAgentsRequest := &agent.SetAgentsRequest{
 		Agents: agents,
 	}
 
 	simDemand := &simapi.SimDemand{
-		Pid:    pid,
-		Type:   simapi.DemandType_SET_AGENTS_REQUEST,
-		Status: simapi.StatusType_NONE,
-		Data:   &simapi.SimDemand_SetAgentsRequest{setAgentsRequest},
+		Pid:        pid,
+		Type:       simapi.DemandType_SET_AGENTS_REQUEST,
+		Status:     simapi.StatusType_NONE,
+		Data:       &simapi.SimDemand_SetAgentsRequest{setAgentsRequest},
+		SenderInfo: senderInfo,
+		Targets:    targets,
 	}
 
 	id := sendDemand(c.MyClients.AgentClient, simDemand)
@@ -356,14 +386,16 @@ func (c *Communicator) SetAgentsRequest(pid uint64, idList []uint64, agents []*a
 }
 
 // Agentのセット完了
-func (c *Communicator) SetAgentsResponse(pid uint64, tid uint64) uint64 {
+func (c *Communicator) SetAgentsResponse(senderInfo *provider.Provider, targets []uint64, pid uint64, tid uint64) uint64 {
 	setAgentsResponse := &agent.SetAgentsResponse{}
 
 	simSupply := &simapi.SimSupply{
-		Pid:    pid,
-		Type:   simapi.SupplyType_SET_AGENTS_RESPONSE,
-		Status: simapi.StatusType_NONE,
-		Data:   &simapi.SimSupply_SetAgentsResponse{setAgentsResponse},
+		Pid:        pid,
+		Type:       simapi.SupplyType_SET_AGENTS_RESPONSE,
+		Status:     simapi.StatusType_NONE,
+		Data:       &simapi.SimSupply_SetAgentsResponse{setAgentsResponse},
+		SenderInfo: senderInfo,
+		Targets:    targets,
 	}
 
 	id := sendSupply(c.MyClients.AgentClient, tid, simSupply)
@@ -376,16 +408,18 @@ func (c *Communicator) SetAgentsResponse(pid uint64, tid uint64) uint64 {
 //////////////////////////////////////////
 
 // Providerを登録するDemand
-func (c *Communicator) RegistProviderRequest(pid uint64, idList []uint64, providerInfo *provider.Provider) uint64 {
+func (c *Communicator) RegistProviderRequest(senderInfo *provider.Provider, targets []uint64, pid uint64, idList []uint64, providerInfo *provider.Provider) uint64 {
 	registProviderRequest := &provider.RegistProviderRequest{
 		Provider: providerInfo,
 	}
 
 	simDemand := &simapi.SimDemand{
-		Pid:    pid,
-		Type:   simapi.DemandType_REGIST_PROVIDER_REQUEST,
-		Status: simapi.StatusType_NONE,
-		Data:   &simapi.SimDemand_RegistProviderRequest{registProviderRequest},
+		Pid:        pid,
+		Type:       simapi.DemandType_REGIST_PROVIDER_REQUEST,
+		Status:     simapi.StatusType_NONE,
+		Data:       &simapi.SimDemand_RegistProviderRequest{registProviderRequest},
+		SenderInfo: senderInfo,
+		Targets:    targets,
 	}
 
 	id := sendDemand(c.MyClients.ProviderClient, simDemand)
@@ -400,14 +434,16 @@ func (c *Communicator) RegistProviderRequest(pid uint64, idList []uint64, provid
 }
 
 // Providerを登録するSupply
-func (c *Communicator) RegistProviderResponse(pid uint64, tid uint64) uint64 {
+func (c *Communicator) RegistProviderResponse(senderInfo *provider.Provider, targets []uint64, pid uint64, tid uint64) uint64 {
 	registProviderResponse := &provider.RegistProviderResponse{}
 
 	simSupply := &simapi.SimSupply{
-		Pid:    pid,
-		Type:   simapi.SupplyType_REGIST_PROVIDER_RESPONSE,
-		Status: simapi.StatusType_NONE,
-		Data:   &simapi.SimSupply_RegistProviderResponse{registProviderResponse},
+		Pid:        pid,
+		Type:       simapi.SupplyType_REGIST_PROVIDER_RESPONSE,
+		Status:     simapi.StatusType_NONE,
+		Data:       &simapi.SimSupply_RegistProviderResponse{registProviderResponse},
+		SenderInfo: senderInfo,
+		Targets:    targets,
 	}
 
 	id := sendSupply(c.MyClients.ProviderClient, tid, simSupply)
@@ -416,16 +452,18 @@ func (c *Communicator) RegistProviderResponse(pid uint64, tid uint64) uint64 {
 }
 
 // Providerを登録するDemand
-func (c *Communicator) KillProviderRequest(pid uint64, idList []uint64, providerInfo *provider.Provider) uint64 {
+func (c *Communicator) KillProviderRequest(senderInfo *provider.Provider, targets []uint64, pid uint64, idList []uint64, providerInfo *provider.Provider) uint64 {
 	killProviderRequest := &provider.KillProviderRequest{
 		Provider: providerInfo,
 	}
 
 	simDemand := &simapi.SimDemand{
-		Pid:    pid,
-		Type:   simapi.DemandType_KILL_PROVIDER_REQUEST,
-		Status: simapi.StatusType_NONE,
-		Data:   &simapi.SimDemand_KillProviderRequest{killProviderRequest},
+		Pid:        pid,
+		Type:       simapi.DemandType_KILL_PROVIDER_REQUEST,
+		Status:     simapi.StatusType_NONE,
+		Data:       &simapi.SimDemand_KillProviderRequest{killProviderRequest},
+		SenderInfo: senderInfo,
+		Targets:    targets,
 	}
 
 	id := sendDemand(c.MyClients.ProviderClient, simDemand)
@@ -440,14 +478,16 @@ func (c *Communicator) KillProviderRequest(pid uint64, idList []uint64, provider
 }
 
 // Providerを登録するSupply
-func (c *Communicator) KillProviderResponse(pid uint64, tid uint64) uint64 {
+func (c *Communicator) KillProviderResponse(senderInfo *provider.Provider, targets []uint64, pid uint64, tid uint64) uint64 {
 	killProviderResponse := &provider.KillProviderResponse{}
 
 	simSupply := &simapi.SimSupply{
-		Pid:    pid,
-		Type:   simapi.SupplyType_KILL_PROVIDER_RESPONSE,
-		Status: simapi.StatusType_NONE,
-		Data:   &simapi.SimSupply_KillProviderResponse{killProviderResponse},
+		Pid:        pid,
+		Type:       simapi.SupplyType_KILL_PROVIDER_RESPONSE,
+		Status:     simapi.StatusType_NONE,
+		Data:       &simapi.SimSupply_KillProviderResponse{killProviderResponse},
+		SenderInfo: senderInfo,
+		Targets:    targets,
 	}
 
 	id := sendSupply(c.MyClients.ProviderClient, tid, simSupply)
@@ -456,16 +496,18 @@ func (c *Communicator) KillProviderResponse(pid uint64, tid uint64) uint64 {
 }
 
 // Providerを登録するDemand
-func (c *Communicator) DivideProviderRequest(pid uint64, idList []uint64, providerInfo *provider.Provider) uint64 {
+func (c *Communicator) DivideProviderRequest(senderInfo *provider.Provider, targets []uint64, pid uint64, idList []uint64, providerInfo *provider.Provider) uint64 {
 	divideProviderRequest := &provider.DivideProviderRequest{
 		Provider: providerInfo,
 	}
 
 	simDemand := &simapi.SimDemand{
-		Pid:    pid,
-		Type:   simapi.DemandType_DIVIDE_PROVIDER_REQUEST,
-		Status: simapi.StatusType_NONE,
-		Data:   &simapi.SimDemand_DivideProviderRequest{divideProviderRequest},
+		Pid:        pid,
+		Type:       simapi.DemandType_DIVIDE_PROVIDER_REQUEST,
+		Status:     simapi.StatusType_NONE,
+		Data:       &simapi.SimDemand_DivideProviderRequest{divideProviderRequest},
+		SenderInfo: senderInfo,
+		Targets:    targets,
 	}
 
 	id := sendDemand(c.MyClients.ProviderClient, simDemand)
@@ -480,14 +522,16 @@ func (c *Communicator) DivideProviderRequest(pid uint64, idList []uint64, provid
 }
 
 // Providerを登録するSupply
-func (c *Communicator) DivideProviderResponse(pid uint64, tid uint64) uint64 {
+func (c *Communicator) DivideProviderResponse(senderInfo *provider.Provider, targets []uint64, pid uint64, tid uint64) uint64 {
 	divideProviderResponse := &provider.DivideProviderResponse{}
 
 	simSupply := &simapi.SimSupply{
-		Pid:    pid,
-		Type:   simapi.SupplyType_DIVIDE_PROVIDER_RESPONSE,
-		Status: simapi.StatusType_NONE,
-		Data:   &simapi.SimSupply_DivideProviderResponse{divideProviderResponse},
+		Pid:        pid,
+		Type:       simapi.SupplyType_DIVIDE_PROVIDER_RESPONSE,
+		Status:     simapi.StatusType_NONE,
+		Data:       &simapi.SimSupply_DivideProviderResponse{divideProviderResponse},
+		SenderInfo: senderInfo,
+		Targets:    targets,
 	}
 
 	id := sendSupply(c.MyClients.ProviderClient, tid, simSupply)
@@ -496,16 +540,18 @@ func (c *Communicator) DivideProviderResponse(pid uint64, tid uint64) uint64 {
 }
 
 // Providerを登録するDemand
-func (c *Communicator) UpdateProvidersRequest(pid uint64, idList []uint64, providers []*provider.Provider) uint64 {
+func (c *Communicator) UpdateProvidersRequest(senderInfo *provider.Provider, targets []uint64, pid uint64, idList []uint64, providers []*provider.Provider) uint64 {
 	updateProvidersRequest := &provider.UpdateProvidersRequest{
 		Providers: providers,
 	}
 
 	simDemand := &simapi.SimDemand{
-		Pid:    pid,
-		Type:   simapi.DemandType_UPDATE_PROVIDERS_REQUEST,
-		Status: simapi.StatusType_NONE,
-		Data:   &simapi.SimDemand_UpdateProvidersRequest{updateProvidersRequest},
+		Pid:        pid,
+		Type:       simapi.DemandType_UPDATE_PROVIDERS_REQUEST,
+		Status:     simapi.StatusType_NONE,
+		Data:       &simapi.SimDemand_UpdateProvidersRequest{updateProvidersRequest},
+		SenderInfo: senderInfo,
+		Targets:    targets,
 	}
 
 	id := sendDemand(c.MyClients.ProviderClient, simDemand)
@@ -520,14 +566,16 @@ func (c *Communicator) UpdateProvidersRequest(pid uint64, idList []uint64, provi
 }
 
 // Providerを登録するSupply
-func (c *Communicator) UpdateProvidersResponse(pid uint64, tid uint64) uint64 {
+func (c *Communicator) UpdateProvidersResponse(senderInfo *provider.Provider, targets []uint64, pid uint64, tid uint64) uint64 {
 	updateProvidersResponse := &provider.UpdateProvidersResponse{}
 
 	simSupply := &simapi.SimSupply{
-		Pid:    pid,
-		Type:   simapi.SupplyType_UPDATE_PROVIDERS_RESPONSE,
-		Status: simapi.StatusType_NONE,
-		Data:   &simapi.SimSupply_UpdateProvidersResponse{updateProvidersResponse},
+		Pid:        pid,
+		Type:       simapi.SupplyType_UPDATE_PROVIDERS_RESPONSE,
+		Status:     simapi.StatusType_NONE,
+		Data:       &simapi.SimSupply_UpdateProvidersResponse{updateProvidersResponse},
+		SenderInfo: senderInfo,
+		Targets:    targets,
 	}
 
 	id := sendSupply(c.MyClients.ProviderClient, tid, simSupply)
@@ -536,16 +584,18 @@ func (c *Communicator) UpdateProvidersResponse(pid uint64, tid uint64) uint64 {
 }
 
 // Providerを登録するDemand
-func (c *Communicator) SendProviderStatusRequest(pid uint64, idList []uint64, providerInfo *provider.Provider) uint64 {
+func (c *Communicator) SendProviderStatusRequest(senderInfo *provider.Provider, targets []uint64, pid uint64, idList []uint64, providerInfo *provider.Provider) uint64 {
 	sendProviderStatusRequest := &provider.SendProviderStatusRequest{
 		Provider: providerInfo,
 	}
 
 	simDemand := &simapi.SimDemand{
-		Pid:    pid,
-		Type:   simapi.DemandType_SEND_PROVIDER_STATUS_REQUEST,
-		Status: simapi.StatusType_NONE,
-		Data:   &simapi.SimDemand_SendProviderStatusRequest{sendProviderStatusRequest},
+		Pid:        pid,
+		Type:       simapi.DemandType_SEND_PROVIDER_STATUS_REQUEST,
+		Status:     simapi.StatusType_NONE,
+		Data:       &simapi.SimDemand_SendProviderStatusRequest{sendProviderStatusRequest},
+		SenderInfo: senderInfo,
+		Targets:    targets,
 	}
 
 	id := sendDemand(c.MyClients.ProviderClient, simDemand)
@@ -560,14 +610,104 @@ func (c *Communicator) SendProviderStatusRequest(pid uint64, idList []uint64, pr
 }
 
 // Providerを登録するSupply
-func (c *Communicator) SendProviderStatusResponse(pid uint64, tid uint64) uint64 {
+func (c *Communicator) SendProviderStatusResponse(senderInfo *provider.Provider, targets []uint64, pid uint64, tid uint64) uint64 {
 	sendProviderStatusResponse := &provider.SendProviderStatusResponse{}
 
 	simSupply := &simapi.SimSupply{
-		Pid:    pid,
-		Type:   simapi.SupplyType_SEND_PROVIDER_STATUS_RESPONSE,
-		Status: simapi.StatusType_NONE,
-		Data:   &simapi.SimSupply_SendProviderStatusResponse{sendProviderStatusResponse},
+		Pid:        pid,
+		Type:       simapi.SupplyType_SEND_PROVIDER_STATUS_RESPONSE,
+		Status:     simapi.StatusType_NONE,
+		Data:       &simapi.SimSupply_SendProviderStatusResponse{sendProviderStatusResponse},
+		SenderInfo: senderInfo,
+		Targets:    targets,
+	}
+
+	id := sendSupply(c.MyClients.ProviderClient, tid, simSupply)
+
+	return id
+}
+
+// Providerを登録するDemand
+func (c *Communicator) SetProvidersRequest(senderInfo *provider.Provider, targets []uint64, pid uint64, idList []uint64, providers []*provider.Provider) uint64 {
+	setProvidersRequest := &provider.SetProvidersRequest{
+		Providers: providers,
+	}
+
+	simDemand := &simapi.SimDemand{
+		Pid:        pid,
+		Type:       simapi.DemandType_SET_PROVIDERS_REQUEST,
+		Status:     simapi.StatusType_NONE,
+		Data:       &simapi.SimDemand_SetProvidersRequest{setProvidersRequest},
+		SenderInfo: senderInfo,
+		Targets:    targets,
+	}
+
+	id := sendDemand(c.MyClients.ProviderClient, simDemand)
+
+	// Wait
+	if idList != nil {
+		supplyType := simapi.SupplyType_SET_PROVIDERS_RESPONSE
+		wait(idList, supplyType)
+	}
+
+	return id
+}
+
+// Providerを登録するSupply
+func (c *Communicator) SetProvidersResponse(senderInfo *provider.Provider, targets []uint64, pid uint64, tid uint64) uint64 {
+	setProvidersResponse := &provider.SetProvidersResponse{}
+
+	simSupply := &simapi.SimSupply{
+		Pid:        pid,
+		Type:       simapi.SupplyType_SET_PROVIDERS_RESPONSE,
+		Status:     simapi.StatusType_NONE,
+		Data:       &simapi.SimSupply_SetProvidersResponse{setProvidersResponse},
+		SenderInfo: senderInfo,
+		Targets:    targets,
+	}
+
+	id := sendSupply(c.MyClients.ProviderClient, tid, simSupply)
+
+	return id
+}
+
+// Providerを登録するDemand
+func (c *Communicator) GetProvidersRequest(senderInfo *provider.Provider, targets []uint64, pid uint64, idList []uint64) uint64 {
+	getProvidersRequest := &provider.GetProvidersRequest{}
+
+	simDemand := &simapi.SimDemand{
+		Pid:        pid,
+		Type:       simapi.DemandType_GET_PROVIDERS_REQUEST,
+		Status:     simapi.StatusType_NONE,
+		Data:       &simapi.SimDemand_GetProvidersRequest{getProvidersRequest},
+		SenderInfo: senderInfo,
+		Targets:    targets,
+	}
+
+	id := sendDemand(c.MyClients.ProviderClient, simDemand)
+
+	// Wait
+	if idList != nil {
+		supplyType := simapi.SupplyType_GET_PROVIDERS_RESPONSE
+		wait(idList, supplyType)
+	}
+
+	return id
+}
+
+// Providerを登録するSupply
+func (c *Communicator) GetProvidersResponse(senderInfo *provider.Provider, targets []uint64, pid uint64, tid uint64, providers []*provider.Provider) uint64 {
+	getProvidersResponse := &provider.GetProvidersResponse{
+		Providers: providers,
+	}
+
+	simSupply := &simapi.SimSupply{
+		Pid:        pid,
+		Type:       simapi.SupplyType_GET_PROVIDERS_RESPONSE,
+		Status:     simapi.StatusType_NONE,
+		Data:       &simapi.SimSupply_GetProvidersResponse{getProvidersResponse},
+		SenderInfo: senderInfo,
+		Targets:    targets,
 	}
 
 	id := sendSupply(c.MyClients.ProviderClient, tid, simSupply)
@@ -579,16 +719,18 @@ func (c *Communicator) SendProviderStatusResponse(pid uint64, tid uint64) uint64
 /////////////   Clock API   //////////////
 //////////////////////////////////////////
 
-func (c *Communicator) UpdateClockRequest(pid uint64, idList []uint64, clockInfo *clock.Clock) uint64 {
+func (c *Communicator) UpdateClockRequest(senderInfo *provider.Provider, targets []uint64, pid uint64, idList []uint64, clockInfo *clock.Clock) uint64 {
 	updateClockRequest := &clock.UpdateClockRequest{
 		Clock: clockInfo,
 	}
 
 	simDemand := &simapi.SimDemand{
-		Pid:    pid,
-		Type:   simapi.DemandType_UPDATE_CLOCK_REQUEST,
-		Status: simapi.StatusType_NONE,
-		Data:   &simapi.SimDemand_UpdateClockRequest{updateClockRequest},
+		Pid:        pid,
+		Type:       simapi.DemandType_UPDATE_CLOCK_REQUEST,
+		Status:     simapi.StatusType_NONE,
+		Data:       &simapi.SimDemand_UpdateClockRequest{updateClockRequest},
+		SenderInfo: senderInfo,
+		Targets:    targets,
 	}
 
 	id := sendDemand(c.MyClients.ClockClient, simDemand)
@@ -603,14 +745,16 @@ func (c *Communicator) UpdateClockRequest(pid uint64, idList []uint64, clockInfo
 }
 
 // Agentを取得するSupply
-func (c *Communicator) UpdateClockResponse(pid uint64, tid uint64) uint64 {
+func (c *Communicator) UpdateClockResponse(senderInfo *provider.Provider, targets []uint64, pid uint64, tid uint64) uint64 {
 	updateClockResponse := &clock.UpdateClockResponse{}
 
 	simSupply := &simapi.SimSupply{
-		Pid:    pid,
-		Type:   simapi.SupplyType_UPDATE_CLOCK_RESPONSE,
-		Status: simapi.StatusType_NONE,
-		Data:   &simapi.SimSupply_UpdateClockResponse{updateClockResponse},
+		Pid:        pid,
+		Type:       simapi.SupplyType_UPDATE_CLOCK_RESPONSE,
+		Status:     simapi.StatusType_NONE,
+		Data:       &simapi.SimSupply_UpdateClockResponse{updateClockResponse},
+		SenderInfo: senderInfo,
+		Targets:    targets,
 	}
 
 	id := sendSupply(c.MyClients.ClockClient, tid, simSupply)
@@ -618,16 +762,18 @@ func (c *Communicator) UpdateClockResponse(pid uint64, tid uint64) uint64 {
 	return id
 }
 
-func (c *Communicator) SetClockRequest(pid uint64, idList []uint64, clockInfo *clock.Clock) uint64 {
+func (c *Communicator) SetClockRequest(senderInfo *provider.Provider, targets []uint64, pid uint64, idList []uint64, clockInfo *clock.Clock) uint64 {
 	setClockRequest := &clock.SetClockRequest{
 		Clock: clockInfo,
 	}
 
 	simDemand := &simapi.SimDemand{
-		Pid:    pid,
-		Type:   simapi.DemandType_SET_CLOCK_REQUEST,
-		Status: simapi.StatusType_NONE,
-		Data:   &simapi.SimDemand_SetClockRequest{setClockRequest},
+		Pid:        pid,
+		Type:       simapi.DemandType_SET_CLOCK_REQUEST,
+		Status:     simapi.StatusType_NONE,
+		Data:       &simapi.SimDemand_SetClockRequest{setClockRequest},
+		SenderInfo: senderInfo,
+		Targets:    targets,
 	}
 
 	id := sendDemand(c.MyClients.ClockClient, simDemand)
@@ -642,14 +788,16 @@ func (c *Communicator) SetClockRequest(pid uint64, idList []uint64, clockInfo *c
 }
 
 // Agentを取得するSupply
-func (c *Communicator) SetClockResponse(pid uint64, tid uint64) uint64 {
+func (c *Communicator) SetClockResponse(senderInfo *provider.Provider, targets []uint64, pid uint64, tid uint64) uint64 {
 	setClockResponse := &clock.SetClockResponse{}
 
 	simSupply := &simapi.SimSupply{
-		Pid:    pid,
-		Type:   simapi.SupplyType_SET_CLOCK_RESPONSE,
-		Status: simapi.StatusType_NONE,
-		Data:   &simapi.SimSupply_SetClockResponse{setClockResponse},
+		Pid:        pid,
+		Type:       simapi.SupplyType_SET_CLOCK_RESPONSE,
+		Status:     simapi.StatusType_NONE,
+		Data:       &simapi.SimSupply_SetClockResponse{setClockResponse},
+		SenderInfo: senderInfo,
+		Targets:    targets,
 	}
 
 	id := sendSupply(c.MyClients.ClockClient, tid, simSupply)
@@ -657,14 +805,16 @@ func (c *Communicator) SetClockResponse(pid uint64, tid uint64) uint64 {
 	return id
 }
 
-func (c *Communicator) GetClockRequest(pid uint64, idList []uint64) (uint64, *clock.Clock) {
+func (c *Communicator) GetClockRequest(senderInfo *provider.Provider, targets []uint64, pid uint64, idList []uint64) (uint64, *clock.Clock) {
 	getClockRequest := &clock.GetClockRequest{}
 
 	simDemand := &simapi.SimDemand{
-		Pid:    pid,
-		Type:   simapi.DemandType_GET_CLOCK_REQUEST,
-		Status: simapi.StatusType_NONE,
-		Data:   &simapi.SimDemand_GetClockRequest{getClockRequest},
+		Pid:        pid,
+		Type:       simapi.DemandType_GET_CLOCK_REQUEST,
+		Status:     simapi.StatusType_NONE,
+		Data:       &simapi.SimDemand_GetClockRequest{getClockRequest},
+		SenderInfo: senderInfo,
+		Targets:    targets,
 	}
 
 	id := sendDemand(c.MyClients.ClockClient, simDemand)
@@ -685,16 +835,18 @@ func (c *Communicator) GetClockRequest(pid uint64, idList []uint64) (uint64, *cl
 }
 
 // Agentを取得するSupply
-func (c *Communicator) GetClockResponse(pid uint64, tid uint64, clockInfo *clock.Clock) uint64 {
+func (c *Communicator) GetClockResponse(senderInfo *provider.Provider, targets []uint64, pid uint64, tid uint64, clockInfo *clock.Clock) uint64 {
 	getClockResponse := &clock.GetClockResponse{
 		Clock: clockInfo,
 	}
 
 	simSupply := &simapi.SimSupply{
-		Pid:    pid,
-		Type:   simapi.SupplyType_GET_CLOCK_RESPONSE,
-		Status: simapi.StatusType_NONE,
-		Data:   &simapi.SimSupply_GetClockResponse{getClockResponse},
+		Pid:        pid,
+		Type:       simapi.SupplyType_GET_CLOCK_RESPONSE,
+		Status:     simapi.StatusType_NONE,
+		Data:       &simapi.SimSupply_GetClockResponse{getClockResponse},
+		SenderInfo: senderInfo,
+		Targets:    targets,
 	}
 
 	id := sendSupply(c.MyClients.ClockClient, tid, simSupply)
@@ -702,14 +854,16 @@ func (c *Communicator) GetClockResponse(pid uint64, tid uint64, clockInfo *clock
 	return id
 }
 
-func (c *Communicator) ForwardClockRequest(pid uint64, idList []uint64) uint64 {
+func (c *Communicator) ForwardClockRequest(senderInfo *provider.Provider, targets []uint64, pid uint64, idList []uint64) uint64 {
 	forwardClockRequest := &clock.ForwardClockRequest{}
 
 	simDemand := &simapi.SimDemand{
-		Pid:    pid,
-		Type:   simapi.DemandType_FORWARD_CLOCK_REQUEST,
-		Status: simapi.StatusType_NONE,
-		Data:   &simapi.SimDemand_ForwardClockRequest{forwardClockRequest},
+		Pid:        pid,
+		Type:       simapi.DemandType_FORWARD_CLOCK_REQUEST,
+		Status:     simapi.StatusType_NONE,
+		Data:       &simapi.SimDemand_ForwardClockRequest{forwardClockRequest},
+		SenderInfo: senderInfo,
+		Targets:    targets,
 	}
 
 	id := sendDemand(c.MyClients.ClockClient, simDemand)
@@ -724,14 +878,16 @@ func (c *Communicator) ForwardClockRequest(pid uint64, idList []uint64) uint64 {
 }
 
 // Agentを取得するSupply
-func (c *Communicator) ForwardClockResponse(pid uint64, tid uint64) uint64 {
+func (c *Communicator) ForwardClockResponse(senderInfo *provider.Provider, targets []uint64, pid uint64, tid uint64) uint64 {
 	forwardClockResponse := &clock.ForwardClockResponse{}
 
 	simSupply := &simapi.SimSupply{
-		Pid:    pid,
-		Type:   simapi.SupplyType_FORWARD_CLOCK_RESPONSE,
-		Status: simapi.StatusType_NONE,
-		Data:   &simapi.SimSupply_ForwardClockResponse{forwardClockResponse},
+		Pid:        pid,
+		Type:       simapi.SupplyType_FORWARD_CLOCK_RESPONSE,
+		Status:     simapi.StatusType_NONE,
+		Data:       &simapi.SimSupply_ForwardClockResponse{forwardClockResponse},
+		SenderInfo: senderInfo,
+		Targets:    targets,
 	}
 
 	id := sendSupply(c.MyClients.ClockClient, tid, simSupply)
@@ -739,14 +895,16 @@ func (c *Communicator) ForwardClockResponse(pid uint64, tid uint64) uint64 {
 	return id
 }
 
-func (c *Communicator) BackClockRequest(pid uint64, idList []uint64) uint64 {
+func (c *Communicator) BackClockRequest(senderInfo *provider.Provider, targets []uint64, pid uint64, idList []uint64) uint64 {
 	backClockRequest := &clock.BackClockRequest{}
 
 	simDemand := &simapi.SimDemand{
-		Pid:    pid,
-		Type:   simapi.DemandType_BACK_CLOCK_REQUEST,
-		Status: simapi.StatusType_NONE,
-		Data:   &simapi.SimDemand_BackClockRequest{backClockRequest},
+		Pid:        pid,
+		Type:       simapi.DemandType_BACK_CLOCK_REQUEST,
+		Status:     simapi.StatusType_NONE,
+		Data:       &simapi.SimDemand_BackClockRequest{backClockRequest},
+		SenderInfo: senderInfo,
+		Targets:    targets,
 	}
 
 	id := sendDemand(c.MyClients.ClockClient, simDemand)
@@ -761,14 +919,16 @@ func (c *Communicator) BackClockRequest(pid uint64, idList []uint64) uint64 {
 }
 
 // Agentを取得するSupply
-func (c *Communicator) backClockResponse(pid uint64, tid uint64) uint64 {
+func (c *Communicator) backClockResponse(senderInfo *provider.Provider, targets []uint64, pid uint64, tid uint64) uint64 {
 	backClockResponse := &clock.BackClockResponse{}
 
 	simSupply := &simapi.SimSupply{
-		Pid:    pid,
-		Type:   simapi.SupplyType_BACK_CLOCK_RESPONSE,
-		Status: simapi.StatusType_NONE,
-		Data:   &simapi.SimSupply_BackClockResponse{backClockResponse},
+		Pid:        pid,
+		Type:       simapi.SupplyType_BACK_CLOCK_RESPONSE,
+		Status:     simapi.StatusType_NONE,
+		Data:       &simapi.SimSupply_BackClockResponse{backClockResponse},
+		SenderInfo: senderInfo,
+		Targets:    targets,
 	}
 
 	id := sendSupply(c.MyClients.ClockClient, tid, simSupply)
@@ -776,14 +936,16 @@ func (c *Communicator) backClockResponse(pid uint64, tid uint64) uint64 {
 	return id
 }
 
-func (c *Communicator) StartClockRequest(pid uint64, idList []uint64) uint64 {
+func (c *Communicator) StartClockRequest(senderInfo *provider.Provider, targets []uint64, pid uint64, idList []uint64) uint64 {
 	startClockRequest := &clock.StartClockRequest{}
 
 	simDemand := &simapi.SimDemand{
-		Pid:    pid,
-		Type:   simapi.DemandType_START_CLOCK_REQUEST,
-		Status: simapi.StatusType_NONE,
-		Data:   &simapi.SimDemand_StartClockRequest{startClockRequest},
+		Pid:        pid,
+		Type:       simapi.DemandType_START_CLOCK_REQUEST,
+		Status:     simapi.StatusType_NONE,
+		Data:       &simapi.SimDemand_StartClockRequest{startClockRequest},
+		SenderInfo: senderInfo,
+		Targets:    targets,
 	}
 
 	id := sendDemand(c.MyClients.ClockClient, simDemand)
@@ -798,14 +960,16 @@ func (c *Communicator) StartClockRequest(pid uint64, idList []uint64) uint64 {
 }
 
 // Agentを取得するSupply
-func (c *Communicator) StartClockResponse(pid uint64, tid uint64) uint64 {
+func (c *Communicator) StartClockResponse(senderInfo *provider.Provider, targets []uint64, pid uint64, tid uint64) uint64 {
 	startClockResponse := &clock.StartClockResponse{}
 
 	simSupply := &simapi.SimSupply{
-		Pid:    pid,
-		Type:   simapi.SupplyType_START_CLOCK_RESPONSE,
-		Status: simapi.StatusType_NONE,
-		Data:   &simapi.SimSupply_StartClockResponse{startClockResponse},
+		Pid:        pid,
+		Type:       simapi.SupplyType_START_CLOCK_RESPONSE,
+		Status:     simapi.StatusType_NONE,
+		Data:       &simapi.SimSupply_StartClockResponse{startClockResponse},
+		SenderInfo: senderInfo,
+		Targets:    targets,
 	}
 
 	id := sendSupply(c.MyClients.ClockClient, tid, simSupply)
@@ -813,14 +977,16 @@ func (c *Communicator) StartClockResponse(pid uint64, tid uint64) uint64 {
 	return id
 }
 
-func (c *Communicator) StopClockRequest(pid uint64, idList []uint64) uint64 {
+func (c *Communicator) StopClockRequest(senderInfo *provider.Provider, targets []uint64, pid uint64, idList []uint64) uint64 {
 	stopClockRequest := &clock.StopClockRequest{}
 
 	simDemand := &simapi.SimDemand{
-		Pid:    pid,
-		Type:   simapi.DemandType_STOP_CLOCK_REQUEST,
-		Status: simapi.StatusType_NONE,
-		Data:   &simapi.SimDemand_StopClockRequest{stopClockRequest},
+		Pid:        pid,
+		Type:       simapi.DemandType_STOP_CLOCK_REQUEST,
+		Status:     simapi.StatusType_NONE,
+		Data:       &simapi.SimDemand_StopClockRequest{stopClockRequest},
+		SenderInfo: senderInfo,
+		Targets:    targets,
 	}
 
 	id := sendDemand(c.MyClients.ClockClient, simDemand)
@@ -835,14 +1001,16 @@ func (c *Communicator) StopClockRequest(pid uint64, idList []uint64) uint64 {
 }
 
 // Agentを取得するSupply
-func (c *Communicator) StopClockResponse(pid uint64, tid uint64) uint64 {
+func (c *Communicator) StopClockResponse(senderInfo *provider.Provider, targets []uint64, pid uint64, tid uint64) uint64 {
 	stopClockResponse := &clock.StopClockResponse{}
 
 	simSupply := &simapi.SimSupply{
-		Pid:    pid,
-		Type:   simapi.SupplyType_STOP_CLOCK_RESPONSE,
-		Status: simapi.StatusType_NONE,
-		Data:   &simapi.SimSupply_StopClockResponse{stopClockResponse},
+		Pid:        pid,
+		Type:       simapi.SupplyType_STOP_CLOCK_RESPONSE,
+		Status:     simapi.StatusType_NONE,
+		Data:       &simapi.SimSupply_StopClockResponse{stopClockResponse},
+		SenderInfo: senderInfo,
+		Targets:    targets,
 	}
 
 	id := sendSupply(c.MyClients.ClockClient, tid, simSupply)

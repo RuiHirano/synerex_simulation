@@ -42,17 +42,34 @@ message SendProviderStatusRequest {
 message SendProviderStatusResponse {
 }
 
+// Gatewayのコネクション完了要求
+message SetProvidersRequest {
+	repeated Provider providers = 1;
+}
+
+message SetProvidersResponse {
+}
+
+// Gatewayへのプロバイダ送信要求
+message GetProvidersRequest {
+}
+
+message GetProvidersResponse {
+	repeated Provider providers = 1;
+}
+
 
 message Provider {
 	uint64 id = 1;
 	string name = 2;
     ProviderType type = 3;
 	ProviderStatus status = 4;
+	string synerex_address = 5;
 	oneof data {
-		ScenarioStatus scenario_status = 5;
-		AgentStatus agent_status = 6;
-		VisualizationStatus visualization_status = 7;
-		ClockStatus clock_status = 8;
+		ScenarioStatus scenario_status = 6;
+		AgentStatus agent_status = 7;
+		VisualizationStatus visualization_status = 8;
+		ClockStatus clock_status = 9;
 	}
 }
 
@@ -71,6 +88,7 @@ enum ProviderType {
 	AGENT = 4;
 	VISUALIZATION = 5;
 	CLOCK = 6;
+	GATEWAY = 7;
 }
 
 message ScenarioStatus {

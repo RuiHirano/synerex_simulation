@@ -128,7 +128,7 @@ func main() {
 
 	flag.Parse()
 	lis, err := net.Listen("tcp", fmt.Sprintf("localhost:%d", *mesPort))
-	defer lis.Close()
+	//defer lis.Close()
 
 	if err != nil {
 		log.Fatalf("failed to listen: %v", err)
@@ -142,7 +142,7 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
-	d := filepath.Join(currentRoot, "client", "build")
+	d := filepath.Join(currentRoot, "mclient", "build")
 
 	assetsDir = http.Dir(d)
 	log.Println("AssetDir:", assetsDir)

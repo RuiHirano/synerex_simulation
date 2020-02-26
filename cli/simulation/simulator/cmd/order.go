@@ -28,7 +28,7 @@ import (
 type orderCmdInfo struct {
 	Aliases []string
 	CmdName string
-	Type OrderType
+	Type    OrderType
 }
 
 /*type Order struct {
@@ -37,29 +37,30 @@ type orderCmdInfo struct {
 }*/
 
 type Options struct {
-	Json string
-	AgentNum string
+	Json      string
+	AgentNum  string
 	ClockTime string
 }
 
 // Order
 type OrderType int
+
 const (
 	OrderType_SET_AGENTS  OrderType = 0
-    OrderType_SET_AREA  OrderType = 1
-    OrderType_SET_CLOCK  OrderType = 2
-    OrderType_START_CLOCK  OrderType = 3
-	OrderType_STOP_CLOCK OrderType = 4
+	OrderType_SET_AREA    OrderType = 1
+	OrderType_SET_CLOCK   OrderType = 2
+	OrderType_START_CLOCK OrderType = 3
+	OrderType_STOP_CLOCK  OrderType = 4
 )
 
-type Option struct{
-	Key string
+type Option struct {
+	Key   string
 	Value string
 }
 
 type Order struct {
-	Type   OrderType
-	Name string
+	Type    OrderType
+	Name    string
 	Options []*Option
 }
 
@@ -69,27 +70,27 @@ var orderCmds = [...]orderCmdInfo{
 	{
 		Aliases: []string{"SetClock", "setClock", "setclock", "set-clock"},
 		CmdName: "SetClock",
-		Type: OrderType_SET_CLOCK,
+		Type:    OrderType_SET_CLOCK,
 	},
 	{
 		Aliases: []string{"SetArea", "setArea", "setarea", "set-area"},
 		CmdName: "SetArea",
-		Type: OrderType_SET_AREA,
+		Type:    OrderType_SET_AREA,
 	},
 	{
 		Aliases: []string{"SetAgents", "setAgents", "setagents", "set-agents", "SetAgent", "setAgent", "setagent", "set-agent"},
 		CmdName: "SetAgents",
-		Type: OrderType_SET_AGENTS,
+		Type:    OrderType_SET_AGENTS,
 	},
 	{
 		Aliases: []string{"StartClock", "startClock", "start"},
 		CmdName: "StartClock",
-		Type: OrderType_START_CLOCK,
+		Type:    OrderType_START_CLOCK,
 	},
 	{
 		Aliases: []string{"StopClock", "stopClock", "stop"},
 		CmdName: "StopClock",
-		Type: OrderType_STOP_CLOCK,
+		Type:    OrderType_STOP_CLOCK,
 	},
 }
 
@@ -106,19 +107,24 @@ func getOrderCmdName(alias string) string {
 
 func sendOrder(cmdName string, order *Order) bool {
 	//todo: we should use ack for this. but its not working....
-	fmt.Printf("simulator order [%v]\n", order)
-	res, err := sioClient.Ack("order", order, 20*time.Second)
-	//					err := sioClient.Emit("run",ci.CmdName) //, 20*time.Second)
-	time.Sleep(1 * time.Second)
+	fmt.Printf("sioClients2 %v", sioClients)
+	for _, sioClient := range sioClients {
+		fmt.Printf("simulator order [%v] to [%v]\n", order, sioClient)
+		res, err := sioClient.Ack("order", order, 20*time.Second)
+		//					err := sioClient.Emit("run",ci.CmdName) //, 20*time.Second)
+		//time.Sleep(1 * time.Second)
 
-	if err != nil || res != "\"ok\"" {
-		fmt.Printf("simulator: Got error on reply:'%s',%v\n", res, err)
-		return false
-	} else {
-		fmt.Printf("simulator: Reply [%s]\n", res)
-		fmt.Printf("simulator: Run '%s' succeeded.\n", cmdName)
-		return true
+		if err != nil || res != "\"ok\"" {
+			fmt.Printf("simulator: Got error on reply:'%s',%v\n", res, err)
+			//return false
+		} else {
+			fmt.Printf("simulator: Reply [%s]\n", res)
+			fmt.Printf("simulator: Run '%s' succeeded.\n", cmdName)
+			//return true
+		}
 	}
+	return true
+
 }
 
 func handleOrder(cmd *cobra.Command, args []string) {

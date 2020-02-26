@@ -26,8 +26,8 @@ import (
 )
 
 var (
-	serverAddr           = flag.String("server_addr", "127.0.0.1:10000", "The server address in the format of host:port")
-	nodesrv              = flag.String("nodeid_addr", "127.0.0.1:9990", "Node ID Server")
+	serverAddr           = flag.String("synerex", "127.0.0.1:10000", "The server address in the format of host:port")
+	nodesrv              = flag.String("nodeid", "127.0.0.1:9990", "Node ID Server")
 	providerJson         = flag.String("provider_json", "", "Provider Json")
 	scenarioProviderJson = flag.String("scenario_provider_json", "", "Provider Json")
 	myProvider           *provider.Provider
@@ -69,52 +69,67 @@ func NewMessage() *Message {
 	return &Message{ready: make(chan struct{})}
 }
 func (m *Message) Set(a []*agent.Agent) {
+	mu.Lock()
 	m.agents = a
 	close(m.ready)
+	mu.Unlock()
 }
 
 func (m *Message) Get() []*agent.Agent {
 	<-m.ready
+
 	return m.agents
 }
 
 // callbackForwardClock: Agentを計算し、クロックを進める要求
 func forwardClock(dm *pb.Demand) {
-
+	agentsMessage = NewMessage()
 	tid := dm.GetSimDemand().GetPid()
 	pid := providerManager.MyProvider.Id
-
 	// [1. Get Same Area Agents]同じエリアの異種Agent情報を取得する
 	idList := providerManager.GetIDList([]simutil.IDType{
 		simutil.IDType_SAME,
 	})
-	_, sameAreaAgents := com.GetAgentsRequest(pid, idList)
+	logger.Debug("1")
+	//logger.Debug("Same ID pid %v ID %v", pid, idList)
+	targets := idList
+	senderInfo := providerManager.MyProvider
+	_, sameAreaAgents := com.GetAgentsRequest(senderInfo, targets, pid, idList)
 
 	// [2. Calculation]次の時間のエージェントを計算する
 	nextControlAgents := sim.ForwardStep(sameAreaAgents)
 	agentsMessage.Set(nextControlAgents)
 
+	logger.Debug("2")
 	// [3. Get Neighbor Area Agents]隣接エリアのエージェントの情報を取得
 	// 同期するIDリスト
 	idList = providerManager.GetIDList([]simutil.IDType{
 		simutil.IDType_NEIGHBOR,
 	})
-	_, neighborAreaAgents := com.GetAgentsRequest(pid, idList)
-
+	//logger.Debug("2, %v", pid)
+	//logger.Debug("Neighbor pid %v ID %v", pid, idList)
+	targets = idList
+	_, neighborAreaAgents := com.GetAgentsRequest(senderInfo, targets, pid, idList)
+	//logger.Debug("3, %v", pid)
+	logger.Debug("3")
 	// [4. Update Agents]重複エリアのエージェントを更新する
 	nextDuplicateAgents := sim.UpdateDuplicateAgents(nextControlAgents, neighborAreaAgents)
 	// Agentsをセットする
 	sim.SetAgents(nextDuplicateAgents)
+	//logger.Debug("4, %v", pid)
 
 	// [5. Forward Clock]クロックを進める
 	sim.ForwardClock()
 
+	logger.Debug("4")
 	// [6. Send Finish Forward Response]セット完了通知を送る
-	com.ForwardClockResponse(pid, tid)
-
+	targets = []uint64{tid}
+	com.ForwardClockResponse(senderInfo, targets, pid, tid)
+	logger.Debug("5")
+	//agentsMessage = NewMessage()
 	//logger.Info("Finish: Clock Forwarded. \n Time:  %v \n Agents Num: %v", sim.Clock.GlobalTime, len(nextControlAgents))
-	logger.Info("Finish: Clock Forwarded.  AgentNum:  %v", len(nextControlAgents))
-	agentsMessage = NewMessage()
+	logger.Info("Finish: Clock Forwarded. pid %v,  AgentNum:  %v", pid, len(nextControlAgents))
+
 }
 
 // callback for each Supply
@@ -127,7 +142,9 @@ func demandCallback(clt *sxutil.SMServiceClient, dm *pb.Demand) {
 		providers := dm.GetSimDemand().GetUpdateProvidersRequest().GetProviders()
 		providerManager.UpdateProviders(providers)
 		providerManager.CreateIDMap()
-		com.UpdateProvidersResponse(pid, tid)
+		targets := []uint64{tid}
+		senderInfo := providerManager.MyProvider
+		com.UpdateProvidersResponse(senderInfo, targets, pid, tid)
 
 	case simapi.DemandType_SET_AGENTS_REQUEST:
 		// Agentをセットする
@@ -137,7 +154,9 @@ func demandCallback(clt *sxutil.SMServiceClient, dm *pb.Demand) {
 		sim.AddAgents(agents)
 
 		// セット完了通知を送る
-		com.SetAgentsResponse(pid, tid)
+		targets := []uint64{tid}
+		senderInfo := providerManager.MyProvider
+		com.SetAgentsResponse(senderInfo, targets, pid, tid)
 		logger.Info("Finish: Set Agents Add: %v", len(sim.Agents))
 
 	case simapi.DemandType_FORWARD_CLOCK_REQUEST:
@@ -148,7 +167,9 @@ func demandCallback(clt *sxutil.SMServiceClient, dm *pb.Demand) {
 		clockInfo := dm.GetSimDemand().GetSetClockRequest().GetClock()
 		sim.Clock = clockInfo
 		logger.Info("Finish Update Clock %v, %v", pid, tid)
-		com.UpdateClockResponse(pid, tid)
+		targets := []uint64{tid}
+		senderInfo := providerManager.MyProvider
+		com.UpdateClockResponse(senderInfo, targets, pid, tid)
 
 	case simapi.DemandType_GET_AGENTS_REQUEST:
 		// vis, neighborProviderからの場合
@@ -156,10 +177,18 @@ func demandCallback(clt *sxutil.SMServiceClient, dm *pb.Demand) {
 			simutil.IDType_VISUALIZATION,
 			simutil.IDType_NEIGHBOR,
 		})
+
 		if simutil.Contains(idList, tid) {
+			//com.GetAgentsResponse(senderInfo, targets, pid, tid, sim.Agents, sim.AgentType, sim.Area.Id)
 			go func() {
+
 				agentsInfo := agentsMessage.Get()
-				com.GetAgentsResponse(pid, tid, agentsInfo, sim.AgentType, sim.Area.Id)
+				targets := []uint64{tid}
+				senderInfo := providerManager.MyProvider
+
+				com.GetAgentsResponse(senderInfo, targets, pid, tid, agentsInfo, sim.AgentType, sim.Area.Id)
+
+				return
 				//logger.Error("Finish: Send Agents2 %v", dm.GetSimDemand().GetPid())
 			}()
 
@@ -169,10 +198,11 @@ func demandCallback(clt *sxutil.SMServiceClient, dm *pb.Demand) {
 			simutil.IDType_SAME,
 		})
 		if simutil.Contains(idList, tid) {
-			com.GetAgentsResponse(pid, tid, sim.Agents, sim.AgentType, sim.Area.Id)
+			targets := []uint64{tid}
+			senderInfo := providerManager.MyProvider
+			com.GetAgentsResponse(senderInfo, targets, pid, tid, sim.Agents, sim.AgentType, sim.Area.Id)
 		}
 
-		logger.Info("Finish: Send Agents")
 	}
 }
 
@@ -181,6 +211,10 @@ func supplyCallback(clt *sxutil.SMServiceClient, sp *pb.Supply) {
 	// 自分宛かどうか
 	if sp.GetTargetId() == providerManager.MyProvider.Id {
 		com.SendToWaitCh(sp, sp.GetSimSupply().GetType())
+		switch sp.GetSimSupply().GetType() {
+		case simapi.SupplyType_GET_AGENTS_RESPONSE:
+
+		}
 		/*switch sp.GetSimSupply().GetType() {
 		case simapi.SupplyType_GET_CLOCK_RESPONSE:
 			com.SendToWaitCh(sp, sp.GetSimSupply().GetType())
@@ -243,14 +277,17 @@ func main() {
 		simutil.IDType_SCENARIO,
 	})
 	pid := providerManager.MyProvider.Id
-	com.RegistProviderRequest(pid, idList, myProvider)
+	targets := idList
+	senderInfo := providerManager.MyProvider
+	com.RegistProviderRequest(senderInfo, targets, pid, idList, myProvider)
 	logger.Info("Finish Provider Registration.")
 
 	// Clock情報を取得
 	idList = providerManager.GetIDList([]simutil.IDType{
 		simutil.IDType_CLOCK,
 	})
-	_, clockInfo = com.GetClockRequest(pid, idList)
+	targets = idList
+	_, clockInfo = com.GetClockRequest(senderInfo, targets, pid, idList)
 	sim.Clock = clockInfo
 	logger.Info("Finish Setting Clock. %v\n", clockInfo)
 

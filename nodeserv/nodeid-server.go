@@ -54,11 +54,12 @@ type srvNodeInfo struct {
 }
 
 var (
-	port      = flag.Int("port", 9990, "NodeID Server Listening Port")
-	srvInfo   srvNodeInfo
-	lastNode  int32 = MaxServerID // start ID from MAX_SERVER_ID to MAX_NODE_NUM
-	lastPrint time.Time
-	nmmu      sync.RWMutex
+	nodeIdAddr = flag.String("nodeid", "127.0.0.1:9990", "Node ID Server")
+	port       = flag.Int("port", 9990, "NodeID Server Listening Port")
+	srvInfo    srvNodeInfo
+	lastNode   int32 = MaxServerID // start ID from MAX_SERVER_ID to MAX_NODE_NUM
+	lastPrint  time.Time
+	nmmu       sync.RWMutex
 )
 
 func init() {
@@ -252,7 +253,8 @@ func main() {
 
 	flag.Parse()
 	//	lis, err := net.Listen("tcp", fmt.Sprintf("localhost:%d", *port))
-	lis, err := net.Listen("tcp", fmt.Sprintf("0.0.0.0:%d", *port))
+	//lis, err := net.Listen("tcp", fmt.Sprintf("0.0.0.0:%d", *port))
+	lis, err := net.Listen("tcp", *nodeIdAddr)
 	//defer func() { fmt.Printf("defer!!!!!!!!!!!!!!!!!!!") }()
 	defer lis.Close()
 
@@ -263,7 +265,7 @@ func main() {
 	var opts []grpc.ServerOption
 
 	nodeServer := prepareGrpcServer(opts...)
-	log.Printf("Start waiting Node Server at port :%d ...", *port)
+	log.Printf("Start waiting Node Server at :%d ...", *nodeIdAddr)
 	nodeServer.Serve(lis)
 
 }

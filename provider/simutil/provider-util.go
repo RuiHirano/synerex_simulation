@@ -1,6 +1,8 @@
 package simutil
 
 import (
+	"log"
+
 	"github.com/synerex/synerex_alpha/api/simulation/provider"
 )
 
@@ -17,6 +19,7 @@ const (
 	IDType_AGENT         IDType = 4
 	IDType_NEIGHBOR      IDType = 5
 	IDType_SAME          IDType = 6
+	IDType_GATEWAY       IDType = 7
 )
 
 type ProviderManager struct {
@@ -95,14 +98,19 @@ func (pm *ProviderManager) CreateIDMap() {
 		switch p.GetType() {
 		case provider.ProviderType_SCENARIO:
 			providerIDMap[IDType_SCENARIO] = []uint64{p.GetId()}
+		case provider.ProviderType_GATEWAY:
+			providerIDMap[IDType_GATEWAY] = []uint64{p.GetId()}
 		case provider.ProviderType_CLOCK:
 			providerIDMap[IDType_CLOCK] = []uint64{p.GetId()}
 		case provider.ProviderType_VISUALIZATION:
 			providerIDMap[IDType_VISUALIZATION] = []uint64{p.GetId()}
 		case provider.ProviderType_AGENT:
-			agentIDs = append(agentIDs, p.GetId())
+			if p.GetSynerexAddress() == pm.MyProvider.GetSynerexAddress() {
+				agentIDs = append(agentIDs, p.GetId())
+			}
 			// AgentProviderでなければ必要ない
 			if pm.MyProvider.GetType() == provider.ProviderType_AGENT {
+				log.Printf("IsNeighbor %v", pm.IsNeighborArea(p))
 				if pm.IsNeighborArea(p) && p.GetAgentStatus().GetAgentType() == pm.MyProvider.GetAgentStatus().GetAgentType() {
 					// 隣接エリアかつAgentTypeが等しい場合
 					neighborIDs = append(neighborIDs, p.GetId())
@@ -134,10 +142,22 @@ func (pm *ProviderManager) IsSameArea(p *provider.Provider) bool {
 
 // FIX
 func (pm *ProviderManager) IsNeighborArea(p *provider.Provider) bool {
-	myNeighborIds := pm.MyProvider.GetAgentStatus().GetArea().GetNeighborAreaIds()
-	opAreaId := p.GetAgentStatus().GetArea().GetId()
-	if Contains(myNeighborIds, opAreaId) {
-		// エリアIDがNeighborIdsにあればtrue
+	myControlArea := pm.MyProvider.GetAgentStatus().GetArea().GetControlArea()
+	tControlArea := p.GetAgentStatus().GetArea().GetControlArea()
+	maxLat, maxLon, minLat, minLon := GetCoordRange(myControlArea)
+	tMaxLat, tMaxLon, tMinLat, tMinLon := GetCoordRange(tControlArea)
+	//log.Printf("latlon %v, %v, %v, %v", maxLat, maxLon, minLat, minLon)
+	//log.Printf("latlon %v, %v, %v, %v", tMaxLat, tMaxLon, tMinLat, tMinLon)
+	if maxLat == tMinLat && (minLon <= tMaxLon && tMaxLon <= maxLon || minLon <= tMinLon && tMinLon <= maxLon) {
+		return true
+	}
+	if minLat == tMaxLat && (minLon <= tMaxLon && tMaxLon <= maxLon || minLon <= tMinLon && tMinLon <= maxLon) {
+		return true
+	}
+	if maxLon == tMinLon && (minLat <= tMaxLat && tMaxLat <= maxLat || minLat <= tMinLat && tMinLat <= maxLat) {
+		return true
+	}
+	if minLon == tMaxLon && (minLat <= tMaxLat && tMaxLat <= maxLat || minLat <= tMinLat && tMinLat <= maxLat) {
 		return true
 	}
 	return false

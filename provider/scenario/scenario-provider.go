@@ -30,8 +30,12 @@ import (
 )
 
 var (
-	serverAddr      = flag.String("server_addr", "127.0.0.1:10000", "The server address in the format of host:port")
-	nodeIdAddr      = flag.String("nodeid_addr", "127.0.0.1:9990", "Node ID Server")
+	serverAddr      = flag.String("synerex", "127.0.0.1:10000", "The server address in the format of host:port")
+	gatewayAddr     = flag.String("gateway", "", "The server address in the format of host:port")
+	nodeIdAddr      = flag.String("nodeid", "127.0.0.1:9990", "Node ID Server")
+	simulatorAddr   = flag.String("simulator", "127.0.0.1:9995", "Node ID Server")
+	visAddr         = flag.String("vis", "127.0.0.1:9995", "Node ID Server")
+	areaId          = flag.Int("areaId", 0, "Area ID")
 	isStart         bool
 	mu              sync.Mutex
 	com             *simutil.Communicator
@@ -47,6 +51,7 @@ const MAX_AGENTS_NUM = 1000
 func init() {
 	isStart = false
 	logger = simutil.NewLogger()
+	logger.SetPrefix("Scenario")
 	flag.Parse()
 }
 
@@ -116,6 +121,14 @@ func init() {
 		SrcDir:  "provider/agent",
 		BinName: "agent-provider",
 		GoFiles: []string{"agent-provider.go"},
+		SubFunc: SendLog,
+	}
+	pSources[provider.ProviderType_GATEWAY] = &provider.Source{
+		CmdName: "Gateway",
+		Type:    provider.ProviderType_GATEWAY,
+		SrcDir:  "provider/gateway",
+		BinName: "gateway-provider",
+		GoFiles: []string{"gateway-provider.go"},
 		SubFunc: SendLog,
 	}
 	pSources[provider.ProviderType_NODE_ID] = &provider.Source{
@@ -252,8 +265,13 @@ func createRandomCoord(areaCoords []*common.Coord) *common.Coord {
 // Agentオブジェクトの変換
 func calcRoute() *agent.Route {
 
-	departure := createRandomCoord(mockAreaInfo.ControlArea)
-	destination := createRandomCoord(mockAreaInfo.ControlArea)
+	departure := createRandomCoord(mockAreaInfos[*areaId].ControlArea)
+	destination := createRandomCoord(mockAreaInfos[*areaId].ControlArea)
+	if *areaId == 0 {
+		destination = createRandomCoord(mockAreaInfos[1].ControlArea)
+	} else if *areaId == 1 {
+		destination = createRandomCoord(mockAreaInfos[0].ControlArea)
+	}
 
 	/*departure = &common.Coord{
 		Latitude:  35.1542,
@@ -376,7 +394,7 @@ func (o *Order) Send() string {
 	case "SetAgents":
 		fmt.Printf("SetAgents option %v\n", o.Option)
 		//agentNum, _ := strconv.Atoi(order.Option)
-		agentNum := uint64(10)
+		agentNum := uint64(1000)
 		o.SetAgents(agentNum)
 		return "ok"
 
@@ -411,7 +429,10 @@ func (o *Order) StartClock() (bool, error) {
 	})
 	// エージェントを設置するリクエスト
 	pid := providerManager.MyProvider.Id
-	com.StartClockRequest(pid, idList)
+
+	senderInfo := providerManager.MyProvider
+	targets := idList
+	com.StartClockRequest(senderInfo, targets, pid, idList)
 	return true, nil
 }
 
@@ -423,7 +444,10 @@ func (o *Order) StopClock() (bool, error) {
 	})
 	// エージェントを設置するリクエスト
 	pid := providerManager.MyProvider.Id
-	com.StopClockRequest(pid, idList)
+
+	senderInfo := providerManager.MyProvider
+	targets := idList
+	com.StopClockRequest(senderInfo, targets, pid, idList)
 
 	return true, nil
 }
@@ -452,6 +476,24 @@ func (o *Order) SetAgents(agentNum uint64) (bool, error) {
 			agents = append(agents, agent)
 		}
 	}
+	for i := 0; i < int(agentNum); i++ {
+		uuid, err := uuid.NewRandom()
+		if err == nil {
+			agent := &agent.Agent{
+				Id:    uint64(uuid.ID()),
+				Type:  agent.AgentType_CAR,
+				Route: calcRoute(),
+				Data: &agent.Agent_Car{
+					Car: &agent.Car{
+						Status: &agent.CarStatus{
+							Name: "car",
+						},
+					},
+				},
+			}
+			agents = append(agents, agent)
+		}
+	}
 
 	// エージェントを設置するリクエスト
 	// 同期するIDリスト
@@ -459,7 +501,10 @@ func (o *Order) SetAgents(agentNum uint64) (bool, error) {
 		simutil.IDType_AGENT,
 	})
 	pid := providerManager.MyProvider.Id
-	com.SetAgentsRequest(pid, idList, agents)
+
+	senderInfo := providerManager.MyProvider
+	targets := idList
+	com.SetAgentsRequest(senderInfo, targets, pid, idList, agents)
 
 	logger.Info("Finish Setting Agents \n Add: %v", len(agents))
 	return true, nil
@@ -476,7 +521,10 @@ func (o *Order) SetClock(globalTime float64, timeStep float64) (bool, error) {
 		simutil.IDType_CLOCK,
 	})
 	pid := providerManager.MyProvider.Id
-	com.SetClockRequest(pid, idList, sim.Clock)
+
+	senderInfo := providerManager.MyProvider
+	targets := idList
+	com.SetClockRequest(senderInfo, targets, pid, idList, sim.Clock)
 	logger.Info("Finish Setting Clock. \n GlobalTime:  %v \n TimeStep: %v", sim.Clock.GlobalTime, sim.Clock.TimeStep)
 	return true, nil
 }
@@ -532,7 +580,7 @@ func (ss *SimulatorServer) Run() error {
 			targetName := param.(string)
 			log.Printf("Get run command %s", targetName)
 
-			p := provider.NewProvider(targetName, provider.ProviderType_AGENT)
+			p := provider.NewProvider(targetName, provider.ProviderType_AGENT, *serverAddr)
 			p.Run(pSources[provider.ProviderType_AGENT])
 
 			//sendRunnningProviders()
@@ -553,7 +601,7 @@ func (ss *SimulatorServer) Run() error {
 		serveMux.Handle("/socket.io/", server)
 		serveMux.HandleFunc("/", assetsFileHandler)
 		log.Println("Serving at localhost:9995...")
-		if err := http.ListenAndServe(fmt.Sprintf("0.0.0.0:%d", port), serveMux); err != nil {
+		if err := http.ListenAndServe(*simulatorAddr, serveMux); err != nil {
 			log.Panic(err)
 		}
 
@@ -627,7 +675,9 @@ func demandCallback(clt *sxutil.SMServiceClient, dm *pb.Demand) {
 		providerManager.AddProvider(p)
 		providerManager.CreateIDMap()
 		// 登録完了通知
-		com.RegistProviderResponse(pid, tid)
+		targets := []uint64{tid}
+		senderInfo := providerManager.MyProvider
+		com.RegistProviderResponse(senderInfo, targets, pid, tid)
 
 		// UpdateRequest
 		idList := providerManager.GetIDList([]simutil.IDType{
@@ -636,13 +686,43 @@ func demandCallback(clt *sxutil.SMServiceClient, dm *pb.Demand) {
 			simutil.IDType_AGENT,
 		})
 		pid := providerManager.MyProvider.Id
-		com.UpdateProvidersRequest(pid, idList, providerManager.Providers)
+		targets = idList
+		com.UpdateProvidersRequest(senderInfo, targets, pid, idList, providerManager.Providers)
 
 		logger.Info("Success Update Providers")
 
 	case simapi.DemandType_DIVIDE_PROVIDER_REQUEST:
 	case simapi.DemandType_KILL_PROVIDER_REQUEST:
 	case simapi.DemandType_SEND_PROVIDER_STATUS_REQUEST:
+	case simapi.DemandType_SET_PROVIDERS_REQUEST:
+		providers := dm.GetSimDemand().GetSetProvidersRequest().GetProviders()
+		logger.Debug("Providers: %v", providers)
+		logger.Info("Get Providers from Gateway")
+		for _, p := range providers {
+			if p.Type == provider.ProviderType_AGENT {
+				providerManager.AddProvider(p)
+			}
+		}
+		//providerManager.CreateIDMap()
+
+		// UpdateRequest
+		idList := providerManager.GetIDList([]simutil.IDType{
+			simutil.IDType_CLOCK,
+			simutil.IDType_VISUALIZATION,
+			simutil.IDType_AGENT,
+		})
+		pid := providerManager.MyProvider.Id
+		targets := idList
+		senderInfo := providerManager.MyProvider
+		com.UpdateProvidersRequest(senderInfo, targets, pid, idList, providerManager.Providers)
+
+		logger.Info("Success Update Providers")
+
+	case simapi.DemandType_GET_PROVIDERS_REQUEST:
+		logger.Info("Get Providers Request")
+		targets := []uint64{tid}
+		senderInfo := providerManager.MyProvider
+		com.GetProvidersResponse(senderInfo, targets, pid, tid, providerManager.Providers)
 
 	}
 }
@@ -650,6 +730,73 @@ func demandCallback(clt *sxutil.SMServiceClient, dm *pb.Demand) {
 ////////////////////////////////////////////////////////////
 ////////////     Run Initial Provider     ////////////////
 ///////////////////////////////////////////////////////////
+
+var mockAreaInfos = []*area.Area{
+	&area.Area{
+		Id:   uint64(0),
+		Name: "Area1",
+		DuplicateArea: []*common.Coord{
+			{Latitude: 35.156431, Longitude: 136.97285},
+			{Latitude: 35.156431, Longitude: 136.981308},
+			{Latitude: 35.153578, Longitude: 136.981308},
+			{Latitude: 35.153578, Longitude: 136.97285},
+		},
+		ControlArea: []*common.Coord{
+			{Latitude: 35.156431, Longitude: 136.97285},
+			{Latitude: 35.156431, Longitude: 136.981308},
+			{Latitude: 35.153578, Longitude: 136.981308},
+			{Latitude: 35.153578, Longitude: 136.97285},
+		},
+	},
+	&area.Area{
+		Id:   uint64(1),
+		Name: "Area2",
+		DuplicateArea: []*common.Coord{
+			{Latitude: 35.156431, Longitude: 136.97285},
+			{Latitude: 35.156431, Longitude: 136.981308},
+			{Latitude: 35.159579, Longitude: 136.981308},
+			{Latitude: 35.159579, Longitude: 136.97285},
+		},
+		ControlArea: []*common.Coord{
+			{Latitude: 35.156431, Longitude: 136.97285},
+			{Latitude: 35.156431, Longitude: 136.981308},
+			{Latitude: 35.159579, Longitude: 136.981308},
+			{Latitude: 35.159579, Longitude: 136.97285},
+		},
+	},
+	&area.Area{
+		Id:   uint64(2),
+		Name: "Area3",
+		DuplicateArea: []*common.Coord{
+			{Latitude: 35.156431, Longitude: 136.981308},
+			{Latitude: 35.156431, Longitude: 136.98888},
+			{Latitude: 35.159579, Longitude: 136.98888},
+			{Latitude: 35.159579, Longitude: 136.981308},
+		},
+		ControlArea: []*common.Coord{
+			{Latitude: 35.156431, Longitude: 136.981308},
+			{Latitude: 35.156431, Longitude: 136.98888},
+			{Latitude: 35.159579, Longitude: 136.98888},
+			{Latitude: 35.159579, Longitude: 136.981308},
+		},
+	},
+	&area.Area{
+		Id:   uint64(3),
+		Name: "Area4",
+		DuplicateArea: []*common.Coord{
+			{Latitude: 35.156431, Longitude: 136.981308},
+			{Latitude: 35.156431, Longitude: 136.98888},
+			{Latitude: 35.153578, Longitude: 136.98888},
+			{Latitude: 35.153578, Longitude: 136.981308},
+		},
+		ControlArea: []*common.Coord{
+			{Latitude: 35.156431, Longitude: 136.981308},
+			{Latitude: 35.156431, Longitude: 136.98888},
+			{Latitude: 35.153578, Longitude: 136.98888},
+			{Latitude: 35.153578, Longitude: 136.981308},
+		},
+	},
+}
 
 // 担当するAreaの範囲
 var mockAreaInfo = &area.Area{
@@ -689,15 +836,29 @@ var mockAreaInfo2 = &area.Area{
 
 func runInitServer() {
 	// Run Server and Provider
-	nodeServer := provider.NewProvider("NodeIDServer", provider.ProviderType_NODE_ID)
+	nodeServer := provider.NewProvider("NodeIDServer", provider.ProviderType_NODE_ID, *serverAddr)
+	options := []*provider.Option{
+		&provider.Option{
+			Key:   "nodeid",
+			Value: *nodeIdAddr,
+		},
+	}
+	pSources[nodeServer.Type].Options = options
 	nodeServer.Run(pSources[nodeServer.Type])
 
 	time.Sleep(100 * time.Millisecond)
-	monitorServer := provider.NewProvider("MonitorServer", provider.ProviderType_MONITOR)
+	monitorServer := provider.NewProvider("MonitorServer", provider.ProviderType_MONITOR, *serverAddr)
 	monitorServer.Run(pSources[monitorServer.Type])
 
 	time.Sleep(100 * time.Millisecond)
-	synerexServer := provider.NewProvider("SynerexServer", provider.ProviderType_SYNEREX)
+	synerexServer := provider.NewProvider("SynerexServer", provider.ProviderType_SYNEREX, *serverAddr)
+	options = []*provider.Option{
+		&provider.Option{
+			Key:   "synerex",
+			Value: *serverAddr,
+		},
+	}
+	pSources[synerexServer.Type].Options = options
 	synerexServer.Run(pSources[synerexServer.Type])
 	time.Sleep(100 * time.Millisecond)
 
@@ -707,26 +868,82 @@ func runInitProvider() {
 	m := jsonpb.Marshaler{}
 	scenarioJson, _ := m.MarshalToString(providerManager.MyProvider)
 
-	clockProvider := provider.NewProvider("Clock", provider.ProviderType_CLOCK)
+	go func() {
+		time.Sleep(2 * time.Second)
+		if *gatewayAddr != "" {
+			gatewayProvider := provider.NewProvider("Gateway", provider.ProviderType_GATEWAY, *serverAddr)
+			js, _ := m.MarshalToString(gatewayProvider)
+
+			options := []*provider.Option{
+				&provider.Option{
+					Key:   "synerex",
+					Value: *serverAddr,
+				},
+				&provider.Option{
+					Key:   "nodeid",
+					Value: *nodeIdAddr,
+				},
+				&provider.Option{
+					Key:   "gateway",
+					Value: *gatewayAddr,
+				},
+				&provider.Option{
+					Key:   "provider_json",
+					Value: js,
+				},
+				&provider.Option{
+					Key:   "scenario_provider_json",
+					Value: scenarioJson,
+				},
+			}
+			pSources[gatewayProvider.Type].Options = options
+			gatewayProvider.Run(pSources[gatewayProvider.Type])
+		}
+		return
+	}()
+
+	clockProvider := provider.NewProvider("Clock", provider.ProviderType_CLOCK, *serverAddr)
 	js, _ := m.MarshalToString(clockProvider)
 	options := provider.NewProviderOptions(*serverAddr, *nodeIdAddr, js, scenarioJson)
 	pSources[clockProvider.Type].Options = options
 	clockProvider.Run(pSources[clockProvider.Type])
 
 	time.Sleep(100 * time.Millisecond)
-	visProvider := provider.NewProvider("Visualization", provider.ProviderType_VISUALIZATION)
+	visProvider := provider.NewProvider("Visualization", provider.ProviderType_VISUALIZATION, *serverAddr)
 	js, _ = m.MarshalToString(visProvider)
-	options = provider.NewProviderOptions(*serverAddr, *nodeIdAddr, js, scenarioJson)
+	options = []*provider.Option{
+		&provider.Option{
+			Key:   "synerex",
+			Value: *serverAddr,
+		},
+		&provider.Option{
+			Key:   "nodeid",
+			Value: *nodeIdAddr,
+		},
+		&provider.Option{
+			Key:   "vis_monitor",
+			Value: *visAddr,
+		},
+		&provider.Option{
+			Key:   "provider_json",
+			Value: js,
+		},
+		&provider.Option{
+			Key:   "scenario_provider_json",
+			Value: scenarioJson,
+		},
+	}
+	//options = provider.NewProviderOptions(*serverAddr, *nodeIdAddr, js, scenarioJson, *serverAddr)
 	pSources[visProvider.Type].Options = options
 	visProvider.Run(pSources[visProvider.Type])
 
 	//var INIT_PROVIDER_NUM = uint64(2)
 	var INIT_AGENT_TYPES = map[string]agent.AgentType{
-		"Pedestrian": agent.AgentType_PEDESTRIAN,
 		"Car":        agent.AgentType_CAR,
+		"Pedestrian": agent.AgentType_PEDESTRIAN,
 	}
 
-	areaInfos := areaManager.DivideArea(mockAreaInfo)
+	areaInfos := areaManager.DivideArea(mockAreaInfos[*areaId])
 	for name, agentType := range INIT_AGENT_TYPES {
 
 		//logger.Error("mockAreaInfo: %v\n", mockAreaInfo2.ControlArea)
@@ -737,7 +954,7 @@ func runInitProvider() {
 				AgentType: agentType,
 				AgentNum:  0,
 			}
-			p := provider.NewAgentProvider(name, agentType, agentStatus)
+			p := provider.NewAgentProvider(name, agentType, agentStatus, *serverAddr)
 			js, _ = m.MarshalToString(p)
 			options = provider.NewProviderOptions(*serverAddr, *nodeIdAddr, js, scenarioJson)
 
@@ -754,12 +971,12 @@ func runInitProvider() {
 func main() {
 
 	// ProviderManager
-	myProvider := provider.NewProvider("ScenarioProvider", provider.ProviderType_SCENARIO)
+	myProvider := provider.NewProvider("ScenarioProvider", provider.ProviderType_SCENARIO, *serverAddr)
 	providerManager = simutil.NewProviderManager(myProvider)
 	providerManager.CreateIDMap()
 
 	//AreaManager
-	areaManager = simutil.NewAreaManager(mockAreaInfo)
+	areaManager = simutil.NewAreaManager(mockAreaInfos[*areaId])
 
 	// CLI, GUIの受信サーバ
 	simulatorServer := NewSimulatorServer()
@@ -795,7 +1012,6 @@ func main() {
 
 	wg := sync.WaitGroup{}
 	wg.Add(1)
-	//updateProviderOrder()
 	// 初期プロバイダ起動
 	runInitProvider()
 	wg.Wait()

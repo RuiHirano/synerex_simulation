@@ -26,8 +26,9 @@ import (
 )
 
 var (
-	serverAddr           = flag.String("server_addr", "127.0.0.1:10000", "The server address in the format of host:port")
-	nodesrv              = flag.String("nodeid_addr", "127.0.0.1:9990", "Node ID Server")
+	serverAddr           = flag.String("synerex", "127.0.0.1:10000", "The server address in the format of host:port")
+	nodesrv              = flag.String("nodeid", "127.0.0.1:9990", "Node ID Server")
+	visAddr              = flag.String("vis_monitor", "127.0.0.1:9993", "Node ID Server")
 	providerJson         = flag.String("provider_json", "", "Provider Json")
 	scenarioProviderJson = flag.String("scenario_provider_json", "", "Provider Json")
 	port                 = flag.Int("port", 10080, "HarmoVis Provider Listening Port")
@@ -132,7 +133,9 @@ func forwardClock(dm *pb.Demand) {
 		simutil.IDType_AGENT,
 	})
 
-	_, agents := com.GetAgentsRequest(pid, idList)
+	senderInfo := providerManager.MyProvider
+	targets := idList
+	_, agents := com.GetAgentsRequest(senderInfo, targets, pid, idList)
 
 	// Harmowareに送る
 	sendToHarmowareVis(agents)
@@ -141,7 +144,7 @@ func forwardClock(dm *pb.Demand) {
 	sim.ForwardStep()
 
 	// セット完了通知を送る
-	com.ForwardClockResponse(pid, targetId)
+	com.ForwardClockResponse(senderInfo, targets, pid, targetId)
 	logger.Info("Finish: Clock Forwarded. \n Time:  %v \n Agents Num: %v", sim.Clock.GlobalTime, len(agents))
 }
 
@@ -211,25 +214,31 @@ func demandCallback(clt *sxutil.SMServiceClient, dm *pb.Demand) {
 		//logger.Error("Update Provider %v\n", providers)
 		providerManager.UpdateProviders(providers)
 		providerManager.CreateIDMap()
-		com.UpdateProvidersResponse(pid, tid)
+		targets := []uint64{tid}
+		senderInfo := providerManager.MyProvider
+		com.UpdateProvidersResponse(senderInfo, targets, pid, tid)
 		// 参加者リストをセットする要求
 		//callbackSetParticipantsRequest(dm)
 	case simapi.DemandType_FORWARD_CLOCK_REQUEST:
 		// クロックを進める
 		forwardClock(dm)
 
-	case simapi.DemandType_SET_AGENTS_REQUEST:
-		// Agentをセットする
+	/*case simapi.DemandType_SET_AGENTS_REQUEST:
+	// Agentをセットする
 
-		// セット完了通知
-		com.SetAgentsResponse(pid, tid)
+	// セット完了通知
+	targets := []uint64{tid}
+	senderInfo := providerManager.MyProvider
+	com.SetAgentsResponse(senderInfo, targets, pid, tid)*/
 
 	case simapi.DemandType_UPDATE_CLOCK_REQUEST:
 		// Clockをセットする
 		clockInfo := dm.GetSimDemand().GetSetClockRequest().GetClock()
 		sim.Clock = clockInfo
 		logger.Info("Finish Update Clock %v, %v", pid, tid)
-		com.UpdateClockResponse(pid, tid)
+		targets := []uint64{tid}
+		senderInfo := providerManager.MyProvider
+		com.UpdateClockResponse(senderInfo, targets, pid, tid)
 	}
 
 }
@@ -251,7 +260,7 @@ func supplyCallback(clt *sxutil.SMServiceClient, sp *pb.Supply) {
 
 func main() {
 
-	logger.Info("StartUp Provider")
+	logger.Info("StartUp Provider %v, %v, %v", *serverAddr, myProvider, scenarioProvider)
 	// ProviderManager
 	//myProvider := provider.NewProvider("VisualizationProvider", provider.ProviderType_VISUALIZATION)
 	providerManager = simutil.NewProviderManager(myProvider)
@@ -291,14 +300,17 @@ func main() {
 		simutil.IDType_SCENARIO,
 	})
 	pid := providerManager.MyProvider.Id
-	com.RegistProviderRequest(pid, idList, myProvider)
+	senderInfo := providerManager.MyProvider
+	targets := idList
+	com.RegistProviderRequest(senderInfo, targets, pid, idList, myProvider)
 	logger.Info("Finish Provider Registration.")
 
 	// Clock情報を取得
 	idList = providerManager.GetIDList([]simutil.IDType{
 		simutil.IDType_CLOCK,
 	})
-	_, clockInfo = com.GetClockRequest(pid, idList)
+	targets = idList
+	_, clockInfo = com.GetClockRequest(senderInfo, targets, pid, idList)
 	sim.Clock = clockInfo
 	logger.Info("Finish Setting Clock. \n")
 
@@ -311,8 +323,8 @@ func main() {
 	serveMux := http.NewServeMux()
 	serveMux.Handle("/socket.io/", ioserv)
 	serveMux.HandleFunc("/", assetsFileHandler)
-	log.Printf("Starting Harmoware VIS  Provider %s  on port %d", version, *port)
-	err = http.ListenAndServe(fmt.Sprintf("0.0.0.0:%d", *port), serveMux)
+	log.Printf("Starting Harmoware VIS  Provider on %v", *visAddr)
+	err = http.ListenAndServe(*visAddr, serveMux)
 	if err != nil {
 		log.Fatal(err)
 	}

@@ -10,6 +10,8 @@ import "simulation/provider/provider.proto";
 
 message SimDemand {
 		uint64 pid = 1;
+		
+
         // provider info
         DemandType type = 2;
 
@@ -26,14 +28,19 @@ message SimDemand {
 			provider.DivideProviderRequest divide_provider_request = 9;
 			provider.UpdateProvidersRequest update_providers_request = 10;
 			provider.SendProviderStatusRequest send_provider_status_request = 11;
-			clock.GetClockRequest get_clock_request = 12;
-			clock.SetClockRequest set_clock_request = 13;
-			clock.UpdateClockRequest update_clock_request = 14;
-			clock.StartClockRequest start_clock_request = 15;
-			clock.StopClockRequest stop_clock_request = 16;
-			clock.ForwardClockRequest forward_clock_request = 17;
-			clock.BackClockRequest back_clock_request = 18;
+			provider.SetProvidersRequest set_providers_request = 12;
+			provider.GetProvidersRequest get_providers_request = 13;
+			clock.GetClockRequest get_clock_request = 14;
+			clock.SetClockRequest set_clock_request = 15;
+			clock.UpdateClockRequest update_clock_request = 16;
+			clock.StartClockRequest start_clock_request = 17;
+			clock.StopClockRequest stop_clock_request = 18;
+			clock.ForwardClockRequest forward_clock_request = 19;
+			clock.BackClockRequest back_clock_request = 20;
         }
+
+		provider.Provider sender_info = 21;
+		repeated uint64 targets = 22;
     }
 
  message SimSupply {
@@ -54,15 +61,26 @@ message SimDemand {
 			provider.DivideProviderResponse divide_provider_response = 9;
 			provider.UpdateProvidersResponse update_providers_response = 10;
 			provider.SendProviderStatusResponse send_provider_status_response = 11;
-			clock.GetClockResponse get_clock_response = 12;
-			clock.SetClockResponse set_clock_response = 13;
-			clock.UpdateClockResponse update_clock_response = 14;
-			clock.StartClockResponse start_clock_response = 15;
-			clock.StopClockResponse stop_clock_response = 16;
-			clock.ForwardClockResponse forward_clock_response = 17;
-			clock.BackClockResponse back_clock_response = 18;
+			provider.SetProvidersResponse set_providers_response = 12;
+			provider.GetProvidersResponse get_providers_response = 13;
+			clock.GetClockResponse get_clock_response = 14;
+			clock.SetClockResponse set_clock_response = 15;
+			clock.UpdateClockResponse update_clock_response = 16;
+			clock.StartClockResponse start_clock_response = 17;
+			clock.StopClockResponse stop_clock_response = 18;
+			clock.ForwardClockResponse forward_clock_response = 19;
+			clock.BackClockResponse back_clock_response = 20;
         }
-    }
+
+		provider.Provider sender_info = 21;
+		repeated uint64 targets = 22;
+}
+
+message SenderInfo {
+	uint64 id = 1;
+	uint64 name = 2;
+	string synerex_address = 3;
+}
 
 enum StatusType {
     OK = 0;
@@ -78,13 +96,15 @@ enum DemandType {
 	DIVIDE_PROVIDER_REQUEST = 4;
 	UPDATE_PROVIDERS_REQUEST = 5;
 	SEND_PROVIDER_STATUS_REQUEST = 6;
-	GET_CLOCK_REQUEST = 7;
-	SET_CLOCK_REQUEST = 8;
-	UPDATE_CLOCK_REQUEST = 9;
-	START_CLOCK_REQUEST = 10;
-	STOP_CLOCK_REQUEST = 11;
-	FORWARD_CLOCK_REQUEST = 12;
-	BACK_CLOCK_REQUEST = 13;
+	SET_PROVIDERS_REQUEST = 7;
+	GET_PROVIDERS_REQUEST = 8;
+	GET_CLOCK_REQUEST = 9;
+	SET_CLOCK_REQUEST = 10;
+	UPDATE_CLOCK_REQUEST = 11;
+	START_CLOCK_REQUEST = 12;
+	STOP_CLOCK_REQUEST = 13;
+	FORWARD_CLOCK_REQUEST = 14;
+	BACK_CLOCK_REQUEST = 15;
 }
 
 enum SupplyType {
@@ -95,13 +115,15 @@ enum SupplyType {
 	DIVIDE_PROVIDER_RESPONSE = 4;
 	UPDATE_PROVIDERS_RESPONSE = 5;
 	SEND_PROVIDER_STATUS_RESPONSE = 6;
-	GET_CLOCK_RESPONSE = 7;
-	SET_CLOCK_RESPONSE = 8;
-	UPDATE_CLOCK_RESPONSE = 9;
-	START_CLOCK_RESPONSE = 10;
-	STOP_CLOCK_RESPONSE = 11;
-	FORWARD_CLOCK_RESPONSE = 12;
-	BACK_CLOCK_RESPONSE = 13;
+	SET_PROVIDERS_RESPONSE = 7;
+	GET_PROVIDERS_RESPONSE = 8;
+	GET_CLOCK_RESPONSE = 9;
+	SET_CLOCK_RESPONSE = 10;
+	UPDATE_CLOCK_RESPONSE = 11;
+	START_CLOCK_RESPONSE = 12;
+	STOP_CLOCK_RESPONSE = 13;
+	FORWARD_CLOCK_RESPONSE = 14;
+	BACK_CLOCK_RESPONSE = 15;
 }
 
 

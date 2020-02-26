@@ -25,8 +25,8 @@ import (
 // daemonをサーバとしてscenarioに命令
 
 var (
-	serverAddr           = flag.String("server_addr", "127.0.0.1:10000", "The server address in the format of host:port")
-	nodesrv              = flag.String("nodeid_addr", "127.0.0.1:9990", "Node ID Server")
+	serverAddr           = flag.String("synerex", "127.0.0.1:10000", "The server address in the format of host:port")
+	nodesrv              = flag.String("nodeid", "127.0.0.1:9990", "Node ID Server")
 	providerJson         = flag.String("provider_json", "", "Provider Json")
 	scenarioProviderJson = flag.String("scenario_provider_json", "", "Provider Json")
 	port                 = flag.Int("port", 10080, "HarmoVis Provider Listening Port")
@@ -57,6 +57,7 @@ func init() {
 // startClock:
 func startClock() {
 
+	t1 := time.Now()
 	// 同期するIDリスト
 	idList := providerManager.GetIDList([]simutil.IDType{
 		//simutil.IDType_SCENARIO,
@@ -65,14 +66,26 @@ func startClock() {
 	})
 	logger.Info("Send Forward Clock Request %v", idList)
 	pid := providerManager.MyProvider.Id
-	com.ForwardClockRequest(pid, idList)
+	senderInfo := providerManager.MyProvider
+	targets := idList
+	com.ForwardClockRequest(senderInfo, targets, pid, idList)
 
 	// calc next time
 	sim.ForwardStep()
 	log.Printf("\x1b[30m\x1b[47m \n Finish: Clock forwarded \n Time:  %v \x1b[0m\n", sim.Clock.GlobalTime)
 
+	t2 := time.Now()
+	duration := t2.Sub(t1).Milliseconds()
+	logger.Info("Duration: %v", duration)
+	if duration > 1000 {
+		logger.Error("time cycle delayed...")
+	} else {
+		// 待機
+		logger.Info("wait %v ms", 1000-duration)
+		time.Sleep(time.Duration(1000-duration) * time.Millisecond)
+	}
 	// 待機
-	time.Sleep(time.Duration(sim.Clock.TimeStep) * time.Second)
+	//time.Sleep(1 * time.Second)
 
 	// 次のサイクルを行う
 	if isStart {
@@ -117,7 +130,9 @@ func demandCallback(clt *sxutil.SMServiceClient, dm *pb.Demand) {
 	switch dm.GetSimDemand().GetType() {
 	case simapi.DemandType_GET_CLOCK_REQUEST:
 		// Clock情報を提供する
-		com.GetClockResponse(pid, tid, sim.Clock)
+		targets := []uint64{tid}
+		senderInfo := providerManager.MyProvider
+		com.GetClockResponse(senderInfo, targets, pid, tid, sim.Clock)
 
 	case simapi.DemandType_SET_CLOCK_REQUEST:
 		// Clockをセットする
@@ -129,33 +144,44 @@ func demandCallback(clt *sxutil.SMServiceClient, dm *pb.Demand) {
 			simutil.IDType_VISUALIZATION,
 			simutil.IDType_AGENT,
 		})
-		com.UpdateClockRequest(pid, idList, clockInfo)
+		senderInfo := providerManager.MyProvider
+		targets := idList
+		com.UpdateClockRequest(senderInfo, targets, pid, idList, clockInfo)
 		logger.Info("Finish Update Clock")
 
 		// Response to Scenario
-		com.SetClockResponse(pid, tid)
+		targets = []uint64{tid}
+		com.SetClockResponse(senderInfo, targets, pid, tid)
 
 	case simapi.DemandType_START_CLOCK_REQUEST:
 		// Clockをスタートする
 		if isStart == false {
 			isStart = true
 			go startClock()
-			com.StartClockResponse(pid, tid)
+			targets := []uint64{tid}
+			senderInfo := providerManager.MyProvider
+			com.StartClockResponse(senderInfo, targets, pid, tid)
 		} else {
 			logger.Warn("Clock is already started.")
-			com.StartClockResponse(pid, tid)
+			targets := []uint64{tid}
+			senderInfo := providerManager.MyProvider
+			com.StartClockResponse(senderInfo, targets, pid, tid)
 		}
 
 	case simapi.DemandType_STOP_CLOCK_REQUEST:
 		//Clockをストップする
 		isStart = false
-		com.StopClockResponse(pid, tid)
+		targets := []uint64{tid}
+		senderInfo := providerManager.MyProvider
+		com.StopClockResponse(senderInfo, targets, pid, tid)
 
 	case simapi.DemandType_UPDATE_PROVIDERS_REQUEST:
 		providers := dm.GetSimDemand().GetUpdateProvidersRequest().GetProviders()
 		providerManager.UpdateProviders(providers)
 		providerManager.CreateIDMap()
-		com.UpdateProvidersResponse(pid, tid)
+		targets := []uint64{tid}
+		senderInfo := providerManager.MyProvider
+		com.UpdateProvidersResponse(senderInfo, targets, pid, tid)
 		// プロバイダーを更新する
 		//setClock(dm)
 
@@ -208,7 +234,9 @@ func main() {
 		simutil.IDType_SCENARIO,
 	})
 	pid := providerManager.MyProvider.Id
-	com.RegistProviderRequest(pid, idList, myProvider)
+	senderInfo := providerManager.MyProvider
+	targets := idList
+	com.RegistProviderRequest(senderInfo, targets, pid, idList, myProvider)
 	logger.Info("Finish Provider Registration.")
 
 	wg.Wait()

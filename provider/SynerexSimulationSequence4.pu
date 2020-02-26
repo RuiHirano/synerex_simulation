@@ -35,7 +35,6 @@ box "SynerexServer" #LightBlue
 control StatusAPI
 control ClockAPI
 control AgentAPI
-control AreaAPI
 control ParticipantAPI
 end box 
 'control RouteAPI
@@ -49,11 +48,16 @@ participant Vis
 
 == StartUp ==
 User -> SimServ: StartUp
+User -> SimServ: Prov=2, Dom=2
 User -> SimServ: SetArea(東山)
 SimServ -> MasterAPI: StartUp(東山)
 MasterAPI -> SimProvider: StartUp(東山)
 SimProvider -> NodeServ: StartUp
 'SimProvider -> SynerexServ: StartUp
+SimProvider -> PedA: StartUp
+SimProvider -> CarA: StartUp
+SimProvider -> PedB: StartUp
+SimProvider -> CarB: StartUp
 SimProvider -> Clock: StartUp
 SimProvider -> Vis: StartUp
 
@@ -64,6 +68,27 @@ SimServ -> MasterAPI: SetClock 12:00
 MasterAPI -> SimProvider: SetClock 12:00
 SimProvider -> ClockAPI: SetClock 12:00
 ClockAPI -> Clock: SetClock 12:00
+
+Clock -> ClockAPI: UpdateClock
+ClockAPI -> PedA: UpdateClock 12:00
+PedA -> ClockAPI: setOK
+ClockAPI -> Clock: setOK
+
+Clock -> ClockAPI: UpdateClock
+ClockAPI -> CarA: UpdateClock 12:00
+CarA -> ClockAPI: setOK
+ClockAPI -> Clock: setOK
+
+Clock -> ClockAPI: UpdateClock
+ClockAPI -> CarB: UpdateClock 12:00
+CarB -> ClockAPI: setOK
+ClockAPI -> Clock: setOK
+
+Clock -> ClockAPI: UpdateClock
+ClockAPI -> Vis: UpdateClock 12:00
+Vis -> ClockAPI: setOK
+ClockAPI -> Clock: setOK
+
 Clock -> ClockAPI: SetClockOK
 ClockAPI -> SimProvider: SetClockOK
 
@@ -72,25 +97,25 @@ ClockAPI -> SimProvider: SetClockOK
 User -> SimServ: Domain(Ped,Car):
 note over SimServ: 該当してないエリアに\nエージェントを設置された場合、\nWarningをだす。\n 該当しているエリアの\nServに命令する
 SimServ --> SimProvider: Domain(Ped, Car)
-note over SimProvider: 必要なエリア分割数を\n計算する
-note over SimProvider: 自作PartIDか\nSynerexのClientIDか
-SimProvider --> PedA: StartUp: AreaCoord, ServerAddr, ParticipantInfo?
-SimProvider --> CarA: StartUp: AreaCoord, ServerAddr, ParticipantInfo?
-SimProvider --> PedB: StartUp: AreaCoord, ServerAddr, ParticipantInfo?
-SimProvider --> CarB: StartUp: AreaCoord, ServerAddr, ParticipantInfo?
-note over PedA: PedA起動時の動き
-note over PedA: ParticipantInfoを保存
-note over PedA: Clock情報を取得する
-PedA -> ClockAPI: GetClock
-ClockAPI -> Clock: GetClock
-Clock -> ClockAPI: SendClock(12:00)
-ClockAPI -> PedA: SendClock(12:00)
-note over PedA: Clockに沿って\nエージェントを設置\nstart時のみでいいかも
 
-note over SimProvider: 起動したら
 SimProvider -> AgentAPI: SetAgent
 AgentAPI -> PedA: SetAgent
 PedA -> AgentAPI: SetAgentOK
+AgentAPI -> SimProvider: SetAgentOK
+
+SimProvider -> AgentAPI: SetAgent
+AgentAPI -> CarA: SetAgent
+CarA -> AgentAPI: SetAgentOK
+AgentAPI -> SimProvider: SetAgentOK
+
+SimProvider -> AgentAPI: SetAgent
+AgentAPI -> PedB: SetAgent
+PedB -> AgentAPI: SetAgentOK
+AgentAPI -> SimProvider: SetAgentOK
+
+SimProvider -> AgentAPI: SetAgent
+AgentAPI -> CarB: SetAgent
+CarB -> AgentAPI: SetAgentOK
 AgentAPI -> SimProvider: SetAgentOK
 
 
@@ -112,33 +137,39 @@ activate PedA #FFBBBB
 
 '同じエリアのエージェントを取得'
 note over PedA: 同じエリアの\nエージェント取得
-PedA -> AgentAPI: RD(GetSameAreaAgentsDemand)
+PedA -> AgentAPI: RD:GetAgents(SameArea)
 activate AgentAPI
 AgentAPI -> CarA: 
 activate CarA #c0c0c0
-CarA -> AgentAPI: PS(SendSameAreaAgentsSupply)
+CarA -> AgentAPI: PS(GetAgentsResponse)
 deactivate CarA
 AgentAPI -> PedA:
 deactivate AgentAPI
 
 note over PedA: 計算
 '隣のエージェントに情報を送信'
-PedA -> AgentAPI: RS(SendNeighborAreaAgentsSupply)
+PedB -> AgentAPI: GetAgents(Neighbor)
+AgentAPI -> PedA: GetAgents
+PedA -> AgentAPI: PS(GetAgentsResponse)
+AgentAPI -> PedB: Response
 
 '隣のエージェントから情報を取得'
-note over PedA: 隣接エリアの\nエージェント取得
-PedB -> AgentAPI: RS(SendNeighborAreaAgentsSupply)
+PedA -> AgentAPI: GetAgents(Neighbor)
 activate AgentAPI
-AgentAPI -> PedA: 
+AgentAPI -> PedB: GetAgents
+PedB -> AgentAPI: PS(GetAgentsResponse)
+AgentAPI -> PedA: Response
 deactivate AgentAPI
 
 'エージェントの更新' 
 note over PedA: 更新
 
 '可視化プロバイダへ送信'
-PedA -> AgentAPI: PS(SendAgentsSupply)
+Vis -> AgentAPI: GetAgents(Neighbor)
 activate AgentAPI
-AgentAPI -> Vis: 
+AgentAPI -> PedA: GetAgents
+PedA -> AgentAPI: PS(GetAgentsResponse)
+AgentAPI -> Vis: Response
 deactivate AgentAPI
 
 PedA -> ClockAPI: PS(ForwardClockSupply)

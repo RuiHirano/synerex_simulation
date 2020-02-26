@@ -15,25 +15,30 @@
 package cmd
 
 import (
+	//"flag"
+	//"encoding/json"
+	//"flag"
+	"encoding/json"
 	"fmt"
-	"github.com/mtfelian/golang-socketio/transport"
+	"io/ioutil"
 	"os"
+	"time"
 
-	homedir "github.com/mitchellh/go-homedir"
-	"github.com/mtfelian/golang-socketio"
+	"github.com/mtfelian/golang-socketio/transport"
+
+	gosocketio "github.com/mtfelian/golang-socketio"
 
 	"github.com/spf13/cobra"
-	"github.com/spf13/viper"
 )
 
-var cfgFile string
+var sioClients []*gosocketio.Client
 
 var sioClient *gosocketio.Client
 var Providers []string
 
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
-	Use:   "sm [OPTIONS] COMMAND [ARG...]",
+	Use:   "sm",
 	Short: "Synergic Exchange command launcher",
 	Long: `Synergic Exchange command launcher
 For example:
@@ -53,74 +58,79 @@ se is a CLI launcher for Synergic Exchange.
 // This is called by main.main(). It only needs to happen once to the rootCmd.
 func Execute() {
 	if err := rootCmd.Execute(); err != nil {
-//		fmt.Println(err)
+		//		fmt.Println(err)
 		os.Exit(1)
 	}
+}
+
+func getSynerexAddr() []string {
+	bytes, _ := ioutil.ReadFile("setup.json")
+	fmt.Printf("addr : %v\n", bytes)
+	server := make([]Server, 0)
+	if err := json.Unmarshal(bytes, &server); err != nil {
+		panic(err)
+	}
+	fmt.Printf("addr : %v\n", server)
+	synerexAddrs := []string{}
+	for _, serv := range server {
+		synerexAddrs = append(synerexAddrs, serv.ServerAddr)
+		fmt.Printf("addr : %v\n", serv.ServerAddr)
+	}
+	fmt.Printf("addr2 : %v\n", synerexAddrs)
+	return synerexAddrs
 }
 
 func init() {
-	cobra.OnInitialize(initConfig)
 
-	// Here you will define your flags and configuration settings.
-	// Cobra supports persistent flags, which, if defined here,
-	// will be global for your application.
-	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.se.yaml)")
+	//cobra.OnInitialize(initConfig)
 
-	// Cobra also supports local flags, which will only run
-	// when this action is called directly.
-	rootCmd.Flags().BoolP("toggle", "t", false, "Help message for toggle")
+	synerexAddrs := getSynerexAddr()
 
-	var st ="01234567890012345678900123456789001234567890012345678900123456789001234567890"
-	var lp = &st
+	//ch := make(chan bool, len(synerexAddrs))
+	for _, addr := range synerexAddrs {
+		ioAddr := "ws://" + addr + "/socket.io/?EIO=3&transport=websocket"
+		go func() {
+			var err error
+			sioClient, err := gosocketio.Dial(ioAddr, transport.DefaultWebsocketTransport())
 
-	rootCmd.Flags().StringVar(lp, "se-addr", "ws://localhost:9995/socket.io/?EIO=3&transport=websocket", "Default address for se-daemon")
-	// need socket.io connection with daemon.
-	var err error
-	sioClient, err = gosocketio.Dial(*lp, transport.DefaultWebsocketTransport())
-	if err != nil {
-		fmt.Println("se: Error to connect with se-daemon. You have to start se-daemon first.") //,err)
-		os.Exit(1)
+			if err != nil {
+				fmt.Println("se: Error to connect with se-daemon. You have to start se-daemon first. %v", err)
+				return
+			}
+			sioClient.On(gosocketio.OnConnection, func(c *gosocketio.Channel, param interface{}) {
+				//		fmt.Println("Go socket.io connected ",c)
+			})
+			sioClient.On("providers", func(c *gosocketio.Channel, param interface{}) {
+				//fmt.Println("Get Providers ",param)
+				// we have to keep this to check parameters
+				procs := param.([]interface{})
+				Providers = make([]string, len(procs))
+				for i, pp := range procs {
+					Providers[i] = pp.(string)
+				}
+			})
+
+			sioClient.On(gosocketio.OnDisconnection, func(c *gosocketio.Channel, param interface{}) {
+				fmt.Println("Go socket.io disconnected ", c)
+			})
+
+			sioClients = append(sioClients, sioClient)
+
+		}()
 	}
-	sioClient.On(gosocketio.OnConnection, func(c *gosocketio.Channel,param interface{}) {
-//		fmt.Println("Go socket.io connected ",c)
-	})
-	sioClient.On("providers", func(c *gosocketio.Channel,param interface{}) {
-		//fmt.Println("Get Providers ",param)
-		// we have to keep this to check parameters
-		procs := param.([]interface{})
-		Providers = make([]string, len(procs))
-		for i, pp := range procs {
-			Providers[i] = pp.(string)
-		}
-	})
-
-	sioClient.On(gosocketio.OnDisconnection, func(c *gosocketio.Channel,param interface{}) {
-		fmt.Println("Go socket.io disconnected ",c)
-	})
-}
-
-// initConfig reads in config file and ENV variables if set.
-func initConfig() {
-	if cfgFile != "" {
-		// Use config file from the flag.
-		viper.SetConfigFile(cfgFile)
-	} else {
-		// Find home directory.
-		home, err := homedir.Dir()
-		if err != nil {
-			fmt.Println(err)
-			os.Exit(1)
-		}
-
-		// Search config in home directory with name ".se" (without extension).
-		viper.AddConfigPath(home)
-		viper.SetConfigName(".se")
-	}
-
-	viper.AutomaticEnv() // read in environment variables that match
-
-	// If a config file is found, read it in.
-	if err := viper.ReadInConfig(); err == nil {
-		fmt.Println("Using config file:", viper.ConfigFileUsed())
-	}
+	/*if len(synerexAddrs) != 0 {
+		wg := sync.WaitGroup{}
+		wg.Add(1)
+		go func() {
+			for {
+				<-ch
+				if len(ch) == len(synerexAddrs) {
+					wg.Done()
+				}
+			}
+		}()
+		wg.Wait()
+	}*/
+	time.Sleep(200 * time.Millisecond)
+	fmt.Printf("sioClients %v", sioClients)
 }

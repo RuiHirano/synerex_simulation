@@ -209,11 +209,13 @@ func (clt *SMServiceClient) IsDemandTarget(dm *api.Demand, idlist []uint64) bool
 // ProposeSupply send proposal Supply message to server
 func (clt *SMServiceClient) ProposeSupply(spo *SupplyOpts) uint64 {
 	pid := GenerateIntID()
+	ts := ptypes.TimestampNow()
 	sp := &api.Supply{
 		Id:         pid,
 		SenderId:   uint64(clt.ClientID),
 		TargetId:   spo.Target,
 		Type:       clt.MType,
+		Ts:         ts,
 		SupplyName: spo.Name,
 		ArgJson:    spo.JSON,
 	}

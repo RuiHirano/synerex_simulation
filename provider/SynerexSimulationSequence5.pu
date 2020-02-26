@@ -1,0 +1,124 @@
+
+
+@startuml
+
+'12/23までに行うこと'
+'Todo: geojson通りに壁を設置する'
+'FIX: エージェントの動きがおかしい'
+'Todo: geojson内にエージェントをランダムに設置'
+'Todo: geojson内のランダムな地点へ移動'
+'FIX: Pedestrianを停止するとscenarioまで停止してしまう'
+'Todo: daemon,モニタ上で操作できるようにする'
+'Todo: 連携するエリアの大きさプロバイダ数の自動調整'
+
+'2/3-
+'Todo: StartUp OK
+'Todo: SetClock
+'Todo: SetAgents
+'Todo: Start
+
+'http://plantuml.com/ja/guide'
+
+
+title SynerexSimulationSequence
+
+
+box "127.0.0.1:9999" #LightBlue
+participant SimProvider1
+participant NodeServ1
+participant Clock1
+control Synerex1
+participant PedA
+participant CarA
+participant PedB
+participant CarB
+participant Vis1
+end box 
+
+participant gateway
+
+box "127.0.0.2:9999" #LightBlue
+participant SimProvider2
+participant NodeServ2
+participant Clock2
+control Synerex2
+participant PedC
+participant CarC
+participant PedD
+participant CarD
+participant Vis2
+end box 
+
+== StartUp ==
+SimProvider1 -> NodeServ1: StartUp
+'SimProvider1 -> Synerex1Serv: StartUp
+SimProvider1 -> PedA: StartUp
+SimProvider1 -> CarA: StartUp
+SimProvider1 -> PedB: StartUp
+SimProvider1 -> CarB: StartUp
+SimProvider1 -> Clock1: StartUp
+SimProvider1 -> Vis1: StartUp
+
+
+== Start ==
+SimProvider1 -> Synerex1: startClock
+Synerex1 -> Clock1: startClock
+activate Clock1 #FFBBBB
+Clock1 -> Synerex1: RD(ForwardClockDemand)
+
+'PedAのForward処理'
+Synerex1 -> PedA: Forward
+activate Synerex1
+activate PedA #FFBBBB
+
+'同じエリアのエージェントを取得'
+note over PedA: 同じエリアの\nエージェント取得
+PedA -> Synerex1: RD:GetAgents(SameArea)
+activate Synerex1
+Synerex1 -> CarA: 
+activate CarA #c0c0c0
+CarA -> Synerex1: PS(GetAgentsResponse)
+deactivate CarA
+Synerex1 -> PedA:
+deactivate Synerex1
+
+note over PedA: 計算
+'隣のエージェントに情報を送信'
+PedB -> Synerex1: GetAgents(Neighbor)
+Synerex1 -> PedA: GetAgents
+PedA -> Synerex1: PS(GetAgentsResponse)
+Synerex1 -> PedB: Response
+
+'隣のエージェントから情報を取得'
+PedA -> Synerex1: GetAgents(Neighbor)
+activate Synerex1
+Synerex1 -> PedB: GetAgents
+PedB -> Synerex1: PS(GetAgentsResponse)
+Synerex1 -> PedA: Response
+deactivate Synerex1
+
+'エージェントの更新' 
+note over PedA: 更新
+
+'可視化プロバイダへ送信'
+Vis1 -> Synerex1: GetAgents(Neighbor)
+activate Synerex1
+Synerex1 -> PedA: GetAgents
+PedA -> Synerex1: PS(GetAgentsResponse)
+Synerex1 -> Vis1: Response
+deactivate Synerex1
+
+PedA -> Synerex1: PS(ForwardClockSupply)
+Synerex1 -> Clock1:
+deactivate Synerex1
+
+deactivate Clock1
+
+PedA -> Synerex1: SendStatus
+Synerex1 -> SimProvider1: SendStatus 
+deactivate PedA
+
+note over SimProvider1: ステータスを集める
+
+
+@enduml

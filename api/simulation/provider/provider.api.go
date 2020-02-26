@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -40,22 +41,24 @@ type Source struct {
 ////////////         Provider Class         ////////////////
 ///////////////////////////////////////////////////////////
 
-func NewProvider(name string, providerType ProviderType) *Provider {
+func NewProvider(name string, providerType ProviderType, synerexAddr string) *Provider {
 	uid, _ := uuid.NewRandom()
 	p := &Provider{
-		Id:   uint64(uid.ID()),
-		Name: name,
-		Type: providerType,
+		Id:             uint64(uid.ID()),
+		Name:           name,
+		Type:           providerType,
+		SynerexAddress: synerexAddr,
 	}
 	return p
 }
 
-func NewScenarioProvider(name string, scenario *ScenarioStatus) *Provider {
+func NewScenarioProvider(name string, scenario *ScenarioStatus, synerexAddr string) *Provider {
 	uid, _ := uuid.NewRandom()
 	p := &Provider{
-		Id:   uint64(uid.ID()),
-		Name: name,
-		Type: ProviderType_SCENARIO,
+		Id:             uint64(uid.ID()),
+		Name:           name,
+		Type:           ProviderType_SCENARIO,
+		SynerexAddress: synerexAddr,
 	}
 	p.WithScenarioStatus(scenario)
 	return p
@@ -66,12 +69,13 @@ func (p *Provider) WithScenarioStatus(s *ScenarioStatus) *Provider {
 	return p
 }
 
-func NewClockProvider(name string, clock *ClockStatus) *Provider {
+func NewClockProvider(name string, clock *ClockStatus, synerexAddr string) *Provider {
 	uid, _ := uuid.NewRandom()
 	p := &Provider{
-		Id:   uint64(uid.ID()),
-		Name: name,
-		Type: ProviderType_CLOCK,
+		Id:             uint64(uid.ID()),
+		Name:           name,
+		Type:           ProviderType_CLOCK,
+		SynerexAddress: synerexAddr,
 	}
 	p.WithClockStatus(clock)
 	return p
@@ -82,12 +86,13 @@ func (p *Provider) WithClockStatus(c *ClockStatus) *Provider {
 	return p
 }
 
-func NewVisualizationProvider(name string, vis *VisualizationStatus) *Provider {
+func NewVisualizationProvider(name string, vis *VisualizationStatus, synerexAddr string) *Provider {
 	uid, _ := uuid.NewRandom()
 	p := &Provider{
-		Id:   uint64(uid.ID()),
-		Name: name,
-		Type: ProviderType_VISUALIZATION,
+		Id:             uint64(uid.ID()),
+		Name:           name,
+		Type:           ProviderType_VISUALIZATION,
+		SynerexAddress: synerexAddr,
 	}
 	p.WithVisualizationStatus(vis)
 	return p
@@ -98,12 +103,13 @@ func (p *Provider) WithVisualizationStatus(v *VisualizationStatus) *Provider {
 	return p
 }
 
-func NewAgentProvider(name string, agentType agent.AgentType, agent *AgentStatus) *Provider {
+func NewAgentProvider(name string, agentType agent.AgentType, agent *AgentStatus, synerexAddr string) *Provider {
 	uid, _ := uuid.NewRandom()
 	p := &Provider{
-		Id:   uint64(uid.ID()),
-		Name: name,
-		Type: ProviderType_AGENT,
+		Id:             uint64(uid.ID()),
+		Name:           name,
+		Type:           ProviderType_AGENT,
+		SynerexAddress: synerexAddr,
 	}
 	p.WithAgentStatus(agent)
 	return p
@@ -121,7 +127,7 @@ func (p *Provider) Run(source *Source) error {
 	if err != nil {
 		return err
 	}
-	go runMyCmd(cmd, source, p.Name)
+	go runMyCmd(cmd, source, p.Name+": "+strconv.FormatUint(p.Id, 10))
 	return nil
 }
 
@@ -150,11 +156,11 @@ type Option struct {
 func NewProviderOptions(serverAddr string, nodeIdAddr string, providerJson string, scenarioProviderJson string) []*Option {
 	o := []*Option{
 		&Option{
-			Key:   "server_addr",
+			Key:   "synerex",
 			Value: serverAddr,
 		},
 		&Option{
-			Key:   "nodeid_addr",
+			Key:   "nodeid",
 			Value: nodeIdAddr,
 		},
 		&Option{

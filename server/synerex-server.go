@@ -14,6 +14,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"flag"
 	"fmt"
@@ -36,9 +37,10 @@ import (
 const MessageChannelBufferSize = 20
 
 var (
-	port    = flag.Int("port", 10000, "The Synerex Server Listening Port")
-	nodesrv = flag.String("nodesrv", "127.0.0.1:9990", "Node ID Server")
-	monitor = flag.String("monitor", "127.0.0.1:9998", "Monitor Server")
+	serverAddr = flag.String("synerex", "127.0.0.1:10000", "Node ID Server")
+	port       = flag.Int("port", 10000, "The Synerex Server Listening Port")
+	nodesrv    = flag.String("nodesrv", "127.0.0.1:9990", "Node ID Server")
+	monitor    = flag.String("monitor", "127.0.0.1:9998", "Monitor Server")
 )
 
 type synerexServerInfo struct {
@@ -242,8 +244,24 @@ func demandServerFunc(ch chan *api.Demand, stream api.Synerex_SubscribeDemandSer
 	for {
 		select {
 		case dm := <-ch: // may block until receiving info
-			err := stream.Send(dm)
+			/*msgType := int(dm.Type)
+			srcId := dm.SenderId
+			tgtId := dm.TargetId
+			mid := dm.Id
+			// 変更
+			cdm := dm // copy
+			//cdm.GetSimDemand().Data := nil
+			dm_json, _ := json.Marshal(cdm)
+			args := string(dm_json)
+			dstId := uint64(0)
+			method := dm.DemandName
+			meth := strings.Replace(method, "Propose", "P", 1)
+			met2 := strings.Replace(meth, "Register", "R", 1)
+			met3 := strings.Replace(met2, "Supply", "S", 1)
+			met4 := strings.Replace(met3, "Demand", "D", 1)
+			go monitorapi.SendMessage(met4, msgType, mid, srcId, dstId, tgtId, args)*/
 
+			err := stream.Send(dm)
 			if err != nil {
 				log.Printf("Error in DemandServer Error %v", err)
 				return err
@@ -287,7 +305,7 @@ func (s *synerexServerInfo) SubscribeDemand(ch *api.Channel, stream api.Synerex_
 
 	// It is better to logging here.
 	//	monitorapi.SendMes(&monitorapi.Mes{Message:"Subscribe Demand", Args: fmt.Sprintf("Type:%d,From: %x  %s",ch.Type,ch.ClientId, ch.ArgJson )})
-	monitorapi.SendMessage("SubscribeDemand", int(ch.Type), 0, ch.ClientId, 0, 0, ch.ArgJson)
+	//monitorapi.SendMessage("SubscribeDemand", int(ch.Type), 0, ch.ClientId, 0, 0, ch.ArgJson)
 
 	subCh := make(chan *api.Demand, MessageChannelBufferSize)
 	// We should think about thread safe coding.
@@ -313,6 +331,23 @@ func supplyServerFunc(ch chan *api.Supply, stream api.Synerex_SubscribeSupplySer
 	for {
 		select {
 		case sp := <-ch:
+
+			/*msgType := int(sp.Type)
+			srcId := sp.SenderId
+			tgtId := sp.TargetId
+			mid := sp.Id
+			// 変更
+			csp := sp // copy
+			//csp.GetSimDemand().Data = nil
+			sp_json, _ := json.Marshal(csp)
+			args := string(sp_json)
+			dstId := uint64(0)
+			method := sp.SupplyName
+			meth := strings.Replace(method, "Propose", "P", 1)
+			met2 := strings.Replace(meth, "Register", "R", 1)
+			met3 := strings.Replace(met2, "Supply", "S", 1)
+			met4 := strings.Replace(met3, "Demand", "D", 1)
+			go monitorapi.SendMessage(met4, msgType, mid, srcId, dstId, tgtId, args)*/
 			//log.Printf("in supply server func id %v", sp)
 			err := stream.Send(sp)
 			if err != nil {
@@ -337,7 +372,7 @@ func (s *synerexServerInfo) SubscribeSupply(ch *api.Channel, stream api.Synerex_
 	subCh := make(chan *api.Supply, MessageChannelBufferSize)
 
 	//	monitorapi.SendMes(&monitorapi.Mes{Message:"Subscribe Supply", Args: fmt.Sprintf("Type:%d, From: %x %s",ch.Type,ch.ClientId,ch.ArgJson )})
-	monitorapi.SendMessage("SubscribeSupply", int(ch.Type), 0, ch.ClientId, 0, 0, ch.ArgJson)
+	//monitorapi.SendMessage("SubscribeSupply", int(ch.Type), 0, ch.ClientId, 0, 0, ch.ArgJson)
 
 	s.smu.Lock()
 	s.supplyChans[tp] = append(s.supplyChans[tp], subCh)
@@ -523,7 +558,13 @@ func unaryServerInterceptor(logger *logrus.Logger, s *synerexServerInfo) grpc.Un
 			tgtId = dm.TargetId
 			mid = dm.Id
 			//			args = "Type:" + strconv.Itoa(int(dm.Type)) + ":" + strconv.FormatUint(dm.Id, 16) + ":" + idToNode(dm.SenderId) + "->" + strconv.FormatUint(dm.TargetId, 16)
-			args = idToNode(dm.SenderId) + "->" + idToNode(dm.TargetId)
+			//args = idToNode(dm.SenderId) + "->" + idToNode(dm.TargetId)
+			// 変更
+			cdm := dm // copy
+			//cdm.GetSimDemand().Data = &simapi.SimDemand_GetAgentsRequest{&agent.GetAgentsRequest{}}
+			//logger.Info("dm: %v\n", cdm.GetSimDemand())
+			dm_json, _ := json.Marshal(cdm)
+			args = string(dm_json)
 			// Supply
 		case "RegisterSupply", "ProposeSupply":
 			sp := req.(*api.Supply)
@@ -532,8 +573,13 @@ func unaryServerInterceptor(logger *logrus.Logger, s *synerexServerInfo) grpc.Un
 			tgtId = sp.TargetId
 			mid = sp.Id
 			//			args = "Type:" + strconv.Itoa(int(sp.Type)) + ":" + strconv.FormatUint(sp.Id, 16) + ":" + idToNode(sp.SenderId) + "->" + strconv.FormatUint(sp.TargetId, 16)
-			args = idToNode(sp.SenderId) + "->" + idToNode(sp.TargetId)
-			// Target
+			//args = idToNode(sp.SenderId) + "->" + idToNode(sp.TargetId)
+			csp := sp // copy
+			//csp.GetSimSupply().Data = &simapi.SimSupply_SetAgentsResponse{&agent.SetAgentsResponse{}}
+			//logger.Info("sp: %v\n", csp.GetSimSupply())
+			sp_json, _ := json.Marshal(csp)
+			args = string(sp_json)
+		// Target
 		case "SelectSupply", "Confirm", "SelectDemand":
 			tg := req.(*api.Target)
 			msgType = int(tg.Type)
@@ -642,7 +688,7 @@ func main() {
 
 	monitorapi.InitMonitor(*monitor)
 
-	lis, err := net.Listen("tcp", fmt.Sprintf("0.0.0.0:%d", *port))
+	lis, err := net.Listen("tcp", *serverAddr)
 	defer lis.Close()
 	if err != nil {
 		log.Fatalf("failed to listen: %v", err)
@@ -659,7 +705,7 @@ func main() {
 	//	opts = append(opts, grpc.StreamInterceptor(streamServerInterceptor(logger)))
 
 	grpcServer := prepareGrpcServer(s, opts...)
-	log.Printf("Start Synergic Exchange Server, connection waiting at port :%d ...", *port)
+	log.Printf("Start Synergic Exchange Server, connection waiting at %d ...", *serverAddr)
 	serr := grpcServer.Serve(lis)
 	log.Printf("Should not arrive here.. server closed. %v", serr)
 
