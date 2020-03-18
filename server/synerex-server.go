@@ -601,12 +601,12 @@ func unaryServerInterceptor(logger *logrus.Logger, s *synerexServerInfo) grpc.Un
 		//		monitorapi.SendMes(&monitorapi.Mes{Message:method+":"+args, Args:""})
 
 		dstId := s.messageStore.getSrcId(tgtId)
-		meth := strings.Replace(method, "Propose", "P", 1)
-		met2 := strings.Replace(meth, "Register", "R", 1)
-		met3 := strings.Replace(met2, "Supply", "S", 1)
-		met4 := strings.Replace(met3, "Demand", "D", 1)
+		//meth := strings.Replace(method, "Propose", "P", 1)
+		//met2 := strings.Replace(meth, "Register", "R", 1)
+		//met3 := strings.Replace(met2, "Supply", "S", 1)
+		//met4 := strings.Replace(met3, "Demand", "D", 1)
 		// it seems here to stuck.
-		go monitorapi.SendMessage(met4, msgType, mid, srcId, dstId, tgtId, args)
+		//go monitorapi.SendMessage(met4, msgType, mid, srcId, dstId, tgtId, args)
 
 		// register for messageStore
 		s.messageStore.AddMessage(method, msgType, mid, srcId, dstId, args)

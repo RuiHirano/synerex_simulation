@@ -233,7 +233,7 @@ func runMyCmd(cmd *exec.Cmd, source *Source, name string) {
 	log.Printf("Starting %s..\n", cmd.Args[0])
 
 	// run SubFuncition
-	if source.Type != ProviderType_SYNEREX && source.Type != ProviderType_NODE_ID && source.Type != ProviderType_MONITOR {
+	if source.Type != ProviderType_NODE_ID && source.Type != ProviderType_MONITOR {
 		pipe, _ := cmd.StderrPipe()
 		err := cmd.Start()
 		if err != nil {

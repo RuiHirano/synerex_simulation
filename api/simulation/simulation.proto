@@ -76,11 +76,6 @@ message SimDemand {
 		repeated uint64 targets = 22;
 }
 
-message SenderInfo {
-	uint64 id = 1;
-	uint64 name = 2;
-	string synerex_address = 3;
-}
 
 enum StatusType {
     OK = 0;

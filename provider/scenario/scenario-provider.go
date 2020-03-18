@@ -35,6 +35,7 @@ var (
 	nodeIdAddr      = flag.String("nodeid", "127.0.0.1:9990", "Node ID Server")
 	simulatorAddr   = flag.String("simulator", "127.0.0.1:9995", "Node ID Server")
 	visAddr         = flag.String("vis", "127.0.0.1:9995", "Node ID Server")
+	monitorAddr     = flag.String("monitor", "127.0.0.1:9993", "Monitor Server")
 	areaId          = flag.Int("areaId", 0, "Area ID")
 	isStart         bool
 	mu              sync.Mutex
@@ -266,12 +267,8 @@ func createRandomCoord(areaCoords []*common.Coord) *common.Coord {
 func calcRoute() *agent.Route {
 
 	departure := createRandomCoord(mockAreaInfos[*areaId].ControlArea)
-	destination := createRandomCoord(mockAreaInfos[*areaId].ControlArea)
-	if *areaId == 0 {
-		destination = createRandomCoord(mockAreaInfos[1].ControlArea)
-	} else if *areaId == 1 {
-		destination = createRandomCoord(mockAreaInfos[0].ControlArea)
-	}
+	destAreaId := rand.Intn(3)
+	destination := createRandomCoord(mockAreaInfos[uint64(destAreaId)].ControlArea)
 
 	/*departure = &common.Coord{
 		Latitude:  35.1542,
@@ -457,7 +454,7 @@ func (o *Order) SetAgents(agentNum uint64) (bool, error) {
 
 	agents := make([]*agent.Agent, 0)
 
-	for i := 0; i < int(agentNum); i++ {
+	for i := 0; i < int(agentNum/2); i++ {
 		uuid, err := uuid.NewRandom()
 		if err == nil {
 			agent := &agent.Agent{
@@ -476,7 +473,7 @@ func (o *Order) SetAgents(agentNum uint64) (bool, error) {
 			agents = append(agents, agent)
 		}
 	}
-	for i := 0; i < int(agentNum); i++ {
+	for i := 0; i < int(agentNum/2); i++ {
 		uuid, err := uuid.NewRandom()
 		if err == nil {
 			agent := &agent.Agent{
@@ -600,7 +597,7 @@ func (ss *SimulatorServer) Run() error {
 		serveMux := http.NewServeMux()
 		serveMux.Handle("/socket.io/", server)
 		serveMux.HandleFunc("/", assetsFileHandler)
-		log.Println("Serving at localhost:9995...")
+		log.Println("Serving at localhost: %v...": *simulatorAddr)
 		if err := http.ListenAndServe(*simulatorAddr, serveMux); err != nil {
 			log.Panic(err)
 		}
@@ -673,6 +670,7 @@ func demandCallback(clt *sxutil.SMServiceClient, dm *pb.Demand) {
 		// providerを追加する
 		p := dm.GetSimDemand().GetRegistProviderRequest().GetProvider()
 		providerManager.AddProvider(p)
+		providerManager.AddMyProvider(p)
 		providerManager.CreateIDMap()
 		// 登録完了通知
 		targets := []uint64{tid}
@@ -696,10 +694,11 @@ func demandCallback(clt *sxutil.SMServiceClient, dm *pb.Demand) {
 	case simapi.DemandType_SEND_PROVIDER_STATUS_REQUEST:
 	case simapi.DemandType_SET_PROVIDERS_REQUEST:
 		providers := dm.GetSimDemand().GetSetProvidersRequest().GetProviders()
-		logger.Debug("Providers: %v", providers)
+
 		logger.Info("Get Providers from Gateway")
 		for _, p := range providers {
 			if p.Type == provider.ProviderType_AGENT {
+				logger.Debug("Provider: %v", p.Id)
 				providerManager.AddProvider(p)
 			}
 		}
@@ -722,7 +721,7 @@ func demandCallback(clt *sxutil.SMServiceClient, dm *pb.Demand) {
 		logger.Info("Get Providers Request")
 		targets := []uint64{tid}
 		senderInfo := providerManager.MyProvider
-		com.GetProvidersResponse(senderInfo, targets, pid, tid, providerManager.Providers)
+		com.GetProvidersResponse(senderInfo, targets, pid, tid, providerManager.MyProviders)
 
 	}
 }
@@ -857,6 +856,14 @@ func runInitServer() {
 			Key:   "synerex",
 			Value: *serverAddr,
 		},
+		&provider.Option{
+			Key:   "nodesrv",
+			Value: *nodeIdAddr,
+		},
+		&provider.Option{
+			Key:   "monitor",
+			Value: *monitorAddr,
+		},
 	}
 	pSources[synerexServer.Type].Options = options
 	synerexServer.Run(pSources[synerexServer.Type])
@@ -944,6 +951,7 @@ func runInitProvider() {
 	}
 
 	areaInfos := areaManager.DivideArea(mockAreaInfos[*areaId])
+	logger.Warn("Area %v", areaInfos)
 	for name, agentType := range INIT_AGENT_TYPES {
 
 		//logger.Error("mockAreaInfo: %v\n", mockAreaInfo2.ControlArea)

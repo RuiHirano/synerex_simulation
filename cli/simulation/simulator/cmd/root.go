@@ -21,6 +21,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
+	"log"
 	"os"
 	"time"
 
@@ -89,6 +90,7 @@ func init() {
 	//ch := make(chan bool, len(synerexAddrs))
 	for _, addr := range synerexAddrs {
 		ioAddr := "ws://" + addr + "/socket.io/?EIO=3&transport=websocket"
+		log.Printf("ioAddr: %v", ioAddr)
 		go func() {
 			var err error
 			sioClient, err := gosocketio.Dial(ioAddr, transport.DefaultWebsocketTransport())

@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log"
 	"sync"
+	"time"
 
 	//"time"
 	//"runtime"
@@ -66,17 +67,19 @@ type Message struct {
 }
 
 func NewMessage() *Message {
-	return &Message{ready: make(chan struct{})}
+	return &Message{ready: make(chan struct{}), agents: make([]*agent.Agent, 0)}
 }
 func (m *Message) Set(a []*agent.Agent) {
-	mu.Lock()
 	m.agents = a
 	close(m.ready)
-	mu.Unlock()
 }
 
 func (m *Message) Get() []*agent.Agent {
-	<-m.ready
+	select {
+	case <-m.ready:
+	case <-time.After(100 * time.Millisecond):
+		logger.Warn("Timeout Get")
+	}
 
 	return m.agents
 }
@@ -110,6 +113,7 @@ func forwardClock(dm *pb.Demand) {
 	//logger.Debug("Neighbor pid %v ID %v", pid, idList)
 	targets = idList
 	_, neighborAreaAgents := com.GetAgentsRequest(senderInfo, targets, pid, idList)
+	//neighborAreaAgents := make([]*agent.Agent, 0)
 	//logger.Debug("3, %v", pid)
 	logger.Debug("3")
 	// [4. Update Agents]重複エリアのエージェントを更新する
@@ -136,6 +140,8 @@ func forwardClock(dm *pb.Demand) {
 func demandCallback(clt *sxutil.SMServiceClient, dm *pb.Demand) {
 	tid := dm.GetSimDemand().GetPid()
 	pid := providerManager.MyProvider.Id
+
+	targets := dm.GetSimDemand().GetTargets()
 	switch dm.GetSimDemand().GetType() {
 	case simapi.DemandType_UPDATE_PROVIDERS_REQUEST:
 		// 参加者リストをセットする要求
@@ -173,12 +179,12 @@ func demandCallback(clt *sxutil.SMServiceClient, dm *pb.Demand) {
 
 	case simapi.DemandType_GET_AGENTS_REQUEST:
 		// vis, neighborProviderからの場合
-		idList := providerManager.GetIDList([]simutil.IDType{
-			simutil.IDType_VISUALIZATION,
-			simutil.IDType_NEIGHBOR,
-		})
+		//idList := providerManager.GetIDList([]simutil.IDType{
+		//	simutil.IDType_VISUALIZATION,
+		//	simutil.IDType_NEIGHBOR,
+		//})
 
-		if simutil.Contains(idList, tid) {
+		/*if simutil.Contains(targets, pid) {
 			//com.GetAgentsResponse(senderInfo, targets, pid, tid, sim.Agents, sim.AgentType, sim.Area.Id)
 			go func() {
 
@@ -192,15 +198,39 @@ func demandCallback(clt *sxutil.SMServiceClient, dm *pb.Demand) {
 				//logger.Error("Finish: Send Agents2 %v", dm.GetSimDemand().GetPid())
 			}()
 
-		}
+		}*/
 		// sameAreaProviderからの場合
-		idList = providerManager.GetIDList([]simutil.IDType{
-			simutil.IDType_SAME,
-		})
-		if simutil.Contains(idList, tid) {
-			targets := []uint64{tid}
-			senderInfo := providerManager.MyProvider
-			com.GetAgentsResponse(senderInfo, targets, pid, tid, sim.Agents, sim.AgentType, sim.Area.Id)
+		//idList = providerManager.GetIDList([]simutil.IDType{
+		//	simutil.IDType_SAME,
+		//})
+		if simutil.Contains(targets, pid) {
+			//targets := []uint64{tid}
+			//senderInfo := providerManager.MyProvider
+			//com.GetAgentsResponse(senderInfo, targets, pid, tid, sim.Agents, sim.AgentType, sim.Area.Id)
+
+			senderPInfo := dm.GetSimDemand().GetSenderInfo()
+			if senderPInfo.GetAgentStatus().GetArea().GetId() == providerManager.MyProvider.GetAgentStatus().GetArea().GetId() {
+				targets := []uint64{tid}
+				senderInfo := providerManager.MyProvider
+				com.GetAgentsResponse(senderInfo, targets, pid, tid, sim.Agents, sim.AgentType, sim.Area.Id)
+			} else {
+				go func() {
+
+					//t1 := time.Now()
+					//agentsMessage.Get()
+					//t2 := time.Now()
+					//duration := t2.Sub(t1).Milliseconds()
+					//logger.Error("Duration: %v", duration)
+					agentsInfo := make([]*agent.Agent, 0)
+					targets := []uint64{tid}
+					senderInfo := providerManager.MyProvider
+
+					com.GetAgentsResponse(senderInfo, targets, pid, tid, agentsInfo, sim.AgentType, sim.Area.Id)
+
+					return
+					//logger.Error("Finish: Send Agents2 %v", dm.GetSimDemand().GetPid())
+				}()
+			}
 		}
 
 	}

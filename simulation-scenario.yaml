@@ -1,0 +1,48 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: simulation-scenario
+spec:
+  selector:
+    app: simulation
+    release: scenario
+  ports:
+    - name: http
+      port: 8400
+
+---
+apiVersion: apps/v1
+kind: ReplicaSet
+metadata:
+  name: simulation-scenario
+  labels:
+    app: simulation
+    release: scenario
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: simulation
+      release: scenario
+  template:
+    metadata:
+      labels:
+        app: simulation
+        release: scenario
+    spec:
+      containers:
+      - name: scenario 
+        image: simulation/scenario:latest 
+        env: 
+        - name: NODEID_SERVER
+          value: localhost:8000
+        - name: SYNEREX_SERVER
+          value: localhost:8100
+        - name: MONITOR_SERVER
+          value: localhost:8200
+        - name: VISUALIZATION_MONITOR
+          value: localhost:8300
+        - name: SIMULATOR
+          value: localhost:8400
+        ports:
+        - containerPort: 8400

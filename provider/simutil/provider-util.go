@@ -1,7 +1,7 @@
 package simutil
 
 import (
-	"log"
+	//"log"
 
 	"github.com/synerex/synerex_alpha/api/simulation/provider"
 )
@@ -25,13 +25,15 @@ const (
 type ProviderManager struct {
 	MyProvider    *provider.Provider
 	Providers     []*provider.Provider
+	MyProviders   []*provider.Provider
 	ProviderIDMap map[IDType][]uint64
 }
 
 func NewProviderManager(myProvider *provider.Provider) *ProviderManager {
 	pm := &ProviderManager{
-		MyProvider: myProvider,
-		Providers:  []*provider.Provider{myProvider},
+		MyProvider:  myProvider,
+		Providers:   []*provider.Provider{myProvider},
+		MyProviders: []*provider.Provider{myProvider},
 	}
 	return pm
 }
@@ -39,6 +41,13 @@ func NewProviderManager(myProvider *provider.Provider) *ProviderManager {
 func (pm *ProviderManager) AddProvider(p *provider.Provider) {
 	mu.Lock()
 	pm.Providers = append(pm.Providers, p)
+	mu.Unlock()
+	//log.Printf("Providers: %v\n", pm.Providers)
+}
+
+func (pm *ProviderManager) AddMyProvider(p *provider.Provider) {
+	mu.Lock()
+	pm.MyProviders = append(pm.MyProviders, p)
 	mu.Unlock()
 	//log.Printf("Providers: %v\n", pm.Providers)
 }
@@ -110,7 +119,7 @@ func (pm *ProviderManager) CreateIDMap() {
 			}
 			// AgentProviderでなければ必要ない
 			if pm.MyProvider.GetType() == provider.ProviderType_AGENT {
-				log.Printf("IsNeighbor %v", pm.IsNeighborArea(p))
+				//log.Printf("IsNeighbor %v", pm.IsNeighborArea(p))
 				if pm.IsNeighborArea(p) && p.GetAgentStatus().GetAgentType() == pm.MyProvider.GetAgentStatus().GetAgentType() {
 					// 隣接エリアかつAgentTypeが等しい場合
 					neighborIDs = append(neighborIDs, p.GetId())

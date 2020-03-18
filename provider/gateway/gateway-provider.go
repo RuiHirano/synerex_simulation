@@ -59,17 +59,17 @@ func supplyCallback1(clt *sxutil.SMServiceClient, sp *pb.Supply) {
 
 	tid := sp.GetTargetId()
 	pid := sp.GetSimSupply().GetPid()
+	targets := sp.GetSimSupply().GetTargets()
+	senderInfo := sp.GetSimSupply().GetSenderInfo()
 	switch sp.GetSimSupply().GetType() {
 	case simapi.SupplyType_GET_AGENTS_RESPONSE:
-		if com2 != nil && IsSameProvidersID(providerManager2.Providers, tid) {
+		if com2 != nil && IsContainProviders(providerManager1.Providers, senderInfo) && IsContainTarget(providerManager2.Providers, targets) {
 			//logger.Error("GetAgentsResponse")
 			agents := sp.GetSimSupply().GetGetAgentsResponse().GetAgents()
 			agentType := sp.GetSimSupply().GetGetAgentsResponse().GetAgentType()
 			areaId := sp.GetSimSupply().GetGetAgentsResponse().GetAreaId()
 
-			targets := []uint64{tid}
-			senderInfo := providerManager2.MyProvider
-			logger.Error("Send Agent from %v to %v", pid, tid)
+			//logger.Error("Send Agent from %v to %v", pid, tid)
 			com2.GetAgentsResponse(senderInfo, targets, pid, tid, agents, agentType, areaId)
 		}
 	case simapi.SupplyType_GET_PROVIDERS_RESPONSE:
@@ -92,13 +92,13 @@ func demandCallback1(clt *sxutil.SMServiceClient, dm *pb.Demand) {
 
 	// check if supply is match with my demand.
 	pid := dm.GetSimDemand().GetPid()
+	targets := dm.GetSimDemand().GetTargets()
+	senderInfo := dm.GetSimDemand().GetSenderInfo()
 	//senderId := dm.GetSenderId()
-	if com2 != nil && IsSameProvidersID(providerManager1.Providers, pid) {
+	if com2 != nil && IsContainProviders(providerManager1.Providers, senderInfo) && IsContainTarget(providerManager2.Providers, targets) {
 		switch dm.GetSimDemand().GetType() {
 		case simapi.DemandType_GET_AGENTS_REQUEST:
 			//logger.Error("GetAgentsRequest")
-			targets := []uint64{}
-			senderInfo := providerManager2.MyProvider
 			com2.GetAgentsRequest(senderInfo, targets, pid, nil)
 		}
 	}
@@ -110,17 +110,17 @@ func supplyCallback2(clt *sxutil.SMServiceClient, sp *pb.Supply) {
 
 	tid := sp.GetTargetId()
 	pid := sp.GetSimSupply().GetPid()
+	targets := sp.GetSimSupply().GetTargets()
+	senderInfo := sp.GetSimSupply().GetSenderInfo()
 	switch sp.GetSimSupply().GetType() {
 	case simapi.SupplyType_GET_AGENTS_RESPONSE:
-		if com1 != nil && IsSameProvidersID(providerManager1.Providers, tid) {
+		if com1 != nil && IsContainProviders(providerManager2.Providers, senderInfo) && IsContainTarget(providerManager1.Providers, targets) {
 			//logger.Error("GetAgentsResponse")
 			agents := sp.GetSimSupply().GetGetAgentsResponse().GetAgents()
 			agentType := sp.GetSimSupply().GetGetAgentsResponse().GetAgentType()
 			areaId := sp.GetSimSupply().GetGetAgentsResponse().GetAreaId()
 
-			targets := []uint64{tid}
-			senderInfo := providerManager1.MyProvider
-			logger.Error("Send Agent from %v to %v", pid, tid)
+			//logger.Error("Send Agent from %v to %v", pid, tid)
 			com1.GetAgentsResponse(senderInfo, targets, pid, tid, agents, agentType, areaId)
 		}
 
@@ -138,25 +138,38 @@ func demandCallback2(clt *sxutil.SMServiceClient, dm *pb.Demand) {
 	// check if supply is match with my demand.
 	//asenderId := dm.GetSenderId()
 	pid := dm.GetSimDemand().GetPid()
+
+	targets := dm.GetSimDemand().GetTargets()
+	senderInfo := dm.GetSimDemand().GetSenderInfo()
 	switch dm.GetSimDemand().GetType() {
 	case simapi.DemandType_GET_AGENTS_REQUEST:
 		//logger.Error("GetAgentsRequest2")
 	}
-	if com1 != nil && IsSameProvidersID(providerManager2.Providers, pid) {
+	// 相手のプロバイダーへのDemandかつ自分のプロバイダーであること
+	if com1 != nil && IsContainProviders(providerManager2.Providers, senderInfo) && IsContainTarget(providerManager1.Providers, targets) {
 		switch dm.GetSimDemand().GetType() {
 		case simapi.DemandType_GET_AGENTS_REQUEST:
 			//logger.Error("GetAgentsRequest")
-			targets := []uint64{}
-			senderInfo := providerManager1.MyProvider
 			com1.GetAgentsRequest(senderInfo, targets, pid, nil)
 		}
 	}
 }
 
-func IsSameProvidersID(providers []*provider.Provider, pid uint64) bool {
+func IsContainProviders(providers []*provider.Provider, senderInfo *provider.Provider) bool {
 	for _, pr := range providers {
-		if pr.Id == pid {
+		if pr.Id == senderInfo.Id {
 			return true
+		}
+	}
+	return false
+}
+
+func IsContainTarget(providers []*provider.Provider, targets []uint64) bool {
+	for _, pr := range providers {
+		for _, tgt := range targets {
+			if pr.Id == tgt {
+				return true
+			}
 		}
 	}
 	return false
