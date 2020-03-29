@@ -1,167 +1,111 @@
-// Copyright © 2018 Synergic Mobility Project (https://synergic.mobi)
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//     http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
-
 package cmd
 
 import (
+	"encoding/json"
 	"fmt"
-	"time"
+	"strings"
 
 	"github.com/spf13/cobra"
-	//"strings"
-	//"strconv"
-	//"os/exec"
+	"gopkg.in/go-playground/validator.v9"
 )
 
-// cmdInfo represents the run command aliases
-type orderCmdInfo struct {
-	Aliases []string
-	CmdName string
-	Type    OrderType
+/////////////////////////////////////////////////
+/////////           Stop Command            /////
+////////////////////////////////////////////////
+
+var stopCmd = &cobra.Command{
+	Use:   "stop",
+	Short: "Stop Simulation",
+	Run: func(cmd *cobra.Command, args []string) {
+		fmt.Printf("stop\n")
+		sender.Post(nil, "/order/stop")
+
+	},
 }
 
-/*type Order struct {
-	Type   string
-	Option string
-}*/
-
-type Options struct {
-	Json      string
-	AgentNum  string
-	ClockTime string
+func init() {
+	orderCmd.AddCommand(stopCmd)
 }
 
-// Order
-type OrderType int
+/////////////////////////////////////////////////
+/////////           Start Command            /////
+////////////////////////////////////////////////
 
-const (
-	OrderType_SET_AGENTS  OrderType = 0
-	OrderType_SET_AREA    OrderType = 1
-	OrderType_SET_CLOCK   OrderType = 2
-	OrderType_START_CLOCK OrderType = 3
-	OrderType_STOP_CLOCK  OrderType = 4
+var startCmd = &cobra.Command{
+	Use:   "start",
+	Short: "Start Simulation",
+	Run: func(cmd *cobra.Command, args []string) {
+		fmt.Printf("start\n")
+		sender.Post(nil, "/order/start")
+
+	},
+}
+
+func init() {
+	orderCmd.AddCommand(startCmd)
+}
+
+/////////////////////////////////////////////////
+/////////           Set Command            /////
+////////////////////////////////////////////////
+
+type AgentOptions struct {
+	Num int `validate:"required,min=0,max=10"`
+}
+
+type ClockOptions struct {
+	Time int `validate:"required,min=0"`
+}
+
+var (
+	ao = &AgentOptions{}
+	co = &ClockOptions{}
 )
 
-type Option struct {
-	Key   string
-	Value string
+var setCmd = &cobra.Command{
+	Use:   "set",
+	Short: "Set agent or clock or area",
 }
 
-type Order struct {
-	Type    OrderType
-	Name    string
-	Options []*Option
-}
-
-var o = Options{}
-
-var orderCmds = [...]orderCmdInfo{
-	{
-		Aliases: []string{"SetClock", "setClock", "setclock", "set-clock"},
-		CmdName: "SetClock",
-		Type:    OrderType_SET_CLOCK,
+var agentCmd = &cobra.Command{
+	Use:   "agent",
+	Short: "Set agent",
+	Run: func(cmd *cobra.Command, args []string) {
+		fmt.Printf("set agent\n")
+		aojson, _ := json.Marshal(ao)
+		sender.Post(aojson, "/order/set/agent")
 	},
-	{
-		Aliases: []string{"SetArea", "setArea", "setarea", "set-area"},
-		CmdName: "SetArea",
-		Type:    OrderType_SET_AREA,
-	},
-	{
-		Aliases: []string{"SetAgents", "setAgents", "setagents", "set-agents", "SetAgent", "setAgent", "setagent", "set-agent"},
-		CmdName: "SetAgents",
-		Type:    OrderType_SET_AGENTS,
-	},
-	{
-		Aliases: []string{"StartClock", "startClock", "start"},
-		CmdName: "StartClock",
-		Type:    OrderType_START_CLOCK,
-	},
-	{
-		Aliases: []string{"StopClock", "stopClock", "stop"},
-		CmdName: "StopClock",
-		Type:    OrderType_STOP_CLOCK,
+	PreRunE: func(cmd *cobra.Command, args []string) error {
+		return validateParams(*ao)
 	},
 }
 
-func getOrderCmdName(alias string) string {
-	for _, ci := range orderCmds {
-		for _, str := range ci.Aliases {
-			if alias == str {
-				return ci.CmdName
-			}
-		}
-	}
-	return "" // can't find alias
+var clockCmd = &cobra.Command{
+	Use:   "clock",
+	Short: "Set clock",
+	Run: func(cmd *cobra.Command, args []string) {
+		fmt.Printf("set clock\n")
+		cojson, _ := json.Marshal(co)
+		sender.Post(cojson, "/order/set/clock")
+	},
+	PreRunE: func(cmd *cobra.Command, args []string) error {
+		return validateParams(*co)
+	},
 }
 
-func sendOrder(cmdName string, order *Order) bool {
-	//todo: we should use ack for this. but its not working....
-	fmt.Printf("sioClients2 %v", sioClients)
-	for _, sioClient := range sioClients {
-		fmt.Printf("simulator order [%v] to [%v]\n", order, sioClient)
-		res, err := sioClient.Ack("order", order, 20*time.Second)
-		//					err := sioClient.Emit("run",ci.CmdName) //, 20*time.Second)
-		//time.Sleep(1 * time.Second)
-
-		if err != nil || res != "\"ok\"" {
-			fmt.Printf("simulator: Got error on reply:'%s',%v\n", res, err)
-			//return false
-		} else {
-			fmt.Printf("simulator: Reply [%s]\n", res)
-			fmt.Printf("simulator: Run '%s' succeeded.\n", cmdName)
-			//return true
-		}
-	}
-	return true
-
+func init() {
+	agentCmd.Flags().IntVarP(&ao.Num, "num", "n", 0, "agent num (required)")
+	clockCmd.Flags().IntVarP(&co.Time, "time", "t", 0, "clcok time (required)")
+	setCmd.AddCommand(agentCmd)
+	setCmd.AddCommand(clockCmd)
+	orderCmd.AddCommand(setCmd)
 }
 
-func handleOrder(cmd *cobra.Command, args []string) {
-
-	//simData := handleUserDialogue()
-	fmt.Printf("Dialogue Result: %v\n", o)
-	if len(args) > 0 {
-		findflag := false
-		order := new(Order)
-		//order.Option = "&o"
-		for _, ci := range orderCmds {
-			for _, str := range ci.Aliases {
-				if args[0] == str {
-					switch ci.CmdName {
-					case "SetAgents":
-						//order.Option = o.optAgentNum
-					}
-
-					fmt.Printf("simulator: Starting '%s'\n", ci.CmdName)
-					order.Type = ci.Type
-					order.Name = ci.CmdName
-					findflag = sendOrder(ci.CmdName, order)
-					break
-				}
-			}
-
-		}
-		if !findflag {
-			fmt.Printf("simulation: Can't find command run '%s'.\n", args[0])
-			fmt.Printf("cmd is:'%s'\n", orderCmds)
-
-		}
-	}
-}
-
+/////////////////////////////////////////////////
+//////////          Order Command          /////
+////////////////////////////////////////////////
 var orderCmd = &cobra.Command{
-	Use:   "order [order name] [options..]",
+	Use:   "order",
 	Short: "Start a provider",
 	Long: `Start a provider with options 
 For example:
@@ -169,12 +113,47 @@ For example:
 	simulation order set-time   
 	simulation order set-area   
 `,
-	Run: handleOrder,
 }
 
 func init() {
 	rootCmd.AddCommand(orderCmd)
-	orderCmd.Flags().StringVarP(&o.Json, "json", "j", "sample.json", "json name")
-	orderCmd.Flags().StringVarP(&o.AgentNum, "num", "n", "1", "agent num")
-	orderCmd.Flags().StringVarP(&o.ClockTime, "time", "t", "0", "clock time")
+}
+
+/////////////////////////////////////////////////
+//////////            Validation            /////
+////////////////////////////////////////////////
+var validate = validator.New()
+
+func validateParams(p interface{}) error {
+
+	errs := validate.Struct(p)
+
+	return extractValidationErrors(errs)
+}
+
+func extractValidationErrors(err error) error {
+
+	if err != nil {
+		var errorText []string
+		for _, err := range err.(validator.ValidationErrors) {
+			errorText = append(errorText, validationErrorToText(err))
+		}
+		return fmt.Errorf("Parameter error: %s", strings.Join(errorText, "\n"))
+	}
+
+	return nil
+}
+
+func validationErrorToText(e validator.FieldError) string {
+
+	f := e.Field()
+	switch e.Tag() {
+	case "required":
+		return fmt.Sprintf("%s is required", f)
+	case "max":
+		return fmt.Sprintf("%s cannot be greater than %s", f, e.Param())
+	case "min":
+		return fmt.Sprintf("%s must be greater than %s", f, e.Param())
+	}
+	return fmt.Sprintf("%s is not valid %s", e.Field(), e.Value())
 }

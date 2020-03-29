@@ -20,11 +20,10 @@ RUN go get -u github.com/golang/protobuf/protoc-gen-go
 RUN go get -u google.golang.org/grpc
 
 # build synerex daemon
-WORKDIR /go/src/github.com/synerex_server
+WORKDIR /synerex_simulation/cli
 COPY . .
 RUN sed -i 's/\r//' ./entrypoint.sh
 RUN chmod +x ./entrypoint.sh
 
 # expose port
-#EXPOSE 3000
 ENTRYPOINT [ "./entrypoint.sh" ]

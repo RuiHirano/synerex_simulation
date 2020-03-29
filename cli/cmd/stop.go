@@ -14,38 +14,8 @@
 
 package cmd
 
-import (
-	"fmt"
-	"github.com/spf13/cobra"
-	"time"
-)
-
-// stopCmd represents the stop command
-var stopCmd = &cobra.Command{
-	Use:   "stop [provider names]",
-	Short: "Stop the process running under Synerex Engine",
-	Long: `Stop the process running under Synerex Engine`,
-	Run: func(cmd *cobra.Command, args []string) {
-		cmdList := make([]string,len(args))
-		n := 0
-		for _, alias := range args {
-			cmd := getCmdName(alias)
-			if len(cmd) != 0 {
-				cmdList[n] =  cmd
-				n++
-			}
-		}
-		fmt.Println("Try to stop ", cmdList)
-		s, err :=sioClient.Ack("stop",cmdList, time.Second * 3)
-
-		if err == nil {
-			fmt.Printf("stop %s\n", s)
-		}
-	},
-}
+import ()
 
 func init() {
-	rootCmd.AddCommand(stopCmd)
-
 
 }
