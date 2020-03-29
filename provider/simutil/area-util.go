@@ -1,12 +1,12 @@
 package simutil
 
-import (
+/*import (
 	"math"
 	"sort"
 
 	"github.com/google/uuid"
+	api "github.com/synerex/synerex_alpha/api"
 	area "github.com/synerex/synerex_alpha/api/simulation/area"
-	common "github.com/synerex/synerex_alpha/api/simulation/common"
 )
 
 ////////////////////////////////////////////////////////////
@@ -69,22 +69,22 @@ func (am *AreaManager) DivideArea(areaInfo *area.Area) []*area.Area {
 	// 二等分にするアルゴリズム
 	areaCoord := areaInfo.ControlArea
 	point1, point2, point3, point4 := areaCoord[0], areaCoord[1], areaCoord[2], areaCoord[3]
-	point1vecs := []*common.Coord{Sub(point1, point1), Sub(point2, point1), Sub(point3, point1), Sub(point4, point1)}
+	point1vecs := []*api.Coord{Sub(point1, point1), Sub(point2, point1), Sub(point3, point1), Sub(point4, point1)}
 	// 昇順にする
 	sort.Sort(ByAbs{point1vecs})
 	divPoint1 := Div(point1vecs[2], 2)                     //分割点1
 	divPoint2 := Add(Div(point1vecs[2], 2), point1vecs[1]) //分割点2
 	// 二つに分割
-	control1 := []*common.Coord{
+	control1 := []*api.Coord{
 		Add(point1vecs[0], point1), Add(point1vecs[1], point1), Add(divPoint1, point1), Add(divPoint2, point1),
 	}
-	control2 := []*common.Coord{
+	control2 := []*api.Coord{
 		Add(point1vecs[2], point1), Add(point1vecs[3], point1), Add(divPoint1, point1), Add(divPoint2, point1),
 	}
-	controls := [][]*common.Coord{control1, control2}
+	controls := [][]*api.Coord{control1, control2}
 
 	// calc duplicate area
-	var duplicates [][]*common.Coord
+	var duplicates [][]*api.Coord
 	for _, control := range controls {
 		maxLat, maxLon := math.Inf(-1), math.Inf(-1)
 		minLat, minLon := math.Inf(0), math.Inf(0)
@@ -102,11 +102,11 @@ func (am *AreaManager) DivideArea(areaInfo *area.Area) []*area.Area {
 				minLon = coord.Longitude
 			}
 		}
-		duplicate := []*common.Coord{
-			&common.Coord{Latitude: minLat - DUPLICATE_RANGE, Longitude: minLon - DUPLICATE_RANGE},
-			&common.Coord{Latitude: minLat - DUPLICATE_RANGE, Longitude: maxLon + DUPLICATE_RANGE},
-			&common.Coord{Latitude: maxLat + DUPLICATE_RANGE, Longitude: maxLon + DUPLICATE_RANGE},
-			&common.Coord{Latitude: maxLat + DUPLICATE_RANGE, Longitude: minLon - DUPLICATE_RANGE},
+		duplicate := []*api.Coord{
+			&api.Coord{Latitude: minLat - DUPLICATE_RANGE, Longitude: minLon - DUPLICATE_RANGE},
+			&api.Coord{Latitude: minLat - DUPLICATE_RANGE, Longitude: maxLon + DUPLICATE_RANGE},
+			&api.Coord{Latitude: maxLat + DUPLICATE_RANGE, Longitude: maxLon + DUPLICATE_RANGE},
+			&api.Coord{Latitude: maxLat + DUPLICATE_RANGE, Longitude: minLon - DUPLICATE_RANGE},
 		}
 		duplicates = append(duplicates, duplicate)
 	}
@@ -202,7 +202,7 @@ func isNeighbor(area1 *area.Area, area2 *area.Area) bool {
 	return false
 }
 
-func GetCoordRange(coords []*common.Coord) (float64, float64, float64, float64) {
+func GetCoordRange(coords []*api.Coord) (float64, float64, float64, float64) {
 	maxLon, maxLat := math.Inf(-1), math.Inf(-1)
 	minLon, minLat := math.Inf(0), math.Inf(0)
 	for _, coord := range coords {
@@ -221,3 +221,4 @@ func GetCoordRange(coords []*common.Coord) (float64, float64, float64, float64) 
 	}
 	return maxLat, maxLon, minLat, minLon
 }
+*/

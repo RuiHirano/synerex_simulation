@@ -9,11 +9,6 @@ require (
 	github.com/stretchr/objx v0.1.1 // indirect
 	github.com/stretchr/testify v1.3.0 // indirect
 	github.com/synerex/synerex_alpha/api v0.0.0
-	github.com/synerex/synerex_alpha/api/common v0.0.0
-	github.com/synerex/synerex_alpha/api/simulation/agent v0.0.0
-	github.com/synerex/synerex_alpha/api/simulation/area v0.0.0
-	github.com/synerex/synerex_alpha/api/simulation/clock v0.0.0
-	github.com/synerex/synerex_alpha/api/simulation/provider v0.0.0
 	github.com/synerex/synerex_alpha/nodeapi v0.0.0
 	golang.org/x/oauth2 v0.0.0-20181203162652-d668ce993890 // indirect
 	google.golang.org/appengine v1.4.0 // indirect
@@ -23,7 +18,6 @@ require (
 
 replace (
 	github.com/synerex/synerex_alpha/api => ../api
-	github.com/synerex/synerex_alpha/api/common => ../api/common
 	github.com/synerex/synerex_alpha/api/simulation/agent => ../api/simulation/agent
 	github.com/synerex/synerex_alpha/api/simulation/area => ../api/simulation/area
 	github.com/synerex/synerex_alpha/api/simulation/clock => ../api/simulation/clock

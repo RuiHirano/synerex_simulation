@@ -1,9 +1,14 @@
 package simutil
 
-import (
+/*import (
 	//"log"
+	"sync"
 
 	"github.com/synerex/synerex_alpha/api/simulation/provider"
+)
+
+var (
+	mu sync.Mutex
 )
 
 ////////////////////////////////////////////////////////////
@@ -171,3 +176,4 @@ func (pm *ProviderManager) IsNeighborArea(p *provider.Provider) bool {
 	}
 	return false
 }
+*/

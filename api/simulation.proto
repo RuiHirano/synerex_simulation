@@ -1,0 +1,163 @@
+syntax = "proto3";
+
+package api;
+
+option go_package="api";
+
+message SimDemand {
+		uint64 sender_id = 1;
+
+        // provider info
+        DemandType type = 2;
+
+        // meta data
+	    string meta = 4;
+
+		// demand data
+        oneof data {
+			SetAgentRequest set_agent_request = 5;
+			RegistProviderRequest regist_provider_request = 6;
+			SetClockRequest set_clock_request = 7;
+			StartClockRequest start_clock_request = 8;
+			StopClockRequest stop_clock_request = 9;
+			ForwardClockRequest forward_clock_request = 10;
+        }
+    }
+
+ message SimSupply {
+	 	uint64 sender_id = 1;
+        // demand type
+        SupplyType type = 2;
+
+        // meta data
+        StatusType status = 3;
+        string meta = 4;
+
+		// supply data
+        oneof data {
+			SetAgentResponse set_agent_response = 5;
+			RegistProviderResponse regist_provider_response = 6;
+			SetClockResponse set_clock_response = 7;
+			StartClockResponse start_clock_response = 8;
+			StopClockResponse stop_clock_response = 9;
+			ForwardClockResponse forward_clock_response = 10;
+        }
+}
+
+
+enum StatusType {
+    OK = 0;
+    ERROR = 1;
+}
+
+enum DemandType {
+    SET_AGENT_REQUEST = 0;
+	REGIST_PROVIDER_REQUEST = 1;
+	SET_CLOCK_REQUEST = 2;
+	START_CLOCK_REQUEST = 3;
+	STOP_CLOCK_REQUEST = 4;
+	FORWARD_CLOCK_REQUEST = 5;
+}
+
+enum SupplyType {
+    SET_AGENT_RESPONSE = 0;
+	REGIST_PROVIDER_RESPONSE = 1;
+	SET_CLOCK_RESPONSE = 2;
+	START_CLOCK_RESPONSE = 3;
+	STOP_CLOCK_RESPONSE = 4;
+	FORWARD_CLOCK_RESPONSE = 5;
+}
+
+
+
+message RegistProviderRequest {
+    Provider provider = 1;
+}
+
+message RegistProviderResponse {
+}
+
+message SetClockRequest {
+    Clock clock = 1;
+}
+
+message SetClockResponse {
+}
+
+message SetAgentRequest {
+    repeated Agent agents = 1;
+}
+
+message SetAgentResponse {
+}
+
+
+message StartClockRequest {
+	
+}
+
+message StartClockResponse {
+}
+
+message ForwardClockRequest {
+	Clock clock = 1;
+}
+
+message ForwardClockResponse {
+}
+
+message StopClockRequest {
+}
+
+message StopClockResponse {
+}
+
+
+
+message Provider {
+	uint64 id = 1;
+	string name = 2;
+    ProviderType type = 3;
+	string address = 5;
+}
+
+enum ProviderType {
+	MASTER = 0;
+	WORKER = 1;
+	AGENT = 2;
+	VISUALIZATION = 3;
+	GATEWAY = 4;
+}
+
+message Clock {
+    double global_time = 1;
+}
+
+message Agent {
+    uint64 id = 1;
+	string name = 2;
+    AgentType type = 3;
+    Route route = 4;
+}
+
+enum AgentType {
+    PEDESTRIAN = 0;
+    CAR = 1;
+}
+
+message Route {
+    Coord position = 1;
+    double direction = 2;
+    double speed = 3;
+    Coord destination = 4;
+    Coord departure = 5;
+    repeated Coord transit_points = 6;
+    Coord next_transit = 7;
+    double total_distance = 8;
+    double required_time = 9;
+}
+
+message Coord {
+    double latitude = 1;
+    double longitude = 2;
+}

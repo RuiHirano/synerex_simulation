@@ -1017,9 +1017,9 @@ func main() {
 	runInitServer()
 
 	// Connect to Node Server
-	sxutil.RegisterNodeName(*nodeIdAddr, "ScenarioProvider", false)
-	go sxutil.HandleSigInt()
-	sxutil.RegisterDeferFunction(sxutil.UnRegisterNode)
+	api.RegisterNodeName(*nodeIdAddr, "ScenarioProvider", false)
+	go api.HandleSigInt()
+	api.RegisterDeferFunction(api.UnRegisterNode)
 
 	// Connect to Synerex Server
 	var opts []grpc.DialOption
@@ -1028,7 +1028,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("fail to dial: %v", err)
 	}
-	sxutil.RegisterDeferFunction(func() { conn.Close() })
+	api.RegisterDeferFunction(func() { conn.Close() })
 	client := pb.NewSynerexClient(conn)
 	argJson := fmt.Sprintf("{Client:Scenario}")
 
@@ -1046,6 +1046,6 @@ func main() {
 	// 初期プロバイダ起動
 	runInitProvider()
 	wg.Wait()
-	sxutil.CallDeferFunctions() // cleanup!
+	api.CallDeferFunctions() // cleanup!
 
 }

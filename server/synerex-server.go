@@ -1,15 +1,6 @@
 package main
 
-//go:generate protoc -I ../api --go_out=paths=source_relative:../api common/common.proto
-
-//go:generate protoc -I ../api  --go_out=paths=source_relative:../api simulation/agent/pedestrian.proto
-//go:generate protoc -I ../api  --go_out=paths=source_relative:../api simulation/agent/car.proto
-//go:generate protoc -I ../api  --go_out=paths=source_relative:../api simulation/agent/agent.proto
-//go:generate protoc -I ../api  --go_out=paths=source_relative:../api simulation/clock/clock.proto
-//go:generate protoc -I ../api  --go_out=paths=source_relative:../api simulation/common/common.proto
-//go:generate protoc -I ../api  --go_out=paths=source_relative:../api simulation/provider/provider.proto
-//go:generate protoc -I ../api  --go_out=paths=source_relative:../api simulation/simulation.proto
-
+//go:generate protoc -I ../api -I .. --go_out=plugins=grpc:../api simulation.proto
 //go:generate protoc -I ../api -I .. --go_out=plugins=grpc:../api synerex.proto
 
 import (

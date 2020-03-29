@@ -19,3 +19,4 @@ replace (
 	github.com/synerex/synerex_alpha/api/simulation => ./simulation
 )
 
+go 1.13

@@ -38,11 +38,11 @@ participant Vis2
 end box 
 
 == StartUp ==
-WorkerProvider->MasterSynerex: RegistWorkerRequest
-MasterSynerex->MasterProvider: RegistWorkerRequest
+WorkerProvider->MasterSynerex: RegistProviderRequest
+MasterSynerex->MasterProvider: RegistProviderRequest
 note over MasterProvider: Workerを登録
-MasterProvider->MasterSynerex: RegistWorkerResponse
-MasterSynerex->WorkerProvider: RegistWorkerResponse
+MasterProvider->MasterSynerex: RegistProviderResponse
+MasterSynerex->WorkerProvider: RegistProviderResponse
 
 == SetClock ==
 Simulator->MasterProvider: SetClockRequest
@@ -102,8 +102,8 @@ MasterProvider->Simulator: StopClockResponse
 @enduml
 
 '必要なPubsub'
-'RegistWorkerRequest'
-'RegistWorkerResponse'
+'RegistProviderRequest'
+'RegistProviderResponse'
 'SetClockRequest'
 'SetClockResponse'
 'SetAgentRequest'

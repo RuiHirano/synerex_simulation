@@ -1,8 +1,4 @@
-package sxutil
-
-// SMUtil.go is a helper utility package for Synergic Market
-
-// Helper structures for Synergic Market
+package api
 
 import (
 	"context"
@@ -13,9 +9,11 @@ import (
 	"sync"
 	"time"
 
+	"os"
+	"os/signal"
+
 	"github.com/bwmarrin/snowflake"
 	"github.com/golang/protobuf/ptypes"
-	"github.com/synerex/synerex_alpha/api"
 	"github.com/synerex/synerex_alpha/nodeapi"
 	"google.golang.org/grpc"
 )
@@ -31,6 +29,7 @@ var (
 	myNodeName string
 	conn       *grpc.ClientConn
 	clt        nodeapi.NodeClient
+	funcSlice  []func()
 )
 
 // DemandOpts is sender options for Demand
@@ -39,7 +38,7 @@ type DemandOpts struct {
 	Target    uint64
 	Name      string
 	JSON      string
-	SimDemand *api.SimDemand
+	SimDemand *SimDemand
 }
 
 // SupplyOpts is sender options for Supply
@@ -48,11 +47,39 @@ type SupplyOpts struct {
 	Target    uint64
 	Name      string
 	JSON      string
-	SimSupply *api.SimSupply
+	SimSupply *SimSupply
 }
 
 func init() {
 	fmt.Println("Synergic Exchange Util init() is called!")
+	funcSlice = make([]func(), 0)
+}
+
+// register closing functions.
+func RegisterDeferFunction(f func()) {
+	funcSlice = append(funcSlice, f)
+}
+
+func CallDeferFunctions() {
+	for _, f := range funcSlice {
+		log.Printf("Calling %v", f)
+		f()
+	}
+}
+
+func HandleSigInt() {
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt, os.Kill)
+
+	for range c {
+		log.Println("Signal Interrupt!")
+		close(c)
+	}
+
+	CallDeferFunctions()
+
+	log.Println("End at HandleSigInt in sxutil/signal.go")
+	os.Exit(1)
 }
 
 // InitNodeNum for initialize NodeNum again
@@ -157,15 +184,14 @@ func UnRegisterNode() {
 // SMServiceClient Wrappter Structure for market client
 type SMServiceClient struct {
 	ClientID IDType
-	MType    api.ChannelType
-	Client   api.SynerexClient
+	MType    ChannelType
+	Client   SynerexClient
 	ArgJson  string
 	MbusID   IDType
 }
 
 // NewSMServiceClient Creates wrapper structre SMServiceClient from SynerexClient
-func NewSMServiceClient(clt api.SynerexClient, mtype api.ChannelType, argJson string) *SMServiceClient {
-	log.Println("node is %v\n ", node)
+func NewSMServiceClient(clt SynerexClient, mtype ChannelType, argJson string) *SMServiceClient {
 	s := &SMServiceClient{
 		ClientID: IDType(node.Generate()),
 		MType:    mtype,
@@ -180,12 +206,12 @@ func GenerateIntID() uint64 {
 	return uint64(node.Generate())
 }
 
-func (clt SMServiceClient) getChannel() *api.Channel {
-	return &api.Channel{ClientId: uint64(clt.ClientID), Type: clt.MType, ArgJson: clt.ArgJson}
+func (clt SMServiceClient) getChannel() *Channel {
+	return &Channel{ClientId: uint64(clt.ClientID), Type: clt.MType, ArgJson: clt.ArgJson}
 }
 
 // IsSupplyTarget is a helper function to check target
-func (clt *SMServiceClient) IsSupplyTarget(sp *api.Supply, idlist []uint64) bool {
+func (clt *SMServiceClient) IsSupplyTarget(sp Supply, idlist []uint64) bool {
 	spid := sp.TargetId
 	for _, id := range idlist {
 		if id == spid {
@@ -196,7 +222,7 @@ func (clt *SMServiceClient) IsSupplyTarget(sp *api.Supply, idlist []uint64) bool
 }
 
 // IsDemandTarget is a helper function to check target
-func (clt *SMServiceClient) IsDemandTarget(dm *api.Demand, idlist []uint64) bool {
+func (clt *SMServiceClient) IsDemandTarget(dm Demand, idlist []uint64) bool {
 	dmid := dm.TargetId
 	for _, id := range idlist {
 		if id == dmid {
@@ -210,7 +236,7 @@ func (clt *SMServiceClient) IsDemandTarget(dm *api.Demand, idlist []uint64) bool
 func (clt *SMServiceClient) ProposeSupply(spo *SupplyOpts) uint64 {
 	pid := GenerateIntID()
 	ts := ptypes.TimestampNow()
-	sp := &api.Supply{
+	sp := &Supply{
 		Id:         pid,
 		SenderId:   uint64(clt.ClientID),
 		TargetId:   spo.Target,
@@ -236,8 +262,8 @@ func (clt *SMServiceClient) ProposeSupply(spo *SupplyOpts) uint64 {
 }
 
 // SelectSupply send select message to server
-func (clt *SMServiceClient) SelectSupply(sp *api.Supply) (uint64, error) {
-	tgt := &api.Target{
+func (clt *SMServiceClient) SelectSupply(sp Supply) (uint64, error) {
+	tgt := &Target{
 		Id:       GenerateIntID(),
 		SenderId: uint64(clt.ClientID),
 		TargetId: sp.Id, /// Message Id of Supply (not SenderId),
@@ -261,8 +287,8 @@ func (clt *SMServiceClient) SelectSupply(sp *api.Supply) (uint64, error) {
 }
 
 // SelectDemand send select message to server
-func (clt *SMServiceClient) SelectDemand(dm *api.Demand) error {
-	tgt := &api.Target{
+func (clt *SMServiceClient) SelectDemand(dm Demand) error {
+	tgt := &Target{
 		Id:       GenerateIntID(),
 		SenderId: uint64(clt.ClientID),
 		TargetId: dm.Id,
@@ -280,7 +306,7 @@ func (clt *SMServiceClient) SelectDemand(dm *api.Demand) error {
 }
 
 // SubscribeSupply  Wrapper function for SMServiceClient
-func (clt *SMServiceClient) SubscribeSupply(ctx context.Context, spcb func(*SMServiceClient, *api.Supply)) error {
+func (clt *SMServiceClient) SubscribeSupply(ctx context.Context, spcb func(*SMServiceClient, *Supply)) error {
 	ch := clt.getChannel()
 	smc, err := clt.Client.SubscribeSupply(ctx, ch)
 	//log.Printf("Test3 %v", ch)
@@ -290,7 +316,7 @@ func (clt *SMServiceClient) SubscribeSupply(ctx context.Context, spcb func(*SMSe
 		return err
 	}
 	for {
-		var sp *api.Supply
+		var sp *Supply
 		sp, err = smc.Recv() // receive Demand
 		//log.Printf("\x1b[30m\x1b[47m SXUTIL: SUPPLY\x1b[0m\n")
 		if err != nil {
@@ -309,7 +335,7 @@ func (clt *SMServiceClient) SubscribeSupply(ctx context.Context, spcb func(*SMSe
 }
 
 // SubscribeDemand  Wrapper function for SMServiceClient
-func (clt *SMServiceClient) SubscribeDemand(ctx context.Context, dmcb func(*SMServiceClient, *api.Demand)) error {
+func (clt *SMServiceClient) SubscribeDemand(ctx context.Context, dmcb func(*SMServiceClient, *Demand)) error {
 	ch := clt.getChannel()
 	dmc, err := clt.Client.SubscribeDemand(ctx, ch)
 	//log.Printf("Test3 %v", ch)
@@ -319,7 +345,7 @@ func (clt *SMServiceClient) SubscribeDemand(ctx context.Context, dmcb func(*SMSe
 		return err // sender should handle error...
 	}
 	for {
-		var dm *api.Demand
+		var dm *Demand
 		dm, err = dmc.Recv() // receive Demand
 		//log.Printf("\x1b[30m\x1b[47m SXUTIL: DEMAND\x1b[0m\n")
 		if err != nil {
@@ -338,9 +364,9 @@ func (clt *SMServiceClient) SubscribeDemand(ctx context.Context, dmcb func(*SMSe
 }
 
 // SubscribeMbus  Wrapper function for SMServiceClient
-func (clt *SMServiceClient) SubscribeMbus(ctx context.Context, mbcb func(*SMServiceClient, *api.MbusMsg)) error {
+func (clt *SMServiceClient) SubscribeMbus(ctx context.Context, mbcb func(*SMServiceClient, *MbusMsg)) error {
 
-	mb := &api.Mbus{
+	mb := &Mbus{
 		ClientId: uint64(clt.ClientID),
 		MbusId:   uint64(clt.MbusID),
 	}
@@ -351,7 +377,7 @@ func (clt *SMServiceClient) SubscribeMbus(ctx context.Context, mbcb func(*SMServ
 		return err // sender should handle error...
 	}
 	for {
-		var mes *api.MbusMsg
+		var mes *MbusMsg
 		mes, err = smc.Recv() // receive Demand
 		if err != nil {
 			if err == io.EOF {
@@ -368,7 +394,7 @@ func (clt *SMServiceClient) SubscribeMbus(ctx context.Context, mbcb func(*SMServ
 	return err
 }
 
-func (clt *SMServiceClient) SendMsg(ctx context.Context, msg *api.MbusMsg) error {
+func (clt *SMServiceClient) SendMsg(ctx context.Context, msg *MbusMsg) error {
 	if clt.MbusID == 0 {
 		return errors.New("No Mbus opened!")
 	}
@@ -384,7 +410,7 @@ func (clt *SMServiceClient) CloseMbus(ctx context.Context) error {
 	if clt.MbusID == 0 {
 		return errors.New("No Mbus opened!")
 	}
-	mbus := &api.Mbus{
+	mbus := &Mbus{
 		ClientId: uint64(clt.ClientID),
 		MbusId:   uint64(clt.MbusID),
 	}
@@ -399,7 +425,7 @@ func (clt *SMServiceClient) CloseMbus(ctx context.Context) error {
 func (clt *SMServiceClient) RegisterDemand(dmo *DemandOpts) uint64 {
 	id := GenerateIntID()
 	ts := ptypes.TimestampNow()
-	dm := api.Demand{
+	dm := &Demand{
 		Id:         id,
 		SenderId:   uint64(clt.ClientID),
 		Type:       clt.MType,
@@ -415,7 +441,7 @@ func (clt *SMServiceClient) RegisterDemand(dmo *DemandOpts) uint64 {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	_, err := clt.Client.RegisterDemand(ctx, &dm)
+	_, err := clt.Client.RegisterDemand(ctx, dm)
 
 	//	resp, err := clt.Client.RegisterDemand(ctx, &dm)
 	if err != nil {
@@ -431,7 +457,7 @@ func (clt *SMServiceClient) RegisterDemand(dmo *DemandOpts) uint64 {
 func (clt *SMServiceClient) RegisterSupply(spo *SupplyOpts) uint64 {
 	id := GenerateIntID()
 	ts := ptypes.TimestampNow()
-	sp := api.Supply{
+	sp := &Supply{
 		Id:         id,
 		SenderId:   uint64(clt.ClientID),
 		Type:       clt.MType,
@@ -448,7 +474,7 @@ func (clt *SMServiceClient) RegisterSupply(spo *SupplyOpts) uint64 {
 	defer cancel()
 	//	resp , err := clt.Client.RegisterSupply(ctx, &dm)
 
-	_, err := clt.Client.RegisterSupply(ctx, &sp)
+	_, err := clt.Client.RegisterSupply(ctx, sp)
 	if err != nil {
 		log.Printf("Error for sending:RegisterSupply to  Synerex Server as %v ", err)
 		return 0
@@ -460,7 +486,7 @@ func (clt *SMServiceClient) RegisterSupply(spo *SupplyOpts) uint64 {
 
 // Confirm sends confirm message to sender
 func (clt *SMServiceClient) Confirm(id IDType) error {
-	tg := &api.Target{
+	tg := &Target{
 		Id:       GenerateIntID(),
 		SenderId: uint64(clt.ClientID),
 		TargetId: uint64(id),
@@ -477,4 +503,25 @@ func (clt *SMServiceClient) Confirm(id IDType) error {
 	clt.MbusID = id
 	log.Println("Confirm Success:", resp)
 	return nil
+}
+
+// Demand
+// NewDemand returns empty Demand.
+func NewDemand() *Demand {
+	return &Demand{}
+}
+
+// NewSupply returns empty Supply.
+func NewSupply() *Supply {
+	return &Supply{}
+}
+
+func (dm *Demand) WithSimDemand(r *SimDemand) *Demand {
+	dm.ArgOneof = &Demand_SimDemand{r}
+	return dm
+}
+
+func (sp *Supply) WithSimSupply(c *SimSupply) *Supply {
+	sp.ArgOneof = &Supply_SimSupply{c}
+	return sp
 }
