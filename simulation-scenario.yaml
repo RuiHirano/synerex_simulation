@@ -1,11 +1,10 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: simulation-scenario
+  name: scenario
 spec:
   selector:
-    app: simulation
-    release: scenario
+    app: scenario
   ports:
     - name: http
       port: 8400
@@ -14,25 +13,23 @@ spec:
 apiVersion: apps/v1
 kind: ReplicaSet
 metadata:
-  name: simulation-scenario
+  name: scenario
   labels:
-    app: simulation
-    release: scenario
+    app: scenario
 spec:
-  replicas: 3
+  replicas: 2
   selector:
     matchLabels:
-      app: simulation
-      release: scenario
+      app: scenario
   template:
     metadata:
       labels:
-        app: simulation
-        release: scenario
+        app: scenario
     spec:
       containers:
       - name: scenario 
         image: simulation/scenario:latest 
+        imagePullPolicy: Never
         env: 
         - name: NODEID_SERVER
           value: localhost:8000

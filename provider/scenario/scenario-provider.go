@@ -16,6 +16,8 @@ import (
 
 	"github.com/golang/protobuf/jsonpb"
 	"github.com/google/uuid"
+	"github.com/labstack/echo"
+	"github.com/labstack/echo/middleware"
 	gosocketio "github.com/mtfelian/golang-socketio"
 	pb "github.com/synerex/synerex_alpha/api"
 	simapi "github.com/synerex/synerex_alpha/api/simulation"
@@ -597,7 +599,7 @@ func (ss *SimulatorServer) Run() error {
 		serveMux := http.NewServeMux()
 		serveMux.Handle("/socket.io/", server)
 		serveMux.HandleFunc("/", assetsFileHandler)
-		log.Println("Serving at localhost: %v...": *simulatorAddr)
+		log.Println("Serving at localhost: %v...", *simulatorAddr)
 		if err := http.ListenAndServe(*simulatorAddr, serveMux); err != nil {
 			log.Panic(err)
 		}
@@ -976,6 +978,26 @@ func runInitProvider() {
 
 }
 
+func SendHello() echo.HandlerFunc {
+	return func(c echo.Context) error {
+		return c.String(http.StatusOK, "Hello World")
+	}
+}
+
+func startSimulatorServer() {
+	fmt.Printf("Starting Simulator Server...")
+
+	e := echo.New()
+
+	e.Use(middleware.Logger())
+	e.Use(middleware.Recover())
+	e.Use(middleware.CORS())
+
+	e.GET("/", SendHello()) // notebookファイル取得
+
+	e.Start(":8400")
+}
+
 func main() {
 
 	// ProviderManager
@@ -987,8 +1009,9 @@ func main() {
 	areaManager = simutil.NewAreaManager(mockAreaInfos[*areaId])
 
 	// CLI, GUIの受信サーバ
-	simulatorServer := NewSimulatorServer()
-	simulatorServer.Run()
+	go startSimulatorServer()
+	//simulatorServer := NewSimulatorServer()
+	//simulatorServer.Run()
 
 	// 初期プロバイダ起動
 	runInitServer()
