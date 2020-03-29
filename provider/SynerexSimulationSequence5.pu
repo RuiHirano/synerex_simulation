@@ -23,102 +23,94 @@
 title SynerexSimulationSequence
 
 
-box "127.0.0.1:9999" #LightBlue
-participant SimProvider1
-participant NodeServ1
-participant Clock1
-control Synerex1
-participant PedA
-participant CarA
-participant PedB
-participant CarB
-participant Vis1
+box "127.0.0.1" #LightBlue
+participant Simulator
+participant MasterProvider
+control MasterSynerex
 end box 
 
-participant gateway
-
-box "127.0.0.2:9999" #LightBlue
-participant SimProvider2
-participant NodeServ2
-participant Clock2
-control Synerex2
-participant PedC
-participant CarC
-participant PedD
-participant CarD
+box "127.0.0.2" #LightBlue
+participant WorkerProvider
+control WorkerSynerex
+participant Ped
+participant Car
 participant Vis2
 end box 
 
 == StartUp ==
-SimProvider1 -> NodeServ1: StartUp
-'SimProvider1 -> Synerex1Serv: StartUp
-SimProvider1 -> PedA: StartUp
-SimProvider1 -> CarA: StartUp
-SimProvider1 -> PedB: StartUp
-SimProvider1 -> CarB: StartUp
-SimProvider1 -> Clock1: StartUp
-SimProvider1 -> Vis1: StartUp
+WorkerProvider->MasterSynerex: RegistWorkerRequest
+MasterSynerex->MasterProvider: RegistWorkerRequest
+note over MasterProvider: Workerを登録
+MasterProvider->MasterSynerex: RegistWorkerResponse
+MasterSynerex->WorkerProvider: RegistWorkerResponse
 
+== SetClock ==
+Simulator->MasterProvider: SetClockRequest
+note over MasterProvider: Clockを登録
+MasterProvider->Simulator: SetClockResponse
+
+== SetAgent ==
+Simulator->MasterProvider: SetAgentRequest
+MasterProvider->MasterSynerex: SetAgentRequest
+MasterSynerex->WorkerProvider: SetAgentRequest
+
+note over WorkerProvider: 同期開始
+WorkerProvider->WorkerSynerex: SetAgentRequest
+WorkerSynerex->Ped: SetAgentRequest
+WorkerSynerex->Car: SetAgentRequest
+note over Ped: Agentを登録
+note over Car: Agentを登録
+Ped->WorkerSynerex: SetAgentResponse
+Car->WorkerSynerex: SetAgentResponse
+WorkerSynerex->WorkerProvider: SetAgentResponse
+WorkerSynerex->WorkerProvider: SetAgentResponse
+note over WorkerProvider: 同期終了
+
+WorkerProvider->MasterSynerex: SetAgentResponse
+MasterSynerex->MasterProvider: SetAgentResponse
+MasterProvider->Simulator: SetAgentResponse
 
 == Start ==
-SimProvider1 -> Synerex1: startClock
-Synerex1 -> Clock1: startClock
-activate Clock1 #FFBBBB
-Clock1 -> Synerex1: RD(ForwardClockDemand)
+Simulator->MasterProvider: StartClockRequest
+MasterProvider->Simulator: StartClockResponse
 
-'PedAのForward処理'
-Synerex1 -> PedA: Forward
-activate Synerex1
-activate PedA #FFBBBB
+note over MasterProvider: サイクル開始
+MasterProvider->MasterSynerex: ForwardClockRequest
+MasterSynerex->WorkerProvider: ForwardClockRequest
 
-'同じエリアのエージェントを取得'
-note over PedA: 同じエリアの\nエージェント取得
-PedA -> Synerex1: RD:GetAgents(SameArea)
-activate Synerex1
-Synerex1 -> CarA: 
-activate CarA #c0c0c0
-CarA -> Synerex1: PS(GetAgentsResponse)
-deactivate CarA
-Synerex1 -> PedA:
-deactivate Synerex1
+note over WorkerProvider: 同期開始
+WorkerProvider->WorkerSynerex: ForwardClockRequest
+WorkerSynerex->Ped: ForwardClockRequest
+WorkerSynerex->Car: ForwardClockRequest
+note over Ped: サイクルを進める
+note over Car: サイクルを進める
+Ped->WorkerSynerex: ForwardClockResponse
+Car->WorkerSynerex: ForwardClockResponse
+WorkerSynerex->WorkerProvider: ForwardClockResponse
+WorkerSynerex->WorkerProvider: ForwardClockResponse
+note over WorkerProvider: 同期終了
 
-note over PedA: 計算
-'隣のエージェントに情報を送信'
-PedB -> Synerex1: GetAgents(Neighbor)
-Synerex1 -> PedA: GetAgents
-PedA -> Synerex1: PS(GetAgentsResponse)
-Synerex1 -> PedB: Response
+WorkerProvider->MasterSynerex: ForwardClockResponse
+MasterSynerex->MasterProvider: ForwardClockResponse
+note over MasterProvider: 次のサイクルへ
 
-'隣のエージェントから情報を取得'
-PedA -> Synerex1: GetAgents(Neighbor)
-activate Synerex1
-Synerex1 -> PedB: GetAgents
-PedB -> Synerex1: PS(GetAgentsResponse)
-Synerex1 -> PedA: Response
-deactivate Synerex1
-
-'エージェントの更新' 
-note over PedA: 更新
-
-'可視化プロバイダへ送信'
-Vis1 -> Synerex1: GetAgents(Neighbor)
-activate Synerex1
-Synerex1 -> PedA: GetAgents
-PedA -> Synerex1: PS(GetAgentsResponse)
-Synerex1 -> Vis1: Response
-deactivate Synerex1
-
-PedA -> Synerex1: PS(ForwardClockSupply)
-Synerex1 -> Clock1:
-deactivate Synerex1
-
-deactivate Clock1
-
-PedA -> Synerex1: SendStatus
-Synerex1 -> SimProvider1: SendStatus 
-deactivate PedA
-
-note over SimProvider1: ステータスを集める
-
+== Stop ==
+Simulator->MasterProvider: StopClockRequest
+note over MasterProvider: Clockを停止
+MasterProvider->Simulator: StopClockResponse
 
 @enduml
+
+'必要なPubsub'
+'RegistWorkerRequest'
+'RegistWorkerResponse'
+'SetClockRequest'
+'SetClockResponse'
+'SetAgentRequest'
+'SetAgentResponse'
+'StartClockRequest'
+'StartClockResponse'
+'ForwardClockRequest'
+'ForwardClockRequest'
+'StopClockRequest'
+'StopClockResponse'

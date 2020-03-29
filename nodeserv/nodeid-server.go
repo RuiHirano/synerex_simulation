@@ -254,6 +254,7 @@ func main() {
 	flag.Parse()
 	//	lis, err := net.Listen("tcp", fmt.Sprintf("localhost:%d", *port))
 	//lis, err := net.Listen("tcp", fmt.Sprintf("0.0.0.0:%d", *port))
+	fmt.Printf("addr: %v\n", *nodeIdAddr)
 	lis, err := net.Listen("tcp", *nodeIdAddr)
 	//defer func() { fmt.Printf("defer!!!!!!!!!!!!!!!!!!!") }()
 	defer lis.Close()

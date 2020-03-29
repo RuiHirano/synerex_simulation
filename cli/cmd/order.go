@@ -50,11 +50,11 @@ func init() {
 ////////////////////////////////////////////////
 
 type AgentOptions struct {
-	Num int `validate:"required,min=0,max=10"`
+	Num int `validate:"required,min=0,max=10", json:"num"`
 }
 
 type ClockOptions struct {
-	Time int `validate:"required,min=0"`
+	Time int `validate:"required,min=0" json:"time"`
 }
 
 var (
@@ -84,7 +84,7 @@ var clockCmd = &cobra.Command{
 	Use:   "clock",
 	Short: "Set clock",
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Printf("set clock\n")
+		fmt.Printf("set clock %v\n", co.Time)
 		cojson, _ := json.Marshal(co)
 		sender.Post(cojson, "/order/set/clock")
 	},
