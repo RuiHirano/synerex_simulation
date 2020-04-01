@@ -10,6 +10,8 @@ message SimDemand {
         // provider info
         DemandType type = 2;
 
+        repeated uint64 targets = 3;
+
         // meta data
 	    string meta = 4;
 
@@ -29,18 +31,20 @@ message SimDemand {
         // demand type
         SupplyType type = 2;
 
+        repeated uint64 targets = 3;
+
         // meta data
-        StatusType status = 3;
-        string meta = 4;
+        StatusType status = 4;
+        string meta = 5;
 
 		// supply data
         oneof data {
-			SetAgentResponse set_agent_response = 5;
-			RegistProviderResponse regist_provider_response = 6;
-			SetClockResponse set_clock_response = 7;
-			StartClockResponse start_clock_response = 8;
-			StopClockResponse stop_clock_response = 9;
-			ForwardClockResponse forward_clock_response = 10;
+			SetAgentResponse set_agent_response = 6;
+			RegistProviderResponse regist_provider_response = 7;
+			SetClockResponse set_clock_response = 8;
+			StartClockResponse start_clock_response = 9;
+			StopClockResponse stop_clock_response = 10;
+			ForwardClockResponse forward_clock_response = 11;
         }
 }
 
@@ -119,6 +123,13 @@ message Provider {
 	string name = 2;
     ProviderType type = 3;
 	string address = 5;
+    ClientIds client_ids = 6;
+}
+
+message ClientIds {
+    uint64 clock_service = 1;
+    uint64 agent_service = 2;
+    uint64 provider_service = 3;
 }
 
 enum ProviderType {

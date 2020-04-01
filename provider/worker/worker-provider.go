@@ -62,14 +62,8 @@ func supplyCallback(clt *api.SMServiceClient, sp *api.Supply) {
 	// 自分宛かどうか
 	// check if supply is match with my demand.
 	switch sp.GetSimSupply().GetType() {
-	case api.SupplyType_SET_CLOCK_RESPONSE:
-		//simapi.SendToWaitCh(sp, sp.GetSimSupply().GetType())
-	case api.SupplyType_SET_AGENT_RESPONSE:
-		//simapi.SendToWaitCh(sp, sp.GetSimSupply().GetType())
-	case api.SupplyType_START_CLOCK_RESPONSE:
-		//simapi.SendToWaitCh(sp, sp.GetSimSupply().GetType())
-	case api.SupplyType_STOP_CLOCK_RESPONSE:
-		//simapi.SendToWaitCh(sp, sp.GetSimSupply().GetType())
+	case api.SupplyType_REGIST_PROVIDER_RESPONSE:
+		fmt.Printf("regist provider!\n")
 	}
 }
 
@@ -100,7 +94,7 @@ func main() {
 	//areaManager = simutil.NewAreaManager(mockAreaInfos[*areaId])
 
 	// Connect to Node Server
-	api.RegisterNodeName(*nodeIdAddr, "ScenarioProvider", false)
+	api.RegisterNodeName(*nodeIdAddr, "WorkerProvider", false)
 	go api.HandleSigInt()
 	api.RegisterDeferFunction(api.UnRegisterNode)
 
@@ -113,16 +107,17 @@ func main() {
 	}
 	api.RegisterDeferFunction(func() { conn.Close() })
 	client := api.NewSynerexClient(conn)
-	argJson := fmt.Sprintf("{Client:Scenario}")
+	argJson := fmt.Sprintf("{Client:Worker}")
 
 	// Communicator
 	simapi = api.NewSimAPI()
-	simapi.RegistClients(client, argJson)               // channelごとのClientを作成
-	simapi.SubscribeAll(demandCallback, supplyCallback) // ChannelにSubscribe
+	simapi.RegistClients(client, myProvider.Id, argJson) // channelごとのClientを作成
+	simapi.SubscribeAll(demandCallback, supplyCallback)  // ChannelにSubscribe
 
 	// masterへ登録
 	senderId := myProvider.Id
-	simapi.RegistProviderRequest(senderId, myProvider)
+	targets := make([]uint64, 0)
+	simapi.RegistProviderRequest(senderId, targets, myProvider)
 
 	wg := sync.WaitGroup{}
 	wg.Add(1)

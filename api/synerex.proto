@@ -17,6 +17,10 @@ service Synerex {
 
     rpc ProposeSupply(Supply) returns (Response) {}
 
+    rpc SyncDemand(Demand) returns (Response) {}
+
+    rpc SyncSupply(Supply) returns (Response) {}
+
     rpc ReserveSupply(Target) returns (ConfirmResponse) {}
 
     rpc ReserveDemand(Target) returns (ConfirmResponse) {}
@@ -30,6 +34,10 @@ service Synerex {
     rpc SubscribeDemand(Channel) returns (stream Demand) {}
 
     rpc SubscribeSupply(Channel) returns (stream Supply) {}
+
+    rpc SubscribeSyncDemand(Channel) returns (stream Demand) {}
+
+    rpc SubscribeSyncSupply(Channel) returns (stream Supply) {}
 
     rpc SubscribeMbus(Mbus) returns (stream MbusMsg) {}
 
@@ -102,6 +110,7 @@ message Channel {
     fixed64 client_id = 1;
     ChannelType type = 2;
     string arg_json = 3;  // for Channel Argument
+    uint64 provider_id = 4;
 }
 
 message Mbus {

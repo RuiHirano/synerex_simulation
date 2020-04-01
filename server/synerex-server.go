@@ -135,6 +135,170 @@ func (s *synerexServerInfo) ProposeSupply(c context.Context, sp *api.Supply) (r 
 	return r, nil
 }
 
+////////////////////////////////////////////////////////////
+//////////////////        Sync           ///////////////////
+///////////////////////////////////////////////////////////
+func (s *synerexServerInfo) SyncDemand(c context.Context, dm *api.Demand) (r *api.Response, e error) {
+	okFlag := true
+	okMsg := ""
+	s.dmu.RLock()
+	chs := s.demandChans[dm.GetType()]
+	for i := range chs {
+		ch := chs[i]
+		if len(ch) < MessageChannelBufferSize {
+
+			ch <- dm
+		} else {
+			okMsg = fmt.Sprintf("PD MessageDrop %v", dm)
+			okFlag = false
+			log.Printf("PD MessageDrop %v\n", dm)
+		}
+	}
+	s.dmu.RUnlock()
+	r = &api.Response{Ok: okFlag, Err: okMsg}
+	return r, nil
+}
+func (s *synerexServerInfo) SyncSupply(c context.Context, sp *api.Supply) (r *api.Response, e error) {
+	okFlag := true
+	okMsg := ""
+	s.smu.RLock()
+	chs := s.supplyChans[sp.GetType()]
+	for i := range chs {
+		ch := chs[i]
+		if len(ch) < MessageChannelBufferSize {
+			ch <- sp
+		} else {
+			okMsg = fmt.Sprintf("PS MessageDrop %v", sp)
+			okFlag = false
+			log.Printf("PS MessageDrop %v\n", sp)
+		}
+	}
+	s.smu.RUnlock()
+	r = &api.Response{Ok: okFlag, Err: okMsg}
+	return r, nil
+}
+
+// go routine which wait demand channel and sending demands to each providers.
+func syncDemandServerFunc(ch chan *api.Demand, stream api.Synerex_SubscribeSyncDemandServer, id uint64) error {
+	for {
+		select {
+		case dm := <-ch: // may block until receiving info
+			//targets = dm.GetSimDemand().GetTargets()
+			//dmId = dm.GetId()
+			//s.SyncMap[dmId] = targets
+			targets := dm.GetSimDemand().GetTargets() // id is channelID, targets is target channelIDs
+			fmt.Printf("targets: %v\n", targets)
+			if contains(id, targets) || len(targets) == 0 {
+				err := stream.Send(dm)
+
+				if err != nil {
+					log.Printf("Error in DemandServer Error %v", err)
+					return err
+				}
+			}
+		}
+	}
+}
+
+// SubscribeDemand is called form client to subscribe channel
+func (s *synerexServerInfo) SubscribeSyncDemand(ch *api.Channel, stream api.Synerex_SubscribeSyncDemandServer) error {
+	// TODO: we can check the duplication of node id here! (especially 1024 snowflake node ID)
+	idt := sxutil.IDType(ch.GetClientId())
+	s.dmu.RLock()
+	_, ok := s.demandMap[ch.Type][idt]
+	s.dmu.RUnlock()
+	if ok { // check the availability of duplicated client ID
+		return errors.New(fmt.Sprintf("duplicated SubscribeDemand ClientID %d", idt))
+	}
+
+	// It is better to logging here.
+	//	monitorapi.SendMes(&monitorapi.Mes{Message:"Subscribe Demand", Args: fmt.Sprintf("Type:%d,From: %x  %s",ch.Type,ch.ClientId, ch.ArgJson )})
+	//monitorapi.SendMessage("SubscribeDemand", int(ch.Type), 0, ch.ClientId, 0, 0, ch.ArgJson)
+
+	subCh := make(chan *api.Demand, MessageChannelBufferSize)
+	// We should think about thread safe coding.
+	tp := ch.GetType()
+	s.dmu.Lock()
+	s.demandChans[tp] = append(s.demandChans[tp], subCh)
+	s.demandMap[tp][idt] = subCh // mapping from clientID to channel
+	s.dmu.Unlock()
+	pid := ch.ProviderId
+	fmt.Printf("ProviderID: %v\n", pid)
+	syncDemandServerFunc(subCh, stream, pid) // infinite go routine?
+	// if this returns, stream might be closed.
+	// we should remove channel
+	s.dmu.Lock()
+	delete(s.demandMap[tp], idt) // remove map from idt
+	s.demandChans[tp] = removeDemandChannelFromSlice(s.demandChans[tp], subCh)
+	log.Printf("Remove Demand Stream Channel %v", ch)
+	s.dmu.Unlock()
+	return nil
+}
+
+func syncSupplyServerFunc(ch chan *api.Supply, stream api.Synerex_SubscribeSyncSupplyServer, id uint64) error {
+	for {
+		select {
+		case sp := <-ch:
+
+			targets := sp.GetSimSupply().GetTargets() // id is channelID, targets is target channelIDs
+			fmt.Printf("targets: %v\n", targets)
+			if contains(id, targets) || len(targets) == 0 { //len(targets) == 0: broadcast, else unicast
+				err := stream.Send(sp) // send to client
+				if err != nil {
+					log.Printf("Error SupplyServer Error %v", err)
+					return err
+				}
+			}
+		}
+	}
+}
+
+func (s *synerexServerInfo) SubscribeSyncSupply(ch *api.Channel, stream api.Synerex_SubscribeSyncSupplyServer) error {
+	idt := sxutil.IDType(ch.GetClientId())
+	tp := ch.GetType()
+	s.smu.RLock()
+	_, ok := s.supplyMap[tp][idt]
+	s.smu.RUnlock()
+	if ok { // check the availability of duplicated client ID
+		return errors.New(fmt.Sprintf("duplicated SubscribeSupply for ClientID %v", idt))
+	}
+
+	subCh := make(chan *api.Supply, MessageChannelBufferSize)
+
+	//	monitorapi.SendMes(&monitorapi.Mes{Message:"Subscribe Supply", Args: fmt.Sprintf("Type:%d, From: %x %s",ch.Type,ch.ClientId,ch.ArgJson )})
+	//monitorapi.SendMessage("SubscribeSupply", int(ch.Type), 0, ch.ClientId, 0, 0, ch.ArgJson)
+
+	s.smu.Lock()
+	s.supplyChans[tp] = append(s.supplyChans[tp], subCh)
+	s.supplyMap[tp][idt] = subCh // mapping from clientID to channel
+	s.smu.Unlock()
+	pid := ch.ProviderId // providerIDで送信先を決定する
+	fmt.Printf("ProviderID: %v\n", pid)
+	err := syncSupplyServerFunc(subCh, stream, pid)
+	// this supply stream may closed. so take care.
+
+	s.smu.Lock()
+	delete(s.supplyMap[tp], idt) // remove map from idt
+	s.supplyChans[tp] = removeSupplyChannelFromSlice(s.supplyChans[tp], subCh)
+	log.Printf("Remove Supply Stream Channel %v", ch)
+	s.smu.Unlock()
+
+	return err
+}
+
+func contains(id uint64, targets []uint64) bool {
+	for _, tgt := range targets {
+		if tgt == id {
+			return true
+		}
+	}
+	return false
+}
+
+////////////////////////////////////////////////////////////
+//////////////////        End          ///////////////////
+///////////////////////////////////////////////////////////
+
 func (s *synerexServerInfo) ReserveSupply(c context.Context, tg *api.Target) (r *api.ConfirmResponse, e error) {
 	//	chs := s.demandChans[tg.GetType()]
 	//	dm := &api.Demand{}
@@ -235,23 +399,7 @@ func demandServerFunc(ch chan *api.Demand, stream api.Synerex_SubscribeDemandSer
 	for {
 		select {
 		case dm := <-ch: // may block until receiving info
-			/*msgType := int(dm.Type)
-			srcId := dm.SenderId
-			tgtId := dm.TargetId
-			mid := dm.Id
-			// 変更
-			cdm := dm // copy
-			//cdm.GetSimDemand().Data := nil
-			dm_json, _ := json.Marshal(cdm)
-			args := string(dm_json)
-			dstId := uint64(0)
-			method := dm.DemandName
-			meth := strings.Replace(method, "Propose", "P", 1)
-			met2 := strings.Replace(meth, "Register", "R", 1)
-			met3 := strings.Replace(met2, "Supply", "S", 1)
-			met4 := strings.Replace(met3, "Demand", "D", 1)
-			go monitorapi.SendMessage(met4, msgType, mid, srcId, dstId, tgtId, args)*/
-
+			fmt.Println("dm %v\n", dm)
 			err := stream.Send(dm)
 			if err != nil {
 				log.Printf("Error in DemandServer Error %v", err)
@@ -322,24 +470,6 @@ func supplyServerFunc(ch chan *api.Supply, stream api.Synerex_SubscribeSupplySer
 	for {
 		select {
 		case sp := <-ch:
-
-			/*msgType := int(sp.Type)
-			srcId := sp.SenderId
-			tgtId := sp.TargetId
-			mid := sp.Id
-			// 変更
-			csp := sp // copy
-			//csp.GetSimDemand().Data = nil
-			sp_json, _ := json.Marshal(csp)
-			args := string(sp_json)
-			dstId := uint64(0)
-			method := sp.SupplyName
-			meth := strings.Replace(method, "Propose", "P", 1)
-			met2 := strings.Replace(meth, "Register", "R", 1)
-			met3 := strings.Replace(met2, "Supply", "S", 1)
-			met4 := strings.Replace(met3, "Demand", "D", 1)
-			go monitorapi.SendMessage(met4, msgType, mid, srcId, dstId, tgtId, args)*/
-			//log.Printf("in supply server func id %v", sp)
 			err := stream.Send(sp)
 			if err != nil {
 
@@ -677,7 +807,7 @@ func main() {
 	flag.Parse()
 	sxutil.RegisterNodeName(*nodesrv, "SynerexServer", true)
 
-	monitorapi.InitMonitor(*monitor)
+	//monitorapi.InitMonitor(*monitor)
 
 	lis, err := net.Listen("tcp", *serverAddr)
 	defer lis.Close()

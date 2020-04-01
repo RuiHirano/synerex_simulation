@@ -183,20 +183,22 @@ func UnRegisterNode() {
 
 // SMServiceClient Wrappter Structure for market client
 type SMServiceClient struct {
-	ClientID IDType
-	MType    ChannelType
-	Client   SynerexClient
-	ArgJson  string
-	MbusID   IDType
+	ClientID   IDType
+	ProviderID uint64
+	MType      ChannelType
+	Client     SynerexClient
+	ArgJson    string
+	MbusID     IDType
 }
 
 // NewSMServiceClient Creates wrapper structre SMServiceClient from SynerexClient
-func NewSMServiceClient(clt SynerexClient, mtype ChannelType, argJson string) *SMServiceClient {
+func NewSMServiceClient(clt SynerexClient, mtype ChannelType, providerID uint64, argJson string) *SMServiceClient {
 	s := &SMServiceClient{
-		ClientID: IDType(node.Generate()),
-		MType:    mtype,
-		Client:   clt,
-		ArgJson:  argJson,
+		ClientID:   IDType(node.Generate()),
+		ProviderID: providerID,
+		MType:      mtype,
+		Client:     clt,
+		ArgJson:    argJson,
 	}
 	return s
 }
@@ -207,7 +209,7 @@ func GenerateIntID() uint64 {
 }
 
 func (clt SMServiceClient) getChannel() *Channel {
-	return &Channel{ClientId: uint64(clt.ClientID), Type: clt.MType, ArgJson: clt.ArgJson}
+	return &Channel{ClientId: uint64(clt.ClientID), Type: clt.MType, ProviderId: clt.ProviderID, ArgJson: clt.ArgJson}
 }
 
 // IsSupplyTarget is a helper function to check target
@@ -308,7 +310,7 @@ func (clt *SMServiceClient) SelectDemand(dm Demand) error {
 // SubscribeSupply  Wrapper function for SMServiceClient
 func (clt *SMServiceClient) SubscribeSupply(ctx context.Context, spcb func(*SMServiceClient, *Supply)) error {
 	ch := clt.getChannel()
-	smc, err := clt.Client.SubscribeSupply(ctx, ch)
+	smc, err := clt.Client.SubscribeSyncSupply(ctx, ch)
 	//log.Printf("Test3 %v", ch)
 	//wg.Done()
 	if err != nil {
@@ -337,7 +339,7 @@ func (clt *SMServiceClient) SubscribeSupply(ctx context.Context, spcb func(*SMSe
 // SubscribeDemand  Wrapper function for SMServiceClient
 func (clt *SMServiceClient) SubscribeDemand(ctx context.Context, dmcb func(*SMServiceClient, *Demand)) error {
 	ch := clt.getChannel()
-	dmc, err := clt.Client.SubscribeDemand(ctx, ch)
+	dmc, err := clt.Client.SubscribeSyncDemand(ctx, ch)
 	//log.Printf("Test3 %v", ch)
 	//wg.Done()
 	if err != nil {
@@ -477,6 +479,72 @@ func (clt *SMServiceClient) RegisterSupply(spo *SupplyOpts) uint64 {
 	_, err := clt.Client.RegisterSupply(ctx, sp)
 	if err != nil {
 		log.Printf("Error for sending:RegisterSupply to  Synerex Server as %v ", err)
+		return 0
+	}
+	//	log.Println("RegiterSupply:", smo, resp)
+	spo.ID = id // assign ID
+	return id
+}
+
+//////////////////////////
+// add sync function////////
+/////////////////////////
+// RegisterDemand sends Typed Demand to Server
+func (clt *SMServiceClient) SyncDemand(dmo *DemandOpts, targetIds []uint64) uint64 {
+	id := GenerateIntID()
+	ts := ptypes.TimestampNow()
+	dm := &Demand{
+		Id:         id,
+		SenderId:   uint64(clt.ClientID),
+		Type:       clt.MType,
+		DemandName: dmo.Name,
+		Ts:         ts,
+		ArgJson:    dmo.JSON,
+	}
+
+	if dmo.SimDemand != nil {
+		dm.WithSimDemand(dmo.SimDemand)
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+
+	_, err := clt.Client.SyncDemand(ctx, dm)
+
+	//	resp, err := clt.Client.SyncDemand(ctx, &dm)
+	if err != nil {
+		log.Printf("%v.SyncDemand err %v", clt, err)
+		return 0
+	}
+	//	log.Println(resp)
+	dmo.ID = id // assign ID
+	return id
+}
+
+// SyncSupply sends Typed Supply to Server
+func (clt *SMServiceClient) SyncSupply(spo *SupplyOpts, targetIds []uint64) uint64 {
+	id := GenerateIntID()
+	ts := ptypes.TimestampNow()
+	sp := &Supply{
+		Id:         id,
+		SenderId:   uint64(clt.ClientID),
+		Type:       clt.MType,
+		SupplyName: spo.Name,
+		Ts:         ts,
+		ArgJson:    spo.JSON,
+	}
+
+	if spo.SimSupply != nil {
+		sp.WithSimSupply(spo.SimSupply)
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	//	resp , err := clt.Client.SyncSupply(ctx, &dm)
+
+	_, err := clt.Client.SyncSupply(ctx, sp)
+	if err != nil {
+		log.Printf("Error for sending:SyncSupply to  Synerex Server as %v ", err)
 		return 0
 	}
 	//	log.Println("RegiterSupply:", smo, resp)

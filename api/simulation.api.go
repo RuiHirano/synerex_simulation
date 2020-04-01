@@ -38,11 +38,11 @@ func NewSimAPI() *SimAPI {
 ////////////        Supply Demand Function       ///////////
 ///////////////////////////////////////////////////////////
 
-func (s *SimAPI) RegistClients(client SynerexClient, argJson string) {
+func (s *SimAPI) RegistClients(client SynerexClient, providerId uint64, argJson string) {
 
-	agentClient := NewSMServiceClient(client, ChannelType_AGENT_SERVICE, argJson)
-	clockClient := NewSMServiceClient(client, ChannelType_CLOCK_SERVICE, argJson)
-	providerClient := NewSMServiceClient(client, ChannelType_PROVIDER_SERVICE, argJson)
+	agentClient := NewSMServiceClient(client, ChannelType_AGENT_SERVICE, providerId, argJson)
+	clockClient := NewSMServiceClient(client, ChannelType_CLOCK_SERVICE, providerId, argJson)
+	providerClient := NewSMServiceClient(client, ChannelType_PROVIDER_SERVICE, providerId, argJson)
 
 	clients := &Clients{
 		AgentClient:    agentClient,
@@ -107,7 +107,32 @@ func sendSupply(sclient *SMServiceClient, simSupply *SimSupply) uint64 {
 	opts := &SupplyOpts{Name: nm, JSON: js, SimSupply: simSupply}
 
 	mu.Lock()
-	id := sclient.ProposeSupply(opts)
+	id := sclient.RegisterSupply(opts)
+	mu.Unlock()
+	return id
+}
+
+//////////////////////////
+// add new function////////
+/////////////////////////
+func sendSyncDemand(sclient *SMServiceClient, simDemand *SimDemand, targetIds []uint64) uint64 {
+	nm := ""
+	js := ""
+	opts := &DemandOpts{Name: nm, JSON: js, SimDemand: simDemand}
+
+	mu.Lock()
+	id := sclient.SyncDemand(opts, targetIds)
+	mu.Unlock()
+	return id
+}
+
+func sendSyncSupply(sclient *SMServiceClient, simSupply *SimSupply, targetIds []uint64) uint64 {
+	nm := ""
+	js := ""
+	opts := &SupplyOpts{Name: nm, JSON: js, SimSupply: simSupply}
+
+	mu.Lock()
+	id := sclient.SyncSupply(opts, targetIds)
 	mu.Unlock()
 	return id
 }
@@ -117,7 +142,7 @@ func sendSupply(sclient *SMServiceClient, simSupply *SimSupply) uint64 {
 //////////////////////////////////////////
 
 // AgentをセットするDemand
-func (s *SimAPI) SetAgentRequest(senderId uint64, agents []*Agent) uint64 {
+func (s *SimAPI) SetAgentRequest(senderId uint64, targets []uint64, agents []*Agent) uint64 {
 	setAgentRequest := &SetAgentRequest{
 		Agents: agents,
 	}
@@ -128,13 +153,13 @@ func (s *SimAPI) SetAgentRequest(senderId uint64, agents []*Agent) uint64 {
 		Data:     &SimDemand_SetAgentRequest{setAgentRequest},
 	}
 
-	id := sendDemand(s.MyClients.AgentClient, simDemand)
+	id := sendSyncDemand(s.MyClients.AgentClient, simDemand, targets)
 
 	return id
 }
 
 // Agentのセット完了
-func (s *SimAPI) SetAgentResponse(senderId uint64) uint64 {
+func (s *SimAPI) SetAgentResponse(senderId uint64, targets []uint64) uint64 {
 	setAgentResponse := &SetAgentResponse{}
 
 	simSupply := &SimSupply{
@@ -144,7 +169,7 @@ func (s *SimAPI) SetAgentResponse(senderId uint64) uint64 {
 		Data:     &SimSupply_SetAgentResponse{setAgentResponse},
 	}
 
-	id := sendSupply(s.MyClients.AgentClient, simSupply)
+	id := sendSyncSupply(s.MyClients.AgentClient, simSupply, targets)
 
 	return id
 }
@@ -154,7 +179,7 @@ func (s *SimAPI) SetAgentResponse(senderId uint64) uint64 {
 //////////////////////////////////////////
 
 // Providerを登録するDemand
-func (s *SimAPI) RegistProviderRequest(senderId uint64, providerInfo *Provider) uint64 {
+func (s *SimAPI) RegistProviderRequest(senderId uint64, targets []uint64, providerInfo *Provider) uint64 {
 	registProviderRequest := &RegistProviderRequest{
 		Provider: providerInfo,
 	}
@@ -163,15 +188,16 @@ func (s *SimAPI) RegistProviderRequest(senderId uint64, providerInfo *Provider) 
 		SenderId: senderId,
 		Type:     DemandType_REGIST_PROVIDER_REQUEST,
 		Data:     &SimDemand_RegistProviderRequest{registProviderRequest},
+		Targets:  targets,
 	}
 
-	id := sendDemand(s.MyClients.ProviderClient, simDemand)
+	id := sendSyncDemand(s.MyClients.ProviderClient, simDemand, targets)
 
 	return id
 }
 
 // Providerを登録するSupply
-func (s *SimAPI) RegistProviderResponse(senderId uint64) uint64 {
+func (s *SimAPI) RegistProviderResponse(senderId uint64, targets []uint64) uint64 {
 	registProviderResponse := &RegistProviderResponse{}
 
 	simSupply := &SimSupply{
@@ -179,9 +205,10 @@ func (s *SimAPI) RegistProviderResponse(senderId uint64) uint64 {
 		Type:     SupplyType_REGIST_PROVIDER_RESPONSE,
 		Status:   StatusType_OK,
 		Data:     &SimSupply_RegistProviderResponse{registProviderResponse},
+		Targets:  targets,
 	}
 
-	id := sendSupply(s.MyClients.ProviderClient, simSupply)
+	id := sendSyncSupply(s.MyClients.ProviderClient, simSupply, targets)
 
 	return id
 }
@@ -190,7 +217,7 @@ func (s *SimAPI) RegistProviderResponse(senderId uint64) uint64 {
 /////////////   Clock API   //////////////
 //////////////////////////////////////////
 
-func (s *SimAPI) SetClockRequest(senderId uint64, clockInfo *Clock) uint64 {
+func (s *SimAPI) SetClockRequest(senderId uint64, targets []uint64, clockInfo *Clock) uint64 {
 	setClockRequest := &SetClockRequest{
 		Clock: clockInfo,
 	}
@@ -199,15 +226,16 @@ func (s *SimAPI) SetClockRequest(senderId uint64, clockInfo *Clock) uint64 {
 		SenderId: senderId,
 		Type:     DemandType_SET_CLOCK_REQUEST,
 		Data:     &SimDemand_SetClockRequest{setClockRequest},
+		Targets:  targets,
 	}
 
-	id := sendDemand(s.MyClients.ClockClient, simDemand)
+	id := sendSyncDemand(s.MyClients.ClockClient, simDemand, targets)
 
 	return id
 }
 
 // Agentを取得するSupply
-func (s *SimAPI) SetClockResponse(senderId uint64) uint64 {
+func (s *SimAPI) SetClockResponse(senderId uint64, targets []uint64) uint64 {
 	setClockResponse := &SetClockResponse{}
 
 	simSupply := &SimSupply{
@@ -215,29 +243,31 @@ func (s *SimAPI) SetClockResponse(senderId uint64) uint64 {
 		Type:     SupplyType_SET_CLOCK_RESPONSE,
 		Status:   StatusType_OK,
 		Data:     &SimSupply_SetClockResponse{setClockResponse},
+		Targets:  targets,
 	}
 
-	id := sendSupply(s.MyClients.ClockClient, simSupply)
+	id := sendSyncSupply(s.MyClients.ClockClient, simSupply, targets)
 
 	return id
 }
 
-func (s *SimAPI) ForwardClockRequest(senderId uint64) uint64 {
+func (s *SimAPI) ForwardClockRequest(senderId uint64, targets []uint64) uint64 {
 	forwardClockRequest := &ForwardClockRequest{}
 
 	simDemand := &SimDemand{
 		SenderId: senderId,
 		Type:     DemandType_FORWARD_CLOCK_REQUEST,
 		Data:     &SimDemand_ForwardClockRequest{forwardClockRequest},
+		Targets:  targets,
 	}
 
-	id := sendDemand(s.MyClients.ClockClient, simDemand)
+	id := sendSyncDemand(s.MyClients.ClockClient, simDemand, targets)
 
 	return id
 }
 
 // Agentを取得するSupply
-func (s *SimAPI) ForwardClockResponse(senderId uint64) uint64 {
+func (s *SimAPI) ForwardClockResponse(senderId uint64, targets []uint64) uint64 {
 	forwardClockResponse := &ForwardClockResponse{}
 
 	simSupply := &SimSupply{
@@ -245,29 +275,31 @@ func (s *SimAPI) ForwardClockResponse(senderId uint64) uint64 {
 		Type:     SupplyType_FORWARD_CLOCK_RESPONSE,
 		Status:   StatusType_OK,
 		Data:     &SimSupply_ForwardClockResponse{forwardClockResponse},
+		Targets:  targets,
 	}
 
-	id := sendSupply(s.MyClients.ClockClient, simSupply)
+	id := sendSyncSupply(s.MyClients.ClockClient, simSupply, targets)
 
 	return id
 }
 
-func (s *SimAPI) StartClockRequest(senderId uint64) uint64 {
+func (s *SimAPI) StartClockRequest(senderId uint64, targets []uint64) uint64 {
 	startClockRequest := &StartClockRequest{}
 
 	simDemand := &SimDemand{
 		SenderId: senderId,
 		Type:     DemandType_START_CLOCK_REQUEST,
 		Data:     &SimDemand_StartClockRequest{startClockRequest},
+		Targets:  targets,
 	}
 
-	id := sendDemand(s.MyClients.ClockClient, simDemand)
+	id := sendSyncDemand(s.MyClients.ClockClient, simDemand, targets)
 
 	return id
 }
 
 // Agentを取得するSupply
-func (s *SimAPI) StartClockResponse(senderId uint64) uint64 {
+func (s *SimAPI) StartClockResponse(senderId uint64, targets []uint64) uint64 {
 	startClockResponse := &StartClockResponse{}
 
 	simSupply := &SimSupply{
@@ -275,29 +307,31 @@ func (s *SimAPI) StartClockResponse(senderId uint64) uint64 {
 		Type:     SupplyType_START_CLOCK_RESPONSE,
 		Status:   StatusType_OK,
 		Data:     &SimSupply_StartClockResponse{startClockResponse},
+		Targets:  targets,
 	}
 
-	id := sendSupply(s.MyClients.ClockClient, simSupply)
+	id := sendSyncSupply(s.MyClients.ClockClient, simSupply, targets)
 
 	return id
 }
 
-func (s *SimAPI) StopClockRequest(senderId uint64) uint64 {
+func (s *SimAPI) StopClockRequest(senderId uint64, targets []uint64) uint64 {
 	stopClockRequest := &StopClockRequest{}
 
 	simDemand := &SimDemand{
 		SenderId: senderId,
 		Type:     DemandType_STOP_CLOCK_REQUEST,
 		Data:     &SimDemand_StopClockRequest{stopClockRequest},
+		Targets:  targets,
 	}
 
-	id := sendDemand(s.MyClients.ClockClient, simDemand)
+	id := sendSyncDemand(s.MyClients.ClockClient, simDemand, targets)
 
 	return id
 }
 
 // Agentを取得するSupply
-func (s *SimAPI) StopClockResponse(senderId uint64) uint64 {
+func (s *SimAPI) StopClockResponse(senderId uint64, targets []uint64) uint64 {
 	stopClockResponse := &StopClockResponse{}
 
 	simSupply := &SimSupply{
@@ -305,9 +339,10 @@ func (s *SimAPI) StopClockResponse(senderId uint64) uint64 {
 		Type:     SupplyType_STOP_CLOCK_RESPONSE,
 		Status:   StatusType_OK,
 		Data:     &SimSupply_StopClockResponse{stopClockResponse},
+		Targets:  targets,
 	}
 
-	id := sendSupply(s.MyClients.ClockClient, simSupply)
+	id := sendSyncSupply(s.MyClients.ClockClient, simSupply, targets)
 
 	return id
 }
@@ -315,6 +350,18 @@ func (s *SimAPI) StopClockResponse(senderId uint64) uint64 {
 ///////////////////////////////////////////
 /////////////      Wait      //////////////
 //////////////////////////////////////////
+
+type Waiter struct {
+}
+
+func NewWaiter() *Waiter {
+	w := &Waiter{}
+	return w
+}
+
+func (w *Waiter) wait() {
+
+}
 
 // SendToSetAgentsResponse : SetAgentsResponseを送る
 func (s *SimAPI) SendToWaitCh(sp *Supply, supplyType SupplyType) {

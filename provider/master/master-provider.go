@@ -38,7 +38,8 @@ var (
 	//providerManager *simutil.ProviderManager
 	//areaManager *simutil.AreaManager
 	//pSources map[provider.ProviderType]*provider.Source
-	logger *simutil.Logger
+	providerManager *Manager
+	logger          *simutil.Logger
 )
 
 func init() {
@@ -48,6 +49,7 @@ func init() {
 	logger = simutil.NewLogger()
 	logger.SetPrefix("Master")
 	flag.Parse()
+	providerManager = NewManager()
 }
 
 var (
@@ -57,6 +59,25 @@ var (
 	assetsDir http.FileSystem
 	server    *gosocketio.Server = nil
 )
+
+////////////////////////////////////////////////////////////
+//////////////////        Manager          ///////////////////
+///////////////////////////////////////////////////////////
+
+type Manager struct {
+	Providers []*api.Provider
+}
+
+func NewManager() *Manager {
+	m := &Manager{
+		Providers: make([]*api.Provider, 0),
+	}
+	return m
+}
+
+func (m *Manager) AddProvider(provider *api.Provider) {
+	m.Providers = append(m.Providers, provider)
+}
 
 ////////////////////////////////////////////////////////////
 //////////////////        Util          ///////////////////
@@ -139,13 +160,15 @@ func demandCallback(clt *api.SMServiceClient, dm *api.Demand) {
 	case api.DemandType_REGIST_PROVIDER_REQUEST:
 		// providerを追加する
 		p := dm.GetSimDemand().GetRegistProviderRequest().GetProvider()
-		fmt.Printf("regist provider! %v\n", p)
+		providerManager.AddProvider(p)
+		fmt.Printf("regist provider! %v\n", providerManager.Providers)
 		// 登録完了通知
 		//targets := []uint64{tid}
 		senderInfo := myProvider.Id
-		simapi.RegistProviderResponse(senderInfo)
+		targets := []uint64{p.GetId()}
+		simapi.RegistProviderResponse(senderInfo, targets)
 
-		logger.Info("Success Update Providers")
+		logger.Info("Success Update Providers", targets)
 
 	}
 }
@@ -169,7 +192,8 @@ func setAgents(agentNum uint64) (bool, error) {
 
 	// エージェントを設置するリクエスト
 	senderId := myProvider.Id
-	simapi.SetAgentRequest(senderId, agents)
+	targets := make([]uint64, 0)
+	simapi.SetAgentRequest(senderId, targets, agents)
 
 	logger.Info("Finish Setting Agents \n Add: %v", len(agents))
 	return true, nil
@@ -181,7 +205,11 @@ func startClock() {
 	t1 := time.Now()
 
 	senderId := myProvider.Id
-	simapi.ForwardClockRequest(senderId)
+	targets := make([]uint64, 0)
+	simapi.ForwardClockRequest(senderId, targets)
+	//dmId := simapi.ForwardClockRequest(senderId)
+	//waiter := Waiter()
+	//waiter.wait(dmId, targets)
 
 	// calc next time
 	masterClock++
@@ -287,19 +315,9 @@ func main() {
 		Name: "MasterServer",
 		Type: api.ProviderType_MASTER,
 	}
-	//providerManager = simutil.NewProviderManager(myProvider)
-	//providerManager.CreateIDMap()
-
-	//AreaManager
-	//areaManager = simutil.NewAreaManager(mockAreaInfos[*areaId])
 
 	// CLI, GUIの受信サーバ
 	go startSimulatorServer()
-	//simulatorServer := NewSimulatorServer()
-	//simulatorServer.Run()
-
-	// 初期プロバイダ起動
-	//runInitServer()
 
 	// Connect to Node Server
 	api.RegisterNodeName(*nodeIdAddr, "MasterProvider", false)
@@ -320,8 +338,8 @@ func main() {
 	// api
 	fmt.Printf("client: %v\n", client)
 	simapi = api.NewSimAPI()
-	simapi.RegistClients(client, argJson)               // channelごとのClientを作成
-	simapi.SubscribeAll(demandCallback, supplyCallback) // ChannelにSubscribe*/
+	simapi.RegistClients(client, myProvider.Id, argJson) // channelごとのClientを作成
+	simapi.SubscribeAll(demandCallback, supplyCallback)  // ChannelにSubscribe*/
 
 	wg := sync.WaitGroup{}
 	wg.Add(1)
