@@ -5,46 +5,48 @@ package api;
 option go_package="api";
 
 message SimDemand {
-		uint64 sender_id = 1;
+        uint64 msg_id = 1;
+		uint64 sender_id = 2;
 
         // provider info
-        DemandType type = 2;
+        DemandType type = 3;
 
-        repeated uint64 targets = 3;
+        repeated uint64 targets = 4;
 
         // meta data
-	    string meta = 4;
+	    string meta = 5;
 
 		// demand data
         oneof data {
-			SetAgentRequest set_agent_request = 5;
-			RegistProviderRequest regist_provider_request = 6;
-			SetClockRequest set_clock_request = 7;
-			StartClockRequest start_clock_request = 8;
-			StopClockRequest stop_clock_request = 9;
-			ForwardClockRequest forward_clock_request = 10;
+			SetAgentRequest set_agent_request = 6;
+			RegistProviderRequest regist_provider_request = 7;
+			SetClockRequest set_clock_request = 8;
+			StartClockRequest start_clock_request = 9;
+			StopClockRequest stop_clock_request = 10;
+			ForwardClockRequest forward_clock_request = 11;
         }
     }
 
  message SimSupply {
-	 	uint64 sender_id = 1;
+        uint64 msg_id = 1;
+	 	uint64 sender_id = 2;
         // demand type
-        SupplyType type = 2;
+        SupplyType type = 3;
 
-        repeated uint64 targets = 3;
+        repeated uint64 targets = 4;
 
         // meta data
-        StatusType status = 4;
-        string meta = 5;
+        StatusType status = 5;
+        string meta = 6;
 
 		// supply data
         oneof data {
-			SetAgentResponse set_agent_response = 6;
-			RegistProviderResponse regist_provider_response = 7;
-			SetClockResponse set_clock_response = 8;
-			StartClockResponse start_clock_response = 9;
-			StopClockResponse stop_clock_response = 10;
-			ForwardClockResponse forward_clock_response = 11;
+			SetAgentResponse set_agent_response = 7;
+			RegistProviderResponse regist_provider_response = 8;
+			SetClockResponse set_clock_response = 9;
+			StartClockResponse start_clock_response = 10;
+			StopClockResponse stop_clock_response = 11;
+			ForwardClockResponse forward_clock_response = 12;
         }
 }
 

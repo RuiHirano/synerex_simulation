@@ -187,7 +187,6 @@ func syncDemandServerFunc(ch chan *api.Demand, stream api.Synerex_SubscribeSyncD
 			//dmId = dm.GetId()
 			//s.SyncMap[dmId] = targets
 			targets := dm.GetSimDemand().GetTargets() // id is channelID, targets is target channelIDs
-			fmt.Printf("targets: %v\n", targets)
 			if contains(id, targets) || len(targets) == 0 {
 				err := stream.Send(dm)
 
@@ -223,7 +222,6 @@ func (s *synerexServerInfo) SubscribeSyncDemand(ch *api.Channel, stream api.Syne
 	s.demandMap[tp][idt] = subCh // mapping from clientID to channel
 	s.dmu.Unlock()
 	pid := ch.ProviderId
-	fmt.Printf("ProviderID: %v\n", pid)
 	syncDemandServerFunc(subCh, stream, pid) // infinite go routine?
 	// if this returns, stream might be closed.
 	// we should remove channel
@@ -240,8 +238,7 @@ func syncSupplyServerFunc(ch chan *api.Supply, stream api.Synerex_SubscribeSyncS
 		select {
 		case sp := <-ch:
 
-			targets := sp.GetSimSupply().GetTargets() // id is channelID, targets is target channelIDs
-			fmt.Printf("targets: %v\n", targets)
+			targets := sp.GetSimSupply().GetTargets()       // id is channelID, targets is target channelIDs
 			if contains(id, targets) || len(targets) == 0 { //len(targets) == 0: broadcast, else unicast
 				err := stream.Send(sp) // send to client
 				if err != nil {

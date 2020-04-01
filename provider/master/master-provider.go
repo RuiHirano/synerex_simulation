@@ -40,9 +40,11 @@ var (
 	//pSources map[provider.ProviderType]*provider.Source
 	providerManager *Manager
 	logger          *simutil.Logger
+	waiter          *api.Waiter
 )
 
 func init() {
+	waiter = api.NewWaiter()
 	startFlag = false
 	masterClock = 0
 	workerHosts = make([]string, 0)
@@ -77,6 +79,14 @@ func NewManager() *Manager {
 
 func (m *Manager) AddProvider(provider *api.Provider) {
 	m.Providers = append(m.Providers, provider)
+}
+
+func (m *Manager) GetProviderIds() []uint64 {
+	pids := make([]uint64, 0)
+	for _, p := range m.Providers {
+		pids = append(pids, p.GetId())
+	}
+	return pids
 }
 
 ////////////////////////////////////////////////////////////
@@ -140,14 +150,14 @@ func supplyCallback(clt *api.SMServiceClient, sp *api.Supply) {
 	// check if supply is match with my demand.
 	switch sp.GetSimSupply().GetType() {
 	case api.SupplyType_SET_CLOCK_RESPONSE:
-		//api.SendToWaitCh(sp, sp.GetSimSupply().GetType())
+		logger.Info("get sp: %v\n", sp)
+		waiter.SendToWait(sp)
 	case api.SupplyType_SET_AGENT_RESPONSE:
-		//api.SendToWaitCh(sp, sp.GetSimSupply().GetType())
-	case api.SupplyType_START_CLOCK_RESPONSE:
-		//api.SendToWaitCh(sp, sp.GetSimSupply().GetType())
-	case api.SupplyType_STOP_CLOCK_RESPONSE:
-		//api.SendToWaitCh(sp, sp.GetSimSupply().GetType())
-
+		logger.Info("get sp: %v\n", sp)
+		waiter.SendToWait(sp)
+	case api.SupplyType_FORWARD_CLOCK_RESPONSE:
+		logger.Info("get sp: %v\n", sp)
+		waiter.SendToWait(sp)
 	}
 }
 
@@ -166,7 +176,8 @@ func demandCallback(clt *api.SMServiceClient, dm *api.Demand) {
 		//targets := []uint64{tid}
 		senderInfo := myProvider.Id
 		targets := []uint64{p.GetId()}
-		simapi.RegistProviderResponse(senderInfo, targets)
+		msgId := dm.GetSimDemand().GetMsgId()
+		simapi.RegistProviderResponse(senderInfo, targets, msgId)
 
 		logger.Info("Success Update Providers", targets)
 
@@ -192,8 +203,9 @@ func setAgents(agentNum uint64) (bool, error) {
 
 	// エージェントを設置するリクエスト
 	senderId := myProvider.Id
-	targets := make([]uint64, 0)
-	simapi.SetAgentRequest(senderId, targets, agents)
+	targets := providerManager.GetProviderIds()
+	msgId := simapi.SetAgentRequest(senderId, targets, agents)
+	waiter.Wait(msgId, targets)
 
 	logger.Info("Finish Setting Agents \n Add: %v", len(agents))
 	return true, nil
@@ -205,11 +217,9 @@ func startClock() {
 	t1 := time.Now()
 
 	senderId := myProvider.Id
-	targets := make([]uint64, 0)
-	simapi.ForwardClockRequest(senderId, targets)
-	//dmId := simapi.ForwardClockRequest(senderId)
-	//waiter := Waiter()
-	//waiter.wait(dmId, targets)
+	targets := providerManager.GetProviderIds()
+	msgId := simapi.ForwardClockRequest(senderId, targets)
+	waiter.Wait(msgId, targets)
 
 	// calc next time
 	masterClock++

@@ -69,14 +69,16 @@ func supplyCallback(clt *api.SMServiceClient, sp *api.Supply) {
 
 // Demandのコールバック関数
 func demandCallback(clt *api.SMServiceClient, dm *api.Demand) {
-	//tid := dm.GetSimDemand().GetPid()
-	//pid := providerManager.MyProvider.Id
-	// check if supply is match with my demand.
+	senderId := myProvider.Id
+	targets := []uint64{dm.GetSimDemand().GetSenderId()}
+	msgId := dm.GetSimDemand().GetMsgId()
 	switch dm.GetSimDemand().GetType() {
 	case api.DemandType_FORWARD_CLOCK_REQUEST:
 		fmt.Printf("get forwardClockRequest")
+		simapi.ForwardClockResponse(senderId, targets, msgId)
 	case api.DemandType_SET_AGENT_REQUEST:
 		fmt.Printf("set agent")
+		simapi.SetAgentResponse(senderId, targets, msgId)
 	}
 }
 
