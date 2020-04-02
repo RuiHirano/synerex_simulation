@@ -6,6 +6,7 @@ require (
 	cloud.google.com/go/pubsub v1.1.0 // indirect
 	cloud.google.com/go/storage v1.4.0 // indirect
 	dmitri.shuralyov.com/gpu/mtl v0.0.0-20191203043605-d42048ed14fd // indirect
+	github.com/bwmarrin/snowflake v0.3.0 // indirect
 	github.com/creack/pty v1.1.9 // indirect
 	github.com/envoyproxy/go-control-plane v0.9.1 // indirect
 	github.com/golang/groupcache v0.0.0-20191027212112-611e8accdfc9 // indirect
@@ -20,10 +21,7 @@ require (
 	github.com/sirupsen/logrus v1.2.0
 	github.com/stretchr/objx v0.2.0 // indirect
 	github.com/synerex/synerex_alpha/api v0.0.0
-	github.com/synerex/synerex_alpha/api/simulation v0.0.0-00010101000000-000000000000 // indirect
-	github.com/synerex/synerex_alpha/monitor/monitorapi v0.0.0
-	github.com/synerex/synerex_alpha/nodeapi v0.0.0
-	github.com/synerex/synerex_alpha/sxutil v0.0.0
+	github.com/synerex/synerex_alpha/nodeapi v0.0.0-20190904050037-afd3805ee7cc // indirect
 	go.opencensus.io v0.22.2 // indirect
 	golang.org/x/crypto v0.0.0-20191206172530-e9b2fee46413 // indirect
 	golang.org/x/exp v0.0.0-20191129062945-2f5052295587 // indirect
@@ -44,18 +42,6 @@ require (
 	gopkg.in/yaml.v2 v2.2.7 // indirect
 )
 
-replace (
-	github.com/synerex/synerex_alpha/api => ../api
-	github.com/synerex/synerex_alpha/api/common => ../api/common
-	github.com/synerex/synerex_alpha/api/simulation => ../api/simulation
-	github.com/synerex/synerex_alpha/api/simulation/agent => ../api/simulation/agent
-	github.com/synerex/synerex_alpha/api/simulation/area => ../api/simulation/area
-	github.com/synerex/synerex_alpha/api/simulation/clock => ../api/simulation/clock
-	github.com/synerex/synerex_alpha/api/simulation/common => ../api/simulation/common
-	github.com/synerex/synerex_alpha/api/simulation/provider => ../api/simulation/provider
-	github.com/synerex/synerex_alpha/monitor/monitorapi => ../monitor/monitorapi
-	github.com/synerex/synerex_alpha/nodeapi => ../nodeapi
-	github.com/synerex/synerex_alpha/sxutil => ../sxutil
-)
+replace github.com/synerex/synerex_alpha/api => ../api
 
 go 1.13

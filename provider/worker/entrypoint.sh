@@ -1,4 +1,4 @@
 #!/bin/sh
 
-go build scenario-provider.go simulator.go
-./scenario-provider
+go build worker-provider.go
+./worker-provider

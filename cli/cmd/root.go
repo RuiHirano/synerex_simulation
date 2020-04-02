@@ -104,11 +104,11 @@ func (s *Sender) Post(data []byte, path string) ([]byte, error) {
 
 func init() {
 
-	synsimMasterServer := os.Getenv("SYNSIM_MASTER_SERVER")
-	if synsimMasterServer == "" {
-		synsimMasterServer = "http://localhost:8000"
+	masterProviderAddr := os.Getenv("MASTER_ADDRESS")
+	if masterProviderAddr == "" {
+		masterProviderAddr = "http://localhost:9990"
 	}
-	sender = NewSender(synsimMasterServer)
+	sender = NewSender(masterProviderAddr)
 
 	time.Sleep(200 * time.Millisecond)
 }

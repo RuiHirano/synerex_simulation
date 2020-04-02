@@ -1,0 +1,43 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: worker
+spec:
+  selector:
+    app: worker
+  ports:
+    - name: http
+      port: 80
+
+---
+apiVersion: apps/v1
+kind: ReplicaSet
+metadata:
+  name: worker
+  labels:
+    app: worker
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: worker
+  template:
+    metadata:
+      labels:
+        app: worker
+    spec:
+      containers:
+      - name: worker-provider
+        image: synerex-simulation/worker-provider:latest 
+        imagePullPolicy: Never
+        env: 
+        - name: NODEID_SERVER
+          value: localhost:9000
+        - name: SYNEREX_SERVER
+          value: localhost:10000
+        - name: MASTER_SYNEREX_SERVER
+          value: localhost:10000
+        - name: PORT
+          value: '80'
+        ports:
+        - containerPort: 80

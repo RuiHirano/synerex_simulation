@@ -16,38 +16,43 @@ import (
 	"sync"
 	"time"
 
+	"os"
 	"strconv"
 
 	"github.com/sirupsen/logrus"
 	"github.com/synerex/synerex_alpha/api"
-	"github.com/synerex/synerex_alpha/monitor/monitorapi"
-	"github.com/synerex/synerex_alpha/sxutil"
 	"google.golang.org/grpc"
 )
 
 const MessageChannelBufferSize = 20
 
 var (
-	serverAddr = flag.String("synerex", "127.0.0.1:10000", "Node ID Server")
-	port       = flag.Int("port", 10000, "The Synerex Server Listening Port")
-	nodesrv    = flag.String("nodesrv", "127.0.0.1:9990", "Node ID Server")
-	monitor    = flag.String("monitor", "127.0.0.1:9998", "Monitor Server")
+	synerexAddr string
+	nodeIdAddr  string
 )
 
 type synerexServerInfo struct {
 	demandChans        [api.ChannelType_END][]chan *api.Demand // create slices for each ChannelType(each slice contains channels)
 	supplyChans        [api.ChannelType_END][]chan *api.Supply
-	mbusChans          map[uint64][]chan *api.MbusMsg                          // Private Message bus for each provider
-	mbusMap            map[sxutil.IDType]map[uint64]chan *api.MbusMsg          // map from IDtype to Mbus channel
-	demandMap          [api.ChannelType_END]map[sxutil.IDType]chan *api.Demand // map from IDtype to Demand channel
-	supplyMap          [api.ChannelType_END]map[sxutil.IDType]chan *api.Supply // map from IDtype to Supply channel
-	waitConfirms       [api.ChannelType_END]map[sxutil.IDType]chan *api.Target // confirm maps
+	mbusChans          map[uint64][]chan *api.MbusMsg                       // Private Message bus for each provider
+	mbusMap            map[api.IDType]map[uint64]chan *api.MbusMsg          // map from IDtype to Mbus channel
+	demandMap          [api.ChannelType_END]map[api.IDType]chan *api.Demand // map from IDtype to Demand channel
+	supplyMap          [api.ChannelType_END]map[api.IDType]chan *api.Supply // map from IDtype to Supply channel
+	waitConfirms       [api.ChannelType_END]map[api.IDType]chan *api.Target // confirm maps
 	dmu, smu, mmu, wmu sync.RWMutex
 	messageStore       *MessageStore // message store
 }
 
 func init() {
-	////	sxutil.InitNodeNum(0)
+	synerexAddr = os.Getenv("SYNEREX_SERVER")
+	if synerexAddr == "" {
+		synerexAddr = "127.0.0.1:10000"
+	}
+	nodeIdAddr = os.Getenv("NODEID_SERVER")
+	if nodeIdAddr == "" {
+		nodeIdAddr = "127.0.0.1:9000"
+	}
+
 }
 
 // Implementation of each Protocol API
@@ -202,17 +207,13 @@ func syncDemandServerFunc(ch chan *api.Demand, stream api.Synerex_SubscribeSyncD
 // SubscribeDemand is called form client to subscribe channel
 func (s *synerexServerInfo) SubscribeSyncDemand(ch *api.Channel, stream api.Synerex_SubscribeSyncDemandServer) error {
 	// TODO: we can check the duplication of node id here! (especially 1024 snowflake node ID)
-	idt := sxutil.IDType(ch.GetClientId())
+	idt := api.IDType(ch.GetClientId())
 	s.dmu.RLock()
 	_, ok := s.demandMap[ch.Type][idt]
 	s.dmu.RUnlock()
 	if ok { // check the availability of duplicated client ID
 		return errors.New(fmt.Sprintf("duplicated SubscribeDemand ClientID %d", idt))
 	}
-
-	// It is better to logging here.
-	//	monitorapi.SendMes(&monitorapi.Mes{Message:"Subscribe Demand", Args: fmt.Sprintf("Type:%d,From: %x  %s",ch.Type,ch.ClientId, ch.ArgJson )})
-	//monitorapi.SendMessage("SubscribeDemand", int(ch.Type), 0, ch.ClientId, 0, 0, ch.ArgJson)
 
 	subCh := make(chan *api.Demand, MessageChannelBufferSize)
 	// We should think about thread safe coding.
@@ -251,7 +252,7 @@ func syncSupplyServerFunc(ch chan *api.Supply, stream api.Synerex_SubscribeSyncS
 }
 
 func (s *synerexServerInfo) SubscribeSyncSupply(ch *api.Channel, stream api.Synerex_SubscribeSyncSupplyServer) error {
-	idt := sxutil.IDType(ch.GetClientId())
+	idt := api.IDType(ch.GetClientId())
 	tp := ch.GetType()
 	s.smu.RLock()
 	_, ok := s.supplyMap[tp][idt]
@@ -261,9 +262,6 @@ func (s *synerexServerInfo) SubscribeSyncSupply(ch *api.Channel, stream api.Syne
 	}
 
 	subCh := make(chan *api.Supply, MessageChannelBufferSize)
-
-	//	monitorapi.SendMes(&monitorapi.Mes{Message:"Subscribe Supply", Args: fmt.Sprintf("Type:%d, From: %x %s",ch.Type,ch.ClientId,ch.ArgJson )})
-	//monitorapi.SendMessage("SubscribeSupply", int(ch.Type), 0, ch.ClientId, 0, 0, ch.ArgJson)
 
 	s.smu.Lock()
 	s.supplyChans[tp] = append(s.supplyChans[tp], subCh)
@@ -307,7 +305,7 @@ func (s *synerexServerInfo) ReserveSupply(c context.Context, tg *api.Target) (r 
 func (s *synerexServerInfo) SelectSupply(c context.Context, tg *api.Target) (r *api.ConfirmResponse, e error) {
 	targetSender := s.messageStore.getSrcId(tg.GetTargetId()) // find source from Id
 	s.dmu.RLock()
-	ch, ok := s.demandMap[tg.Type][sxutil.IDType(targetSender)]
+	ch, ok := s.demandMap[tg.Type][api.IDType(targetSender)]
 	s.dmu.RUnlock()
 	if !ok {
 		r = &api.ConfirmResponse{Ok: false, Err: "Can't find demand target from SelectSupply"}
@@ -315,7 +313,7 @@ func (s *synerexServerInfo) SelectSupply(c context.Context, tg *api.Target) (r *
 		e = errors.New("Cant find channel in SelectSupply")
 		return
 	}
-	id := sxutil.GenerateIntID()
+	id := api.GenerateIntID()
 	dm := &api.Demand{
 		Id:       id, // generate ID from market server
 		SenderId: tg.SenderId,
@@ -323,13 +321,10 @@ func (s *synerexServerInfo) SelectSupply(c context.Context, tg *api.Target) (r *
 		Type:     tg.Type,
 		MbusId:   id, // mbus id is a message id for select.
 	}
-	//
-	args := idToNode(tg.SenderId) + "->" + idToNode(tg.TargetId)
-	go monitorapi.SendMessage("ServSelSupply", int(tg.Type), dm.Id, tg.SenderId, tg.TargetId, tg.TargetId, args)
 
 	tch := make(chan *api.Target)
 	s.wmu.Lock()
-	s.waitConfirms[tg.Type][sxutil.IDType(id)] = tch
+	s.waitConfirms[tg.Type][api.IDType(id)] = tch
 	s.wmu.Unlock()
 
 	ch <- dm // send select message
@@ -339,10 +334,8 @@ func (s *synerexServerInfo) SelectSupply(c context.Context, tg *api.Target) (r *
 
 	case tb := <-tch: // got confirm!
 		s.wmu.Lock() // remove waitChannel
-		delete(s.waitConfirms[tg.Type], sxutil.IDType(id))
+		delete(s.waitConfirms[tg.Type], api.IDType(id))
 		s.wmu.Unlock()
-		args := idToNode(tg.SenderId) + "->" + idToNode(tg.TargetId)
-		go monitorapi.SendMessage("gotConfirm", int(tg.Type), dm.Id, tb.SenderId, tb.TargetId, tb.TargetId, args)
 
 		if tb.TargetId == id {
 			if tb.MbusId == id {
@@ -355,8 +348,8 @@ func (s *synerexServerInfo) SelectSupply(c context.Context, tg *api.Target) (r *
 		}
 
 	case <-time.After(30 * time.Second): // timeout!
-		args := idToNode(tg.SenderId) + "->" + idToNode(tg.TargetId)
-		go monitorapi.SendMessage("notConfirm", int(tg.Type), dm.Id, tg.SenderId, tg.TargetId, tg.TargetId, args)
+		//args := idToNode(tg.SenderId) + "->" + idToNode(tg.TargetId)
+		//go monitorapi.SendMessage("notConfirm", int(tg.Type), dm.Id, tg.SenderId, tg.TargetId, tg.TargetId, args)
 		r = &api.ConfirmResponse{Ok: false, Err: "waitConfirm Timeout!"}
 
 	}
@@ -379,9 +372,9 @@ func (s *synerexServerInfo) SelectDemand(c context.Context, tg *api.Target) (r *
 func (s *synerexServerInfo) Confirm(c context.Context, tg *api.Target) (r *api.Response, e error) {
 	// check waitConfirms
 	s.wmu.RLock()
-	ch, ok := s.waitConfirms[tg.Type][sxutil.IDType(tg.TargetId)]
+	ch, ok := s.waitConfirms[tg.Type][api.IDType(tg.TargetId)]
 	s.wmu.RUnlock()
-	go monitorapi.SendMessage("ServConfirm", int(tg.Type), tg.Id, tg.SenderId, 0, tg.TargetId, "ConfirmTo")
+
 	if !ok {
 		r = &api.Response{Ok: false, Err: "Can't find channel"}
 		return r, errors.New("can't find channels for Confirm")
@@ -392,7 +385,7 @@ func (s *synerexServerInfo) Confirm(c context.Context, tg *api.Target) (r *api.R
 }
 
 // go routine which wait demand channel and sending demands to each providers.
-func demandServerFunc(ch chan *api.Demand, stream api.Synerex_SubscribeDemandServer, id sxutil.IDType) error {
+func demandServerFunc(ch chan *api.Demand, stream api.Synerex_SubscribeDemandServer, id api.IDType) error {
 	for {
 		select {
 		case dm := <-ch: // may block until receiving info
@@ -431,17 +424,13 @@ func removeSupplyChannelFromSlice(sl []chan *api.Supply, c chan *api.Supply) []c
 // SubscribeDemand is called form client to subscribe channel
 func (s *synerexServerInfo) SubscribeDemand(ch *api.Channel, stream api.Synerex_SubscribeDemandServer) error {
 	// TODO: we can check the duplication of node id here! (especially 1024 snowflake node ID)
-	idt := sxutil.IDType(ch.GetClientId())
+	idt := api.IDType(ch.GetClientId())
 	s.dmu.RLock()
 	_, ok := s.demandMap[ch.Type][idt]
 	s.dmu.RUnlock()
 	if ok { // check the availability of duplicated client ID
 		return errors.New(fmt.Sprintf("duplicated SubscribeDemand ClientID %d", idt))
 	}
-
-	// It is better to logging here.
-	//	monitorapi.SendMes(&monitorapi.Mes{Message:"Subscribe Demand", Args: fmt.Sprintf("Type:%d,From: %x  %s",ch.Type,ch.ClientId, ch.ArgJson )})
-	//monitorapi.SendMessage("SubscribeDemand", int(ch.Type), 0, ch.ClientId, 0, 0, ch.ArgJson)
 
 	subCh := make(chan *api.Demand, MessageChannelBufferSize)
 	// We should think about thread safe coding.
@@ -478,7 +467,7 @@ func supplyServerFunc(ch chan *api.Supply, stream api.Synerex_SubscribeSupplySer
 }
 
 func (s *synerexServerInfo) SubscribeSupply(ch *api.Channel, stream api.Synerex_SubscribeSupplyServer) error {
-	idt := sxutil.IDType(ch.GetClientId())
+	idt := api.IDType(ch.GetClientId())
 	tp := ch.GetType()
 	s.smu.RLock()
 	_, ok := s.supplyMap[tp][idt]
@@ -488,9 +477,6 @@ func (s *synerexServerInfo) SubscribeSupply(ch *api.Channel, stream api.Synerex_
 	}
 
 	subCh := make(chan *api.Supply, MessageChannelBufferSize)
-
-	//	monitorapi.SendMes(&monitorapi.Mes{Message:"Subscribe Supply", Args: fmt.Sprintf("Type:%d, From: %x %s",ch.Type,ch.ClientId,ch.ArgJson )})
-	//monitorapi.SendMessage("SubscribeSupply", int(ch.Type), 0, ch.ClientId, 0, 0, ch.ArgJson)
 
 	s.smu.Lock()
 	s.supplyChans[tp] = append(s.supplyChans[tp], subCh)
@@ -510,15 +496,15 @@ func (s *synerexServerInfo) SubscribeSupply(ch *api.Channel, stream api.Synerex_
 
 // This function is created for each subscribed provider
 // This is not efficient if the number of providers increases.
-func mbusServerFunc(ch chan *api.MbusMsg, stream api.Synerex_SubscribeMbusServer, id sxutil.IDType) error {
+func mbusServerFunc(ch chan *api.MbusMsg, stream api.Synerex_SubscribeMbusServer, id api.IDType) error {
 	for {
 		select {
 		case msg := <-ch:
 			if msg.GetMsgId() == 0 { // close message
 				return nil // grace close
 			}
-			if sxutil.IDType(msg.GetSenderId()) != id { // do not send msg from myself
-				tgt := sxutil.IDType(msg.GetTargetId())
+			if api.IDType(msg.GetSenderId()) != id { // do not send msg from myself
+				tgt := api.IDType(msg.GetTargetId())
 				if tgt == 0 || tgt == id { // =0 broadcast , = tgt unicast
 					err := stream.Send(msg)
 					if err != nil {
@@ -543,7 +529,7 @@ func removeMbusChannelFromSlice(sl []chan *api.MbusMsg, c chan *api.MbusMsg) []c
 func (s *synerexServerInfo) SubscribeMbus(mb *api.Mbus, stream api.Synerex_SubscribeMbusServer) error {
 
 	mbusCh := make(chan *api.MbusMsg, MessageChannelBufferSize) // make channel for each mbus
-	id := sxutil.IDType(mb.GetClientId())
+	id := api.IDType(mb.GetClientId())
 	mbid := mb.MbusId
 	s.mmu.Lock()
 	chans := s.mbusChans[mbid]
@@ -626,12 +612,12 @@ func newServerInfo() *synerexServerInfo {
 	var ms synerexServerInfo
 	s := &ms
 	for i := 0; i < int(api.ChannelType_END); i++ {
-		s.demandMap[i] = make(map[sxutil.IDType]chan *api.Demand)
-		s.supplyMap[i] = make(map[sxutil.IDType]chan *api.Supply)
-		s.waitConfirms[i] = make(map[sxutil.IDType]chan *api.Target)
+		s.demandMap[i] = make(map[api.IDType]chan *api.Demand)
+		s.supplyMap[i] = make(map[api.IDType]chan *api.Supply)
+		s.waitConfirms[i] = make(map[api.IDType]chan *api.Target)
 	}
 	s.mbusChans = make(map[uint64][]chan *api.MbusMsg)
-	s.mbusMap = make(map[sxutil.IDType]map[uint64]chan *api.MbusMsg)
+	s.mbusMap = make(map[api.IDType]map[uint64]chan *api.MbusMsg)
 	s.messageStore = CreateLocalMessageStore()
 
 	return s
@@ -653,7 +639,7 @@ func idToNode(id uint64) string {
 	var ok bool
 	var str string
 	if str, ok = nodeMap[nodeNum]; !ok {
-		str = sxutil.GetNodeName(nodeNum)
+		str = api.GetNodeName(nodeNum)
 	}
 	rs := strings.Replace(str, "Provider", "", -1)
 	rs2 := strings.Replace(rs, "Server", "", -1)
@@ -716,15 +702,7 @@ func unaryServerInterceptor(logger *logrus.Logger, s *synerexServerInfo) grpc.Un
 
 		}
 
-		//		monitorapi.SendMes(&monitorapi.Mes{Message:method+":"+args, Args:""})
-
 		dstId := s.messageStore.getSrcId(tgtId)
-		//meth := strings.Replace(method, "Propose", "P", 1)
-		//met2 := strings.Replace(meth, "Register", "R", 1)
-		//met3 := strings.Replace(met2, "Supply", "S", 1)
-		//met4 := strings.Replace(met3, "Demand", "D", 1)
-		// it seems here to stuck.
-		//go monitorapi.SendMessage(met4, msgType, mid, srcId, dstId, tgtId, args)
 
 		// register for messageStore
 		s.messageStore.AddMessage(method, msgType, mid, srcId, dstId, args)
@@ -767,7 +745,6 @@ func streamServerInterceptor(logger *logrus.Logger) grpc.StreamServerInterceptor
 		case "SubscribeDemand":
 		case "SubscribeSupply":
 		}
-		//		monitorapi.SendMes(&monitorapi.Mes{Message:method, Args:args})
 
 		defer func(begin time.Time) {
 			// Obtain method name from info
@@ -802,11 +779,9 @@ func prepareGrpcServer(s *synerexServerInfo, opts ...grpc.ServerOption) *grpc.Se
 
 func main() {
 	flag.Parse()
-	sxutil.RegisterNodeName(*nodesrv, "SynerexServer", true)
+	api.RegisterNodeName(nodeIdAddr, "SynerexServer", true)
 
-	//monitorapi.InitMonitor(*monitor)
-
-	lis, err := net.Listen("tcp", *serverAddr)
+	lis, err := net.Listen("tcp", synerexAddr)
 	defer lis.Close()
 	if err != nil {
 		log.Fatalf("failed to listen: %v", err)
@@ -819,11 +794,8 @@ func main() {
 	s := newServerInfo()
 	opts = append(opts, grpc.UnaryInterceptor(unaryServerInterceptor(logger, s)))
 
-	// for more precise monitoring , we do not use StreamIntercepter.
-	//	opts = append(opts, grpc.StreamInterceptor(streamServerInterceptor(logger)))
-
 	grpcServer := prepareGrpcServer(s, opts...)
-	log.Printf("Start Synergic Exchange Server, connection waiting at %d ...", *serverAddr)
+	log.Printf("Start Synergic Exchange Server, connection waiting at %d ...", synerexAddr)
 	serr := grpcServer.Serve(lis)
 	log.Printf("Should not arrive here.. server closed. %v", serr)
 

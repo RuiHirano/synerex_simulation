@@ -15,19 +15,15 @@ import (
 )
 
 var (
-	myProvider    *api.Provider
-	serverAddr    = flag.String("synerex", "127.0.0.1:10000", "The server address in the format of host:port")
-	gatewayAddr   = flag.String("gateway", "", "The server address in the format of host:port")
-	nodeIdAddr    = flag.String("nodeid", "127.0.0.1:9990", "Node ID Server")
-	simulatorAddr = flag.String("simulator", "127.0.0.1:9995", "Node ID Server")
-	visAddr       = flag.String("vis", "127.0.0.1:9995", "Node ID Server")
-	monitorAddr   = flag.String("monitor", "127.0.0.1:9993", "Monitor Server")
-	areaId        = flag.Int("areaId", 0, "Area ID")
-	mu            sync.Mutex
-	simapi        *api.SimAPI
-	workerClock   int
-	providerHosts []string
-	logger        *simutil.Logger
+	myProvider        *api.Provider
+	synerexAddr       string
+	nodeIdAddr        string
+	masterSynerexAddr string
+	mu                sync.Mutex
+	simapi            *api.SimAPI
+	workerClock       int
+	providerHosts     []string
+	logger            *simutil.Logger
 )
 
 const MAX_AGENTS_NUM = 1000
@@ -38,6 +34,19 @@ func init() {
 	logger = simutil.NewLogger()
 	logger.SetPrefix("Scenario")
 	flag.Parse()
+
+	synerexAddr = os.Getenv("SYNEREX_SERVER")
+	if synerexAddr == "" {
+		synerexAddr = "127.0.0.1:10080"
+	}
+	nodeIdAddr = os.Getenv("NODEID_SERVER")
+	if nodeIdAddr == "" {
+		nodeIdAddr = "127.0.0.1:9000"
+	}
+	masterSynerexAddr = os.Getenv("MASTER_SYNEREX_SERVER")
+	if masterSynerexAddr == "" {
+		masterSynerexAddr = "127.0.0.1:10000"
+	}
 }
 
 var (
@@ -96,14 +105,14 @@ func main() {
 	//areaManager = simutil.NewAreaManager(mockAreaInfos[*areaId])
 
 	// Connect to Node Server
-	api.RegisterNodeName(*nodeIdAddr, "WorkerProvider", false)
+	api.RegisterNodeName(nodeIdAddr, "WorkerProvider", false)
 	go api.HandleSigInt()
 	api.RegisterDeferFunction(api.UnRegisterNode)
 
 	// Connect to Synerex Server
 	var opts []grpc.DialOption
 	opts = append(opts, grpc.WithInsecure())
-	conn, err := grpc.Dial(*serverAddr, opts...)
+	conn, err := grpc.Dial(serverAddr, opts...)
 	if err != nil {
 		log.Fatalf("fail to dial: %v", err)
 	}

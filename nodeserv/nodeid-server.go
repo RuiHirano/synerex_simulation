@@ -8,6 +8,7 @@ import (
 	"log"
 	"math/rand"
 	"net"
+	"os"
 	"sort"
 	"sync"
 	"time"
@@ -54,8 +55,7 @@ type srvNodeInfo struct {
 }
 
 var (
-	nodeIdAddr = flag.String("nodeid", "127.0.0.1:9990", "Node ID Server")
-	port       = flag.Int("port", 9990, "NodeID Server Listening Port")
+	nodeIdAddr string
 	srvInfo    srvNodeInfo
 	lastNode   int32 = MaxServerID // start ID from MAX_SERVER_ID to MAX_NODE_NUM
 	lastPrint  time.Time
@@ -69,6 +69,11 @@ func init() {
 	s.nodeMap = make(map[int32]*eachNodeInfo)
 	lastPrint = time.Now()
 	go keepNodes(s)
+
+	nodeIdAddr = os.Getenv("NODEID_SERVER")
+	if nodeIdAddr == "" {
+		nodeIdAddr = "127.0.0.1:9000"
+	}
 }
 
 // find unused ID from map.
@@ -252,10 +257,8 @@ func main() {
 	}
 
 	flag.Parse()
-	//	lis, err := net.Listen("tcp", fmt.Sprintf("localhost:%d", *port))
-	//lis, err := net.Listen("tcp", fmt.Sprintf("0.0.0.0:%d", *port))
-	fmt.Printf("addr: %v\n", *nodeIdAddr)
-	lis, err := net.Listen("tcp", *nodeIdAddr)
+	fmt.Printf("addr: %v\n", nodeIdAddr)
+	lis, err := net.Listen("tcp", nodeIdAddr)
 	//defer func() { fmt.Printf("defer!!!!!!!!!!!!!!!!!!!") }()
 	defer lis.Close()
 
@@ -266,7 +269,7 @@ func main() {
 	var opts []grpc.ServerOption
 
 	nodeServer := prepareGrpcServer(opts...)
-	log.Printf("Start waiting Node Server at :%d ...", *nodeIdAddr)
+	log.Printf("Start waiting Node Server at :%d ...", nodeIdAddr)
 	nodeServer.Serve(lis)
 
 }
