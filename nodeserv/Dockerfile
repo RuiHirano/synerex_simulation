@@ -27,7 +27,6 @@ RUN cd nodeserv && \
     sed -i 's/\r//' ./entrypoint.sh && \
     chmod +x ./entrypoint.sh
 
-# expose port
-#EXPOSE 10000
+
 WORKDIR /synerex_simulation/nodeserv
 ENTRYPOINT [ "./entrypoint.sh" ]

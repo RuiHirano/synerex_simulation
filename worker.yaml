@@ -8,6 +8,7 @@ spec:
   ports:
     - name: http
       port: 80
+      targetPort: 9980
 
 ---
 apiVersion: apps/v1
@@ -17,7 +18,7 @@ metadata:
   labels:
     app: worker
 spec:
-  replicas: 2
+  replicas: 1
   selector:
     matchLabels:
       app: worker
@@ -36,8 +37,10 @@ spec:
         - name: SYNEREX_SERVER
           value: localhost:10000
         - name: MASTER_SYNEREX_SERVER
-          value: localhost:10000
+          value: master:700
+        - name: MASTER_NODEID_SERVER
+          value: master:600
         - name: PORT
-          value: '80'
+          value: '9980'
         ports:
-        - containerPort: 80
+        - containerPort: 9980

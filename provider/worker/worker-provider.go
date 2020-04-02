@@ -4,11 +4,10 @@ import (
 	"flag"
 	"fmt"
 	"log"
-	"net/http"
+	"os"
 	"sync"
 
 	"github.com/google/uuid"
-	gosocketio "github.com/mtfelian/golang-socketio"
 	api "github.com/synerex/synerex_alpha/api"
 	"github.com/synerex/synerex_alpha/provider/simutil"
 	"google.golang.org/grpc"
@@ -18,12 +17,15 @@ var (
 	myProvider        *api.Provider
 	synerexAddr       string
 	nodeIdAddr        string
+	masterNodeIdAddr  string
 	masterSynerexAddr string
 	mu                sync.Mutex
 	simapi            *api.SimAPI
 	workerClock       int
 	providerHosts     []string
 	logger            *simutil.Logger
+	providerManager   *Manager
+	waiter            *api.Waiter
 )
 
 const MAX_AGENTS_NUM = 1000
@@ -47,19 +49,40 @@ func init() {
 	if masterSynerexAddr == "" {
 		masterSynerexAddr = "127.0.0.1:10000"
 	}
+	masterNodeIdAddr = os.Getenv("MASTER_NODEID_SERVER")
+	if masterNodeIdAddr == "" {
+		masterNodeIdAddr = "127.0.0.1:9080"
+	}
+
+	providerManager = NewManager()
+	waiter = api.NewWaiter()
 }
 
-var (
-	//fcs *geojson.FeatureCollection
-	//geofile string
-	port          = 9995
-	assetsDir     http.FileSystem
-	server        *gosocketio.Server = nil
-	providerMutex sync.RWMutex
-)
+////////////////////////////////////////////////////////////
+//////////////////        Manager          ///////////////////
+///////////////////////////////////////////////////////////
 
-func init() {
-	providerMutex = sync.RWMutex{}
+type Manager struct {
+	Providers []*api.Provider
+}
+
+func NewManager() *Manager {
+	m := &Manager{
+		Providers: make([]*api.Provider, 0),
+	}
+	return m
+}
+
+func (m *Manager) AddProvider(provider *api.Provider) {
+	m.Providers = append(m.Providers, provider)
+}
+
+func (m *Manager) GetProviderIds() []uint64 {
+	pids := make([]uint64, 0)
+	for _, p := range m.Providers {
+		pids = append(pids, p.GetId())
+	}
+	return pids
 }
 
 ////////////////////////////////////////////////////////////
@@ -79,14 +102,30 @@ func supplyCallback(clt *api.SMServiceClient, sp *api.Supply) {
 // Demandのコールバック関数
 func demandCallback(clt *api.SMServiceClient, dm *api.Demand) {
 	senderId := myProvider.Id
-	targets := []uint64{dm.GetSimDemand().GetSenderId()}
-	msgId := dm.GetSimDemand().GetMsgId()
 	switch dm.GetSimDemand().GetType() {
 	case api.DemandType_FORWARD_CLOCK_REQUEST:
 		fmt.Printf("get forwardClockRequest")
+
+		// request to providers
+		//targets := providerManager.GetProviderIds()
+		//msgId := simapi.ForwardClockRequest(senderId, targets)
+		//waiter.Wait(msgId, targets)
+
+		// response to master
+		targets := []uint64{dm.GetSimDemand().GetSenderId()}
+		msgId := dm.GetSimDemand().GetMsgId()
 		simapi.ForwardClockResponse(senderId, targets, msgId)
+
 	case api.DemandType_SET_AGENT_REQUEST:
 		fmt.Printf("set agent")
+		// request to providers
+		//targets := providerManager.GetProviderIds()
+		//msgId := simapi.ForwardClockRequest(senderId, targets)
+		//waiter.Wait(msgId, targets)
+
+		// response to master
+		targets := []uint64{dm.GetSimDemand().GetSenderId()}
+		msgId := dm.GetSimDemand().GetMsgId()
 		simapi.SetAgentResponse(senderId, targets, msgId)
 	}
 }
@@ -101,18 +140,15 @@ func main() {
 		Type: api.ProviderType_WORKER,
 	}
 
-	//AreaManager
-	//areaManager = simutil.NewAreaManager(mockAreaInfos[*areaId])
-
 	// Connect to Node Server
-	api.RegisterNodeName(nodeIdAddr, "WorkerProvider", false)
+	api.RegisterNodeName(masterNodeIdAddr, "WorkerProvider", false)
 	go api.HandleSigInt()
 	api.RegisterDeferFunction(api.UnRegisterNode)
 
 	// Connect to Synerex Server
 	var opts []grpc.DialOption
 	opts = append(opts, grpc.WithInsecure())
-	conn, err := grpc.Dial(serverAddr, opts...)
+	conn, err := grpc.Dial(masterSynerexAddr, opts...)
 	if err != nil {
 		log.Fatalf("fail to dial: %v", err)
 	}

@@ -35,6 +35,6 @@ spec:
         tty: true
         env: 
         - name: MASTER_ADDRESS
-          value: http://master
+          value: http://master:800
         ports:
         - containerPort: 8000

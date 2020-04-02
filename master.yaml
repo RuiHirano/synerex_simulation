@@ -6,8 +6,15 @@ spec:
   selector:
     app: master
   ports:
-    - name: http
-      port: 80
+    - name: master-provider
+      port: 800
+      targetPort: 9990
+    - name: synerex
+      port: 700
+      targetPort: 10000
+    - name: nodeid
+      port: 600
+      targetPort: 9000
 
 ---
 apiVersion: apps/v1
@@ -32,7 +39,7 @@ spec:
         imagePullPolicy: Never
         env: 
         - name: NODEID_SERVER
-          value: localhost:9000
+          value: :9000
         ports:
         - containerPort: 9000
       - name: synerex-server
@@ -40,9 +47,9 @@ spec:
         imagePullPolicy: Never
         env: 
         - name: NODEID_SERVER
-          value: localhost:9000
+          value: :9000
         - name: SYNEREX_SERVER
-          value: localhost:10000
+          value: :10000
         ports:
         - containerPort: 10000
       - name: master-provider
@@ -50,10 +57,10 @@ spec:
         imagePullPolicy: Never
         env: 
         - name: NODEID_SERVER
-          value: localhost:9000
+          value: :9000
         - name: SYNEREX_SERVER
-          value: localhost:10000
+          value: :10000
         - name: PORT
-          value: '80'
+          value: '9990'
         ports:
-        - containerPort: 80
+        - containerPort: 9990
