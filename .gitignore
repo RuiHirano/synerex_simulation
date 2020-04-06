@@ -13,6 +13,8 @@
 
 node_modules
 
+build
+
 # Eclipse project settings
 .project
 

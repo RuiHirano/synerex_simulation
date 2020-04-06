@@ -218,8 +218,8 @@ func init() {
 			Id:   uint64(uid.ID()),
 			Route: &api.Route{
 				Position: &api.Coord{
-					Longitude: 136.97285 + float64(rand.Int())*0.01,
-					Latitude:  35.15333 + float64(rand.Int())*0.01,
+					Longitude: 136.97285 + rand.Float64()*0.01,
+					Latitude:  35.15333 + rand.Float64()*0.01,
 				},
 				Direction: 0,
 				Speed:     0,

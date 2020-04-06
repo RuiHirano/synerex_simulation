@@ -163,7 +163,7 @@ class App extends Container {
         //const setMovedData = [];
         const movesbasedata = [...movesbase];
 
-        console.log("socketData length", socketsData);
+        console.log("socketData2", socketsData);
         //console.log("movesbasedata length", movesbasedata.length)
 
         socketsData.forEach(socketData => {
