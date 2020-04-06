@@ -80,7 +80,10 @@ func subscribeSupply(client *SMServiceClient, supplyCallback func(*SMServiceClie
 	ctx := context.Background() // should check proper context
 	client.SubscribeSupply(ctx, supplyCallback)
 	// comes here if channel closed
-	log.Printf("SMarket Server Closed?")
+	log.Printf("SMarket Server Closed? Reconnect...")
+	time.Sleep(1 * time.Second)
+	subscribeSupply(client, supplyCallback)
+
 }
 
 func subscribeDemand(client *SMServiceClient, demandCallback func(*SMServiceClient, *Demand)) {
@@ -117,24 +120,24 @@ func sendSupply(sclient *SMServiceClient, simSupply *SimSupply) uint64 {
 //////////////////////////
 // add new function////////
 /////////////////////////
-func sendSyncDemand(sclient *SMServiceClient, simDemand *SimDemand, targetIds []uint64) uint64 {
+func sendSyncDemand(sclient *SMServiceClient, simDemand *SimDemand) uint64 {
 	nm := ""
 	js := ""
 	opts := &DemandOpts{Name: nm, JSON: js, SimDemand: simDemand}
 
 	mu.Lock()
-	id := sclient.SyncDemand(opts, targetIds)
+	id := sclient.SyncDemand(opts)
 	mu.Unlock()
 	return id
 }
 
-func sendSyncSupply(sclient *SMServiceClient, simSupply *SimSupply, targetIds []uint64) uint64 {
+func sendSyncSupply(sclient *SMServiceClient, simSupply *SimSupply) uint64 {
 	nm := ""
 	js := ""
 	opts := &SupplyOpts{Name: nm, JSON: js, SimSupply: simSupply}
 
 	mu.Lock()
-	id := sclient.SyncSupply(opts, targetIds)
+	id := sclient.SyncSupply(opts)
 	mu.Unlock()
 	return id
 }
@@ -157,9 +160,10 @@ func (s *SimAPI) SetAgentRequest(senderId uint64, targets []uint64, agents []*Ag
 		SenderId: senderId,
 		Type:     DemandType_SET_AGENT_REQUEST,
 		Data:     &SimDemand_SetAgentRequest{setAgentRequest},
+		Targets:  targets,
 	}
 
-	sendSyncDemand(s.MyClients.AgentClient, simDemand, targets)
+	sendSyncDemand(s.MyClients.AgentClient, simDemand)
 
 	return msgId
 }
@@ -174,9 +178,10 @@ func (s *SimAPI) SetAgentResponse(senderId uint64, targets []uint64, msgId uint6
 		Type:     SupplyType_SET_AGENT_RESPONSE,
 		Status:   StatusType_OK,
 		Data:     &SimSupply_SetAgentResponse{setAgentResponse},
+		Targets:  targets,
 	}
 
-	sendSyncSupply(s.MyClients.AgentClient, simSupply, targets)
+	sendSyncSupply(s.MyClients.AgentClient, simSupply)
 
 	return msgId
 }
@@ -201,7 +206,7 @@ func (s *SimAPI) RegistProviderRequest(senderId uint64, targets []uint64, provid
 		Targets:  targets,
 	}
 
-	sendSyncDemand(s.MyClients.ProviderClient, simDemand, targets)
+	sendSyncDemand(s.MyClients.ProviderClient, simDemand)
 
 	return msgId
 }
@@ -219,7 +224,7 @@ func (s *SimAPI) RegistProviderResponse(senderId uint64, targets []uint64, msgId
 		Targets:  targets,
 	}
 
-	sendSyncSupply(s.MyClients.ProviderClient, simSupply, targets)
+	sendSyncSupply(s.MyClients.ProviderClient, simSupply)
 
 	return msgId
 }
@@ -243,7 +248,7 @@ func (s *SimAPI) SetClockRequest(senderId uint64, targets []uint64, clockInfo *C
 		Targets:  targets,
 	}
 
-	sendSyncDemand(s.MyClients.ClockClient, simDemand, targets)
+	sendSyncDemand(s.MyClients.ClockClient, simDemand)
 
 	return msgId
 }
@@ -261,7 +266,7 @@ func (s *SimAPI) SetClockResponse(senderId uint64, targets []uint64, msgId uint6
 		Targets:  targets,
 	}
 
-	sendSyncSupply(s.MyClients.ClockClient, simSupply, targets)
+	sendSyncSupply(s.MyClients.ClockClient, simSupply)
 
 	return msgId
 }
@@ -279,7 +284,7 @@ func (s *SimAPI) ForwardClockRequest(senderId uint64, targets []uint64) uint64 {
 		Targets:  targets,
 	}
 
-	sendSyncDemand(s.MyClients.ClockClient, simDemand, targets)
+	sendSyncDemand(s.MyClients.ClockClient, simDemand)
 
 	return msgId
 }
@@ -297,7 +302,7 @@ func (s *SimAPI) ForwardClockResponse(senderId uint64, targets []uint64, msgId u
 		Targets:  targets,
 	}
 
-	sendSyncSupply(s.MyClients.ClockClient, simSupply, targets)
+	sendSyncSupply(s.MyClients.ClockClient, simSupply)
 
 	return msgId
 }
@@ -315,7 +320,7 @@ func (s *SimAPI) StartClockRequest(senderId uint64, targets []uint64) uint64 {
 		Targets:  targets,
 	}
 
-	sendSyncDemand(s.MyClients.ClockClient, simDemand, targets)
+	sendSyncDemand(s.MyClients.ClockClient, simDemand)
 
 	return msgId
 }
@@ -333,7 +338,7 @@ func (s *SimAPI) StartClockResponse(senderId uint64, targets []uint64, msgId uin
 		Targets:  targets,
 	}
 
-	sendSyncSupply(s.MyClients.ClockClient, simSupply, targets)
+	sendSyncSupply(s.MyClients.ClockClient, simSupply)
 
 	return msgId
 }
@@ -351,7 +356,7 @@ func (s *SimAPI) StopClockRequest(senderId uint64, targets []uint64) uint64 {
 		Targets:  targets,
 	}
 
-	sendSyncDemand(s.MyClients.ClockClient, simDemand, targets)
+	sendSyncDemand(s.MyClients.ClockClient, simDemand)
 
 	return msgId
 }
@@ -369,7 +374,7 @@ func (s *SimAPI) StopClockResponse(senderId uint64, targets []uint64, msgId uint
 		Targets:  targets,
 	}
 
-	sendSyncSupply(s.MyClients.ClockClient, simSupply, targets)
+	sendSyncSupply(s.MyClients.ClockClient, simSupply)
 
 	return msgId
 }

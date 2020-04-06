@@ -1,0 +1,22 @@
+
+# common
+kubectl get pod
+kubectl get svc
+
+
+# master
+kubectl logs -f master-4xzb9 -c master-provider
+kubectl logs -f master-4xzb9 -c nodeid-server
+kubectl logs -f master-4xzb9 -c synerex-server
+kubectl describe pod master-4xzb9
+
+# worker
+kubectl logs -f worker-4xzb9 -c worker-provider
+kubectl logs -f worker-4xzb9 -c nodeid-server
+kubectl logs -f worker-4xzb9 -c synerex-server
+kubectl logs -f worker-4xzb9 -c agent-provider
+kubectl logs -f worker-4xzb9 -c visualization-provider
+kubectl describe pod worker-4xzb9
+
+# simulator
+kubectl exec -it simulator-bw29p -c simulator bash

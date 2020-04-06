@@ -29,4 +29,5 @@ RUN cd nodeserv && \
 
 
 WORKDIR /synerex_simulation/nodeserv
+RUN go build nodeid-server.go
 ENTRYPOINT [ "./entrypoint.sh" ]

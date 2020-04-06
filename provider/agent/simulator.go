@@ -4,10 +4,7 @@ import (
 	//"log"
 
 	"github.com/paulmach/orb/geojson"
-	"github.com/synerex/synerex_alpha/api/simulation/agent"
-	"github.com/synerex/synerex_alpha/api/simulation/area"
-	"github.com/synerex/synerex_alpha/api/simulation/clock"
-	"github.com/synerex/synerex_alpha/api/simulation/common"
+	"github.com/synerex/synerex_alpha/api"
 	algo "github.com/synerex/synerex_alpha/provider/agent/algorithm"
 	"github.com/synerex/synerex_alpha/provider/simutil"
 )
@@ -18,20 +15,20 @@ var (
 
 // SynerexSimulator :
 type Simulator struct {
-	Clock     *clock.Clock
-	Area      *area.Area
-	AgentType agent.AgentType
-	Agents    []*agent.Agent
+	Clock     *api.Clock
+	Area      *api.Area
+	AgentType api.AgentType
+	Agents    []*api.Agent
 }
 
 // NewSenerexSimulator:
-func NewSimulator(clockInfo *clock.Clock, areaInfo *area.Area, agentType agent.AgentType) *Simulator {
+func NewSimulator(clockInfo *api.Clock, areaInfo *api.Area, agentType api.AgentType) *Simulator {
 
 	sim := &Simulator{
 		Clock:     clockInfo,
 		Area:      areaInfo,
 		AgentType: agentType,
-		Agents:    make([]*agent.Agent, 0),
+		Agents:    make([]*api.Agent, 0),
 	}
 
 	return sim
@@ -40,12 +37,16 @@ func NewSimulator(clockInfo *clock.Clock, areaInfo *area.Area, agentType agent.A
 // ForwardClock :
 func (sim *Simulator) ForwardClock() {
 	//log.Printf("-------clock %v", sim.Clock)
-	sim.Clock.Forward()
+	sim.Clock = &api.Clock{
+		GlobalTime: sim.Clock.GetGlobalTime() + 1,
+	}
 }
 
 // ForwardClock :
 func (sim *Simulator) BackwardClock() {
-	sim.Clock.Backward()
+	sim.Clock = &api.Clock{
+		GlobalTime: sim.Clock.GetGlobalTime() - 1,
+	}
 }
 
 // SetObstacles :　Obstaclesを追加する関数
@@ -54,18 +55,18 @@ func (sim *Simulator) SetGeoInfo(_geoInfo *geojson.FeatureCollection) {
 }
 
 // SetArea :　Areaを追加する関数
-func (sim *Simulator) SetArea(areaInfo *area.Area) {
+func (sim *Simulator) SetArea(areaInfo *api.Area) {
 	sim.Area = areaInfo
 }
 
 // GetArea :　Areaを取得する関数
-func (sim *Simulator) GetArea() *area.Area {
+func (sim *Simulator) GetArea() *api.Area {
 	return sim.Area
 }
 
 // AddAgents :　Agentsを追加する関数
-func (sim *Simulator) AddAgents(agentsInfo []*agent.Agent) {
-	newAgents := make([]*agent.Agent, 0)
+func (sim *Simulator) AddAgents(agentsInfo []*api.Agent) {
+	newAgents := make([]*api.Agent, 0)
 	for _, agentInfo := range agentsInfo {
 		if agentInfo.Type == sim.AgentType {
 			position := agentInfo.Route.Position
@@ -79,8 +80,8 @@ func (sim *Simulator) AddAgents(agentsInfo []*agent.Agent) {
 }
 
 // SetAgents :　Agentsをセットする関数
-func (sim *Simulator) SetAgents(agentsInfo []*agent.Agent) {
-	newAgents := make([]*agent.Agent, 0)
+func (sim *Simulator) SetAgents(agentsInfo []*api.Agent) {
+	newAgents := make([]*api.Agent, 0)
 	for _, agentInfo := range agentsInfo {
 		if agentInfo.Type == sim.AgentType && IsAgentInArea(agentInfo.Route.Position, sim.Area.DuplicateArea) {
 			newAgents = append(newAgents, agentInfo)
@@ -91,16 +92,16 @@ func (sim *Simulator) SetAgents(agentsInfo []*agent.Agent) {
 
 // ClearAgents :　Agentsを追加する関数
 func (sim *Simulator) ClearAgents() {
-	sim.Agents = make([]*agent.Agent, 0)
+	sim.Agents = make([]*api.Agent, 0)
 }
 
 // GetAgents :　Agentsを取得する関数
-func (sim *Simulator) GetAgents() []*agent.Agent {
+func (sim *Simulator) GetAgents() []*api.Agent {
 	return sim.Agents
 }
 
 // UpdateDuplicateAgents :　重複エリアのエージェントを更新する関数
-func (sim *Simulator) UpdateDuplicateAgents(nextControlAgents []*agent.Agent, neighborAgents []*agent.Agent) []*agent.Agent {
+func (sim *Simulator) UpdateDuplicateAgents(nextControlAgents []*api.Agent, neighborAgents []*api.Agent) []*api.Agent {
 	nextAgents := nextControlAgents
 	for _, neighborAgent := range neighborAgents {
 		//　隣のエージェントが自分のエリアにいてかつ自分のエリアのエージェントと被ってない場合更新
@@ -128,21 +129,23 @@ func (sim *Simulator) UpdateDuplicateAgents(nextControlAgents []*agent.Agent, ne
 }
 
 // ForwardStep :　次の時刻のエージェントを計算する関数
-func (sim *Simulator) ForwardStep(sameAreaAgents []*agent.Agent) []*agent.Agent {
+func (sim *Simulator) ForwardStep(sameAreaAgents []*api.Agent) []*api.Agent {
 	IsRVO2 := true
 	nextControlAgents := sim.GetAgents()
 
 	if IsRVO2 {
 		// RVO2
-		rvo2route := algo.NewRVO2Route(sim.Clock.TimeStep, sim.Clock.GlobalTime, sim.Area, sim.Agents, sim.AgentType)
+		timeStep := float64(1.0)
+		rvo2route := algo.NewRVO2Route(timeStep, sim.Clock.GlobalTime, sim.Area, sim.Agents, sim.AgentType)
 		// Agent計算
 		nextControlAgents = rvo2route.CalcNextAgents()
 
 	} else {
 		// 干渉なしで目的地へ進む
-		simpleRoute := algo.NewSimpleRoute(sim.Clock.TimeStep, sim.Clock.GlobalTime, sim.Area, sim.Agents, sim.AgentType)
+		timeStep := float64(1.0)
+		simpleRoute := algo.NewSimpleRoute(timeStep, sim.Clock.GlobalTime, sim.Area, sim.Agents, sim.AgentType)
 		nextControlAgents = simpleRoute.CalcNextAgents()
-		/*newAgents := make([]*agent.Agent, 0)
+		/*newAgents := make([]*api.Agent, 0)
 		for _, agentInfo := range nextControlAgents {
 			if IsAgentInArea(agentInfo.Route.Position, sim.Area.ControlArea) {
 				newAgents = append(newAgents, agentInfo)
@@ -158,7 +161,7 @@ func (sim *Simulator) ForwardStep(sameAreaAgents []*agent.Agent) []*agent.Agent 
 }
 
 // エージェントがエリアの中にいるかどうか
-func IsAgentInArea(position *common.Coord, areaCoords []*common.Coord) bool {
+func IsAgentInArea(position *api.Coord, areaCoords []*api.Coord) bool {
 	lat := position.Latitude
 	lon := position.Longitude
 	maxLat, maxLon, minLat, minLon := simutil.GetCoordRange(areaCoords)

@@ -34,7 +34,7 @@ participant WorkerProvider
 control WorkerSynerex
 participant Ped
 participant Car
-participant Vis2
+participant Vis
 end box 
 
 == StartUp ==
@@ -98,6 +98,32 @@ note over MasterProvider: 次のサイクルへ
 Simulator->MasterProvider: StopClockRequest
 note over MasterProvider: Clockを停止
 MasterProvider->Simulator: StopClockResponse
+
+== Agent Calc Flow ==
+
+note over WorkerProvider: 同期開始
+WorkerProvider->WorkerSynerex: ForwardClockRequest
+WorkerSynerex->Ped: ForwardClockRequest
+WorkerSynerex->Car: ForwardClockRequest
+
+note over Ped: 同じエリアにエージェントを送る
+Ped->Car: SetAgentRequest
+note over Car: 同じエリアにエージェントを送る
+Car->Ped: SetAgentRequest
+note over Ped: 取得, 計算
+note over Car: 取得, 計算
+note over Ped: 隣接エリアにエージェントを送る
+Ped->Car: SetAgentRequest
+note over Car: 隣接エリアにエージェントを送る
+Car->Ped: SetAgentRequest
+note over Ped: 取得, 更新
+note over Car: 取得, 更新
+
+Ped->WorkerSynerex: ForwardClockResponse
+Car->WorkerSynerex: ForwardClockResponse
+WorkerSynerex->WorkerProvider: ForwardClockResponse
+WorkerSynerex->WorkerProvider: ForwardClockResponse
+note over WorkerProvider: 同期終了
 
 @enduml
 

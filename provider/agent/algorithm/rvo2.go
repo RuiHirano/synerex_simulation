@@ -13,9 +13,7 @@ import (
 	"log"
 
 	rvo "github.com/RuiHirano/rvo2-go/src/rvosimulator"
-	"github.com/synerex/synerex_alpha/api/simulation/agent"
-	"github.com/synerex/synerex_alpha/api/simulation/area"
-	"github.com/synerex/synerex_alpha/api/simulation/common"
+	"github.com/synerex/synerex_alpha/api"
 )
 
 var (
@@ -38,12 +36,12 @@ func loadGeoJson(fname string) *geojson.FeatureCollection {
 type RVO2Route struct {
 	TimeStep   float64
 	GlobalTime float64
-	Area       *area.Area
-	Agents     []*agent.Agent
-	AgentType  agent.AgentType
+	Area       *api.Area
+	Agents     []*api.Agent
+	AgentType  api.AgentType
 }
 
-func NewRVO2Route(timeStep float64, globalTime float64, area *area.Area, agentsInfo []*agent.Agent, agentType agent.AgentType) *RVO2Route {
+func NewRVO2Route(timeStep float64, globalTime float64, area *api.Area, agentsInfo []*api.Agent, agentType api.AgentType) *RVO2Route {
 
 	// set obstacle
 	fcs = loadGeoJson("higashiyama.geojson")
@@ -59,7 +57,7 @@ func NewRVO2Route(timeStep float64, globalTime float64, area *area.Area, agentsI
 }
 
 // CalcDirectionAndDistance: 目的地までの距離と角度を計算する関数
-func (rvo2route *RVO2Route) CalcDirectionAndDistance(startCoord *common.Coord, goalCoord *common.Coord) (float64, float64) {
+func (rvo2route *RVO2Route) CalcDirectionAndDistance(startCoord *api.Coord, goalCoord *api.Coord) (float64, float64) {
 
 	r := 6378137 // equatorial radius
 	sLat := startCoord.Latitude * math.Pi / 180
@@ -82,7 +80,7 @@ func (rvo2route *RVO2Route) CalcDirectionAndDistance(startCoord *common.Coord, g
 }
 
 // DecideNextTransit: 次の経由地を求める関数
-func (rvo2route *RVO2Route) DecideNextTransit(nextTransit *common.Coord, transitPoint []*common.Coord, distance float64, destination *common.Coord) *common.Coord {
+func (rvo2route *RVO2Route) DecideNextTransit(nextTransit *api.Coord, transitPoint []*api.Coord, distance float64, destination *api.Coord) *api.Coord {
 	// 距離が5m以下の場合
 	if distance < 150 {
 		if nextTransit != destination {
@@ -122,7 +120,7 @@ func (rvo2route *RVO2Route) SetupScenario() {
 		// エージェントの速度方向ベクトルを設定
 		goalVector := sim.GetAgentGoalVector(id)
 		sim.SetAgentPrefVelocity(id, goalVector)
-		//sim.SetAgentMaxSpeed(id, float64(agent.MaxSpeed))
+		//sim.SetAgentMaxSpeed(id, float64(api.MaxSpeed))
 	}
 
 	// Set Obstacle
@@ -149,9 +147,9 @@ func (rvo2route *RVO2Route) SetupScenario() {
 	//fmt.Printf("Running Simulation..\n\n")
 }
 
-func (rvo2route *RVO2Route) CalcNextAgents() []*agent.Agent {
+func (rvo2route *RVO2Route) CalcNextAgents() []*api.Agent {
 
-	nextControlAgents := make([]*agent.Agent, 0)
+	nextControlAgents := make([]*api.Agent, 0)
 	currentAgents := rvo2route.Agents
 
 	timeStep := rvo2route.TimeStep
@@ -180,7 +178,7 @@ func (rvo2route *RVO2Route) CalcNextAgents() []*agent.Agent {
 			// rvoの位置情報を緯度経度に変換する
 			rvoAgentPosition := sim.GetAgentPosition(int(rvoId))
 
-			nextCoord := &common.Coord{
+			nextCoord := &api.Coord{
 				Latitude:  rvoAgentPosition.Y,
 				Longitude: rvoAgentPosition.X,
 			}
@@ -190,7 +188,7 @@ func (rvo2route *RVO2Route) CalcNextAgents() []*agent.Agent {
 			// 次の経由地nextTransitを求める
 			nextTransit := rvo2route.DecideNextTransit(agentInfo.Route.NextTransit, agentInfo.Route.TransitPoints, distance, destination)
 
-			nextRoute := &agent.Route{
+			nextRoute := &api.Route{
 				Position:      nextCoord,
 				Direction:     direction,
 				Speed:         distance,
@@ -202,11 +200,10 @@ func (rvo2route *RVO2Route) CalcNextAgents() []*agent.Agent {
 				RequiredTime:  agentInfo.Route.RequiredTime,
 			}
 
-			nextControlAgent := &agent.Agent{
+			nextControlAgent := &api.Agent{
 				Id:    agentInfo.Id,
 				Type:  agentInfo.Type,
 				Route: nextRoute,
-				Data:  agentInfo.Data,
 			}
 
 			nextControlAgents = append(nextControlAgents, nextControlAgent)

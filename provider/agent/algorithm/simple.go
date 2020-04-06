@@ -4,22 +4,20 @@ import (
 	"fmt"
 	"math"
 
-	"github.com/synerex/synerex_alpha/api/simulation/agent"
-	"github.com/synerex/synerex_alpha/api/simulation/area"
-	"github.com/synerex/synerex_alpha/api/simulation/common"
+	"github.com/synerex/synerex_alpha/api"
 	"github.com/synerex/synerex_alpha/provider/simutil"
 )
 
 type SimpleRoute struct {
 	TimeStep       float64
 	GlobalTime     float64
-	Area           *area.Area
-	Agents         []*agent.Agent
-	AgentType      agent.AgentType
-	SameAreaAgents []*agent.Agent
+	Area           *api.Area
+	Agents         []*api.Agent
+	AgentType      api.AgentType
+	SameAreaAgents []*api.Agent
 }
 
-func NewSimpleRoute(timeStep float64, globalTime float64, area *area.Area, agents []*agent.Agent, agentType agent.AgentType) *SimpleRoute {
+func NewSimpleRoute(timeStep float64, globalTime float64, area *api.Area, agents []*api.Agent, agentType api.AgentType) *SimpleRoute {
 	r := &SimpleRoute{
 		TimeStep:   timeStep,
 		GlobalTime: globalTime,
@@ -30,7 +28,7 @@ func NewSimpleRoute(timeStep float64, globalTime float64, area *area.Area, agent
 	return r
 }
 
-func (simple *SimpleRoute) CalcDirectionAndDistance(startCoord *common.Coord, goalCoord *common.Coord) (float64, float64) {
+func (simple *SimpleRoute) CalcDirectionAndDistance(startCoord *api.Coord, goalCoord *api.Coord) (float64, float64) {
 
 	r := 6378137 // equatorial radius
 	sLat := startCoord.Latitude * math.Pi / 180
@@ -53,7 +51,7 @@ func (simple *SimpleRoute) CalcDirectionAndDistance(startCoord *common.Coord, go
 }
 
 // TODO: Why Calc Error ? newLat=nan and newLon = inf
-func (simple *SimpleRoute) CalcMovedPosition(currentPosition *common.Coord, goalPosition *common.Coord, distance float64, speed float64) *common.Coord {
+func (simple *SimpleRoute) CalcMovedPosition(currentPosition *api.Coord, goalPosition *api.Coord, distance float64, speed float64) *api.Coord {
 
 	sLat := currentPosition.Latitude
 	sLon := currentPosition.Longitude
@@ -65,7 +63,7 @@ func (simple *SimpleRoute) CalcMovedPosition(currentPosition *common.Coord, goal
 	newLat := sLat + (gLat-sLat)*x
 	newLon := sLon + (gLon-sLon)*x
 
-	nextPosition := &common.Coord{
+	nextPosition := &api.Coord{
 		Latitude:  newLat,
 		Longitude: newLon,
 	}
@@ -74,7 +72,7 @@ func (simple *SimpleRoute) CalcMovedPosition(currentPosition *common.Coord, goal
 }
 
 // DecideNextTransit: 次の経由地を決める関数
-func (simple *SimpleRoute) DecideNextTransit(nextTransit *common.Coord, transitPoint []*common.Coord, distance float64, destination *common.Coord) *common.Coord {
+func (simple *SimpleRoute) DecideNextTransit(nextTransit *api.Coord, transitPoint []*api.Coord, distance float64, destination *api.Coord) *api.Coord {
 	// 距離が5m以下の場合
 	if distance < 5 {
 		if nextTransit != destination {
@@ -97,7 +95,7 @@ func (simple *SimpleRoute) DecideNextTransit(nextTransit *common.Coord, transitP
 }
 
 // CalcNextRoute：次の時刻のRouteを計算する関数
-func (simple *SimpleRoute) CalcNextRoute(agentInfo *agent.Agent, sameAreaAgents []*agent.Agent) *agent.Route {
+func (simple *SimpleRoute) CalcNextRoute(agentInfo *api.Agent, sameAreaAgents []*api.Agent) *api.Route {
 
 	route := agentInfo.Route
 	speed := route.Speed
@@ -121,13 +119,13 @@ func (simple *SimpleRoute) CalcNextRoute(agentInfo *agent.Agent, sameAreaAgents 
 
 	//fmt.Printf("\x1b[30m\x1b[47m Position %v, NextTransit: %v, NextTransit: %v, Direction: %v, Distance: %v \x1b[0m\n", currentPosition, nextTransit, destination, direction, distance)
 	//fmt.Printf("\x1b[30m\x1b[47m 上下:  %v, 左右: %v \x1b[0m\n", nextTransit.Lat-currentPosition.Lat, nextTransit.Lon-currentPosition.Lon)
-	/*nextPosition := &common.Coord{
+	/*nextPosition := &api.Coord{
 		Latitude: currentPosition.Latitude,
 		Lonitude: currentPosition.Longitude,
 	}
 	//TODO: Fix this
 	if newLat < 40 && newLat > 0 && newLon < 150 && newLon > 0 {
-		nextPosition = &common.Coord{
+		nextPosition = &api.Coord{
 			Latitude: newLat,
 			Longitude: newLon,
 		}*/
@@ -135,7 +133,7 @@ func (simple *SimpleRoute) CalcNextRoute(agentInfo *agent.Agent, sameAreaAgents 
 	//	log.Printf("\x1b[30m\x1b[47m LOCATION CULC ERROR %v \x1b[0m\n", nextPosition)
 	//}
 
-	nextRoute := &agent.Route{
+	nextRoute := &api.Route{
 		Position:      nextPosition,
 		Direction:     direction,
 		Speed:         speed,
@@ -151,31 +149,21 @@ func (simple *SimpleRoute) CalcNextRoute(agentInfo *agent.Agent, sameAreaAgents 
 }
 
 // CalcNextAgents: 次の時刻のエージェントを取得する関数
-func (simple *SimpleRoute) CalcNextAgents() []*agent.Agent {
+func (simple *SimpleRoute) CalcNextAgents() []*api.Agent {
 
-	nextControlAgents := make([]*agent.Agent, 0)
+	nextControlAgents := make([]*api.Agent, 0)
 
 	for _, agentInfo := range simple.Agents {
 		// 自エリアにいる場合、次のルートを計算する
 		if IsAgentInArea(agentInfo.Route.Position, simple.Area.ControlArea) {
 
-			// 現在のPedestrian情報
-			currentPedInfo := agentInfo.GetPedestrian()
-
 			// 次の時刻のRouteを計算
 			nextRoute := simple.CalcNextRoute(agentInfo, simple.SameAreaAgents)
 
-			ped := &agent.Pedestrian{
-				Status: currentPedInfo.Status,
-			}
-
-			nextControlAgent := &agent.Agent{
+			nextControlAgent := &api.Agent{
 				Id:    agentInfo.Id,
 				Type:  agentInfo.Type,
 				Route: nextRoute,
-				Data: &agent.Agent_Pedestrian{
-					Pedestrian: ped,
-				},
 			}
 			// Agent追加
 			nextControlAgents = append(nextControlAgents, nextControlAgent)
@@ -185,7 +173,7 @@ func (simple *SimpleRoute) CalcNextAgents() []*agent.Agent {
 }
 
 // エージェントがエリアの中にいるかどうか
-func IsAgentInArea(position *common.Coord, areaCoords []*common.Coord) bool {
+func IsAgentInArea(position *api.Coord, areaCoords []*api.Coord) bool {
 	lat := position.Latitude
 	lon := position.Longitude
 	maxLat, maxLon, minLat, minLon := simutil.GetCoordRange(areaCoords)

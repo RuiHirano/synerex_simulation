@@ -191,12 +191,15 @@ func syncDemandServerFunc(ch chan *api.Demand, stream api.Synerex_SubscribeSyncD
 			//targets = dm.GetSimDemand().GetTargets()
 			//dmId = dm.GetId()
 			//s.SyncMap[dmId] = targets
+
 			targets := dm.GetSimDemand().GetTargets() // id is channelID, targets is target channelIDs
+			fmt.Println("get dm %v targets: %v\n", targets)
 			if contains(id, targets) || len(targets) == 0 {
+				fmt.Println("dm %v\n", dm)
 				err := stream.Send(dm)
 
 				if err != nil {
-					log.Printf("Error in DemandServer Error %v", err)
+					log.Printf("Error in DemandServer Error %v", err, dm, id)
 					return err
 				}
 			}
@@ -238,12 +241,13 @@ func syncSupplyServerFunc(ch chan *api.Supply, stream api.Synerex_SubscribeSyncS
 	for {
 		select {
 		case sp := <-ch:
-
-			targets := sp.GetSimSupply().GetTargets()       // id is channelID, targets is target channelIDs
+			targets := sp.GetSimSupply().GetTargets() // id is channelID, targets is target channelIDs
+			fmt.Println("get sp %v targets: %v\n", sp, targets)
 			if contains(id, targets) || len(targets) == 0 { //len(targets) == 0: broadcast, else unicast
+				fmt.Println("sp %v\n", sp)
 				err := stream.Send(sp) // send to client
 				if err != nil {
-					log.Printf("Error SupplyServer Error %v", err)
+					log.Printf("Error SupplyServer Error %v", err, sp, id)
 					return err
 				}
 			}
@@ -392,7 +396,7 @@ func demandServerFunc(ch chan *api.Demand, stream api.Synerex_SubscribeDemandSer
 			fmt.Println("dm %v\n", dm)
 			err := stream.Send(dm)
 			if err != nil {
-				log.Printf("Error in DemandServer Error %v", err)
+				log.Printf("Error in DemandServer Error %v", err, dm)
 				return err
 			}
 		}
@@ -459,7 +463,7 @@ func supplyServerFunc(ch chan *api.Supply, stream api.Synerex_SubscribeSupplySer
 			err := stream.Send(sp)
 			if err != nil {
 
-				log.Printf("Error SupplyServer Error %v", err)
+				log.Printf("Error SupplyServer Error %v", err, sp)
 				return err
 			}
 		}

@@ -174,3 +174,11 @@ message Coord {
     double latitude = 1;
     double longitude = 2;
 }
+
+message Area {
+    uint64 id = 1;
+    string name = 2;
+    repeated Coord duplicate_area = 3;
+    repeated Coord control_area = 4;
+    repeated uint64 neighbor_area_ids = 5;
+}

@@ -30,4 +30,5 @@ RUN cd server && \
 # expose port
 #EXPOSE 10000
 WORKDIR /synerex_simulation/server
+RUN go build synerex-server.go message-store.go
 ENTRYPOINT [ "./entrypoint.sh" ]

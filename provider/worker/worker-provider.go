@@ -15,12 +15,13 @@ import (
 
 var (
 	myProvider        *api.Provider
-	synerexAddr       string
-	nodeIdAddr        string
+	workerSynerexAddr string
+	workerNodeIdAddr  string
 	masterNodeIdAddr  string
 	masterSynerexAddr string
 	mu                sync.Mutex
-	simapi            *api.SimAPI
+	masterapi         *api.SimAPI
+	workerapi         *api.SimAPI
 	workerClock       int
 	providerHosts     []string
 	logger            *simutil.Logger
@@ -37,13 +38,13 @@ func init() {
 	logger.SetPrefix("Scenario")
 	flag.Parse()
 
-	synerexAddr = os.Getenv("SYNEREX_SERVER")
-	if synerexAddr == "" {
-		synerexAddr = "127.0.0.1:10080"
+	workerSynerexAddr = os.Getenv("SYNEREX_SERVER")
+	if workerSynerexAddr == "" {
+		workerSynerexAddr = "127.0.0.1:10000"
 	}
-	nodeIdAddr = os.Getenv("NODEID_SERVER")
-	if nodeIdAddr == "" {
-		nodeIdAddr = "127.0.0.1:9000"
+	workerNodeIdAddr = os.Getenv("NODEID_SERVER")
+	if workerNodeIdAddr == "" {
+		workerNodeIdAddr = "127.0.0.1:9000"
 	}
 	masterSynerexAddr = os.Getenv("MASTER_SYNEREX_SERVER")
 	if masterSynerexAddr == "" {
@@ -51,7 +52,7 @@ func init() {
 	}
 	masterNodeIdAddr = os.Getenv("MASTER_NODEID_SERVER")
 	if masterNodeIdAddr == "" {
-		masterNodeIdAddr = "127.0.0.1:9080"
+		masterNodeIdAddr = "127.0.0.1:9000"
 	}
 
 	providerManager = NewManager()
@@ -90,43 +91,84 @@ func (m *Manager) GetProviderIds() []uint64 {
 ///////////////////////////////////////////////////////////
 
 // Supplyのコールバック関数
-func supplyCallback(clt *api.SMServiceClient, sp *api.Supply) {
+func masterSupplyCallback(clt *api.SMServiceClient, sp *api.Supply) {
 	// 自分宛かどうか
 	// check if supply is match with my demand.
 	switch sp.GetSimSupply().GetType() {
 	case api.SupplyType_REGIST_PROVIDER_RESPONSE:
-		fmt.Printf("regist provider!\n")
+		fmt.Printf("regist provider to Master Provider!\n")
 	}
 }
 
 // Demandのコールバック関数
-func demandCallback(clt *api.SMServiceClient, dm *api.Demand) {
+func masterDemandCallback(clt *api.SMServiceClient, dm *api.Demand) {
 	senderId := myProvider.Id
 	switch dm.GetSimDemand().GetType() {
 	case api.DemandType_FORWARD_CLOCK_REQUEST:
 		fmt.Printf("get forwardClockRequest")
 
-		// request to providers
-		//targets := providerManager.GetProviderIds()
-		//msgId := simapi.ForwardClockRequest(senderId, targets)
-		//waiter.Wait(msgId, targets)
+		// request to worker providers
+		targets := providerManager.GetProviderIds()
+		msgId := workerapi.ForwardClockRequest(senderId, targets)
+		waiter.Wait(msgId, targets)
 
 		// response to master
-		targets := []uint64{dm.GetSimDemand().GetSenderId()}
-		msgId := dm.GetSimDemand().GetMsgId()
-		simapi.ForwardClockResponse(senderId, targets, msgId)
+		targets = []uint64{dm.GetSimDemand().GetSenderId()}
+		msgId = dm.GetSimDemand().GetMsgId()
+		masterapi.ForwardClockResponse(senderId, targets, msgId)
 
 	case api.DemandType_SET_AGENT_REQUEST:
 		fmt.Printf("set agent")
 		// request to providers
-		//targets := providerManager.GetProviderIds()
-		//msgId := simapi.ForwardClockRequest(senderId, targets)
-		//waiter.Wait(msgId, targets)
+		agents := dm.GetSimDemand().GetSetAgentRequest().GetAgents()
+		targets := providerManager.GetProviderIds()
+		msgId := workerapi.SetAgentRequest(senderId, targets, agents)
+		waiter.Wait(msgId, targets)
 
 		// response to master
-		targets := []uint64{dm.GetSimDemand().GetSenderId()}
+		targets = []uint64{dm.GetSimDemand().GetSenderId()}
+		msgId = dm.GetSimDemand().GetMsgId()
+		masterapi.SetAgentResponse(senderId, targets, msgId)
+	}
+}
+
+////////////////////////////////////////////////////////////
+////////////     Worker Demand Supply Callback    //////////
+///////////////////////////////////////////////////////////
+
+// Supplyのコールバック関数
+func workerSupplyCallback(clt *api.SMServiceClient, sp *api.Supply) {
+	// 自分宛かどうか
+	// check if supply is match with my demand.
+	switch sp.GetSimSupply().GetType() {
+	case api.SupplyType_SET_CLOCK_RESPONSE:
+		logger.Info("get sp: %v\n", sp)
+		waiter.SendToWait(sp)
+	case api.SupplyType_SET_AGENT_RESPONSE:
+		logger.Info("get sp: %v\n", sp)
+		waiter.SendToWait(sp)
+	case api.SupplyType_FORWARD_CLOCK_RESPONSE:
+		logger.Info("get sp: %v\n", sp)
+		waiter.SendToWait(sp)
+	}
+}
+
+// Demandのコールバック関数
+func workerDemandCallback(clt *api.SMServiceClient, dm *api.Demand) {
+	switch dm.GetSimDemand().GetType() {
+	case api.DemandType_REGIST_PROVIDER_REQUEST:
+		// providerを追加する
+		p := dm.GetSimDemand().GetRegistProviderRequest().GetProvider()
+		providerManager.AddProvider(p)
+		fmt.Printf("regist request from agent of vis provider! %v\n", providerManager.Providers)
+		// 登録完了通知
+		senderId := myProvider.Id
+		targets := []uint64{p.GetId()}
 		msgId := dm.GetSimDemand().GetMsgId()
-		simapi.SetAgentResponse(senderId, targets, msgId)
+		workerapi.RegistProviderResponse(senderId, targets, msgId)
+
+		logger.Info("Success Regist Agent or Vis Providers", targets)
+
 	}
 }
 
@@ -140,6 +182,7 @@ func main() {
 		Type: api.ProviderType_WORKER,
 	}
 
+	// For Master
 	// Connect to Node Server
 	api.RegisterNodeName(masterNodeIdAddr, "WorkerProvider", false)
 	go api.HandleSigInt()
@@ -157,18 +200,41 @@ func main() {
 	argJson := fmt.Sprintf("{Client:Worker}")
 
 	// Communicator
-	simapi = api.NewSimAPI()
-	simapi.RegistClients(client, myProvider.Id, argJson) // channelごとのClientを作成
-	simapi.SubscribeAll(demandCallback, supplyCallback)  // ChannelにSubscribe
+	masterapi = api.NewSimAPI()
+	masterapi.RegistClients(client, myProvider.Id, argJson)            // channelごとのClientを作成
+	masterapi.SubscribeAll(masterDemandCallback, masterSupplyCallback) // ChannelにSubscribe
 
 	// masterへ登録
 	senderId := myProvider.Id
 	targets := make([]uint64, 0)
-	simapi.RegistProviderRequest(senderId, targets, myProvider)
+	masterapi.RegistProviderRequest(senderId, targets, myProvider)
+
+	// For Worker
+	// Connect to Node Server
+	api.RegisterNodeName(workerNodeIdAddr, "WorkerProvider", false)
+	go api.HandleSigInt()
+	api.RegisterDeferFunction(api.UnRegisterNode)
+
+	// Connect to Synerex Server
+	var wopts []grpc.DialOption
+	wopts = append(wopts, grpc.WithInsecure())
+	wconn, werr := grpc.Dial(workerSynerexAddr, wopts...)
+	if werr != nil {
+		log.Fatalf("fail to dial: %v", werr)
+	}
+	api.RegisterDeferFunction(func() { wconn.Close() })
+	wclient := api.NewSynerexClient(wconn)
+	wargJson := fmt.Sprintf("{Client:Worker}")
+
+	// Communicator
+	workerapi = api.NewSimAPI()
+	workerapi.RegistClients(wclient, myProvider.Id, wargJson)          // channelごとのClientを作成
+	workerapi.SubscribeAll(workerDemandCallback, workerSupplyCallback) // ChannelにSubscribe
 
 	wg := sync.WaitGroup{}
 	wg.Add(1)
 	wg.Wait()
+	fmt.Printf("clean up!")
 	api.CallDeferFunctions() // cleanup!
 
 }

@@ -1,152 +1,61 @@
 package main
 
 import (
-	"flag"
+	//"flag"
 	"log"
-	"strings"
+	"math/rand"
+	"time"
+
+	//"strings"
 	"sync"
 
-	"github.com/golang/protobuf/jsonpb"
-	pb "github.com/synerex/synerex_alpha/api"
-	simapi "github.com/synerex/synerex_alpha/api/simulation"
-	"github.com/synerex/synerex_alpha/api/simulation/agent"
-	"github.com/synerex/synerex_alpha/api/simulation/area"
-	"github.com/synerex/synerex_alpha/api/simulation/clock"
-	"github.com/synerex/synerex_alpha/api/simulation/provider"
+	//"github.com/golang/protobuf/jsonpb"
+	api "github.com/synerex/synerex_alpha/api"
 	"github.com/synerex/synerex_alpha/provider/simutil"
-	"github.com/synerex/synerex_alpha/sxutil"
 
 	"fmt"
 	"net/http"
 	"os"
+
 	"path/filepath"
 
+	"github.com/google/uuid"
 	gosocketio "github.com/mtfelian/golang-socketio"
 	"google.golang.org/grpc"
 )
 
 var (
-	serverAddr           = flag.String("synerex", "127.0.0.1:10000", "The server address in the format of host:port")
-	nodesrv              = flag.String("nodeid", "127.0.0.1:9990", "Node ID Server")
-	visAddr              = flag.String("vis_monitor", "127.0.0.1:9993", "Node ID Server")
-	providerJson         = flag.String("provider_json", "", "Provider Json")
-	scenarioProviderJson = flag.String("scenario_provider_json", "", "Provider Json")
-	port                 = flag.Int("port", 10080, "HarmoVis Provider Listening Port")
-	version              = "0.01"
-	myProvider           *provider.Provider
-	scenarioProvider     *provider.Provider
-	mu                   sync.Mutex
-	assetsDir            http.FileSystem
-	ioserv               *gosocketio.Server
-	com                  *simutil.Communicator
-	sim                  *Simulator
-	providerManager      *simutil.ProviderManager
-	logger               *simutil.Logger
+	synerexAddr string
+	nodeIdAddr  string
+	visAddr     string
+	myProvider  *api.Provider
+	mu          sync.Mutex
+	assetsDir   http.FileSystem
+	ioserv      *gosocketio.Server
+	logger      *simutil.Logger
+	simapi      *api.SimAPI
 )
 
-func flagToProviderInfo(pJson string) *provider.Provider {
-	pInfo := &provider.Provider{}
-	jsonpb.Unmarshal(strings.NewReader(pJson), pInfo)
-	return pInfo
-}
-
 func init() {
-	flag.Parse()
+	//flag.Parse()
 	logger = simutil.NewLogger()
-	myProvider = flagToProviderInfo(*providerJson)
-	scenarioProvider = flagToProviderInfo(*scenarioProviderJson)
-}
-
-func sendAreaToHarmowareVis(areas []*area.Area) {
-	jsonAreas := make([]string, 0)
-	jsonAreas = append(jsonAreas, "test")
-	mu.Lock()
-	ioserv.BroadcastToAll("area", jsonAreas)
-	mu.Unlock()
-}
-
-type MapMarker struct {
-	mtype int32   `json:"mtype"`
-	id    int32   `json:"id"`
-	lat   float32 `json:"lat"`
-	lon   float32 `json:"lon"`
-	angle float32 `json:"angle"`
-	speed int32   `json:"speed"`
-	area  int32   `json:"area"`
-}
-
-// GetJson: json化する関数
-func (m *MapMarker) GetJson() string {
-	s := fmt.Sprintf("{\"mtype\":%d,\"id\":%d,\"lat\":%f,\"lon\":%f,\"angle\":%f,\"speed\":%d,\"area\":%d}",
-		m.mtype, m.id, m.lat, m.lon, m.angle, m.speed, m.area)
-	return s
-}
-
-// sendToHarmowareVis: harmowareVisに情報を送信する関数
-func sendToHarmowareVis(sumAgents []*agent.Agent) {
-
-	if sumAgents != nil {
-		jsonAgents := make([]string, 0)
-		for _, agentInfo := range sumAgents {
-
-			// agentInfoTypeによってエージェントを取得
-			switch agentInfo.Type {
-			case agent.AgentType_PEDESTRIAN:
-				//ped := agentInfo.GetPedestrian()
-				mm := &MapMarker{
-					mtype: int32(agentInfo.Type),
-					id:    int32(agentInfo.Id),
-					lat:   float32(agentInfo.Route.Position.Latitude),
-					lon:   float32(agentInfo.Route.Position.Longitude),
-					angle: float32(agentInfo.Route.Direction),
-					speed: int32(agentInfo.Route.Speed),
-				}
-				jsonAgents = append(jsonAgents, mm.GetJson())
-
-			case agent.AgentType_CAR:
-				//car := agentInfo.GetCar()
-				mm := &MapMarker{
-					mtype: int32(agentInfo.Type),
-					id:    int32(agentInfo.Id),
-					lat:   float32(agentInfo.Route.Position.Latitude),
-					lon:   float32(agentInfo.Route.Position.Longitude),
-					angle: float32(agentInfo.Route.Direction),
-					speed: int32(agentInfo.Route.Speed),
-				}
-				jsonAgents = append(jsonAgents, mm.GetJson())
-			}
-		}
-		mu.Lock()
-		ioserv.BroadcastToAll("event", jsonAgents)
-		mu.Unlock()
+	synerexAddr = os.Getenv("SYNEREX_SERVER")
+	if synerexAddr == "" {
+		synerexAddr = "127.0.0.1:10000"
+	}
+	nodeIdAddr = os.Getenv("NODEID_SERVER")
+	if nodeIdAddr == "" {
+		nodeIdAddr = "127.0.0.1:9000"
+	}
+	visAddr = os.Getenv("VIS_ADDRESS")
+	if visAddr == "" {
+		visAddr = "127.0.0.1:9500"
 	}
 }
 
-// callbackForwardClockRequest: クロックを進める関数
-func forwardClock(dm *pb.Demand) {
-	//log.Printf("\x1b[30m\x1b[47m \n Start: Clock forwarded \n Time:  %v \x1b[0m\n", sim.Clock.GlobalTime)
-	targetId := dm.GetSimDemand().GetPid()
-	pid := providerManager.MyProvider.Id
-
-	// 同期するIDリスト
-	idList := providerManager.GetIDList([]simutil.IDType{
-		simutil.IDType_AGENT,
-	})
-
-	senderInfo := providerManager.MyProvider
-	targets := idList
-	_, agents := com.GetAgentsRequest(senderInfo, targets, pid, idList)
-
-	// Harmowareに送る
-	sendToHarmowareVis(agents)
-
-	// clockを進める
-	sim.ForwardStep()
-
-	// セット完了通知を送る
-	com.ForwardClockResponse(senderInfo, targets, pid, targetId)
-	logger.Info("Finish: Clock Forwarded. \n Time:  %v \n Agents Num: %v", sim.Clock.GlobalTime, len(agents))
-}
+////////////////////////////////////////////////////////////
+////////////           Harmovis server           ///////////
+///////////////////////////////////////////////////////////
 
 func runServer() *gosocketio.Server {
 
@@ -164,11 +73,6 @@ func runServer() *gosocketio.Server {
 
 	server.On(gosocketio.OnConnection, func(c *gosocketio.Channel) {
 		log.Printf("Connected from %s as %s", c.IP(), c.Id())
-
-		//sendAreaToHarmowareVis(make([]*area.Area2, 0))
-		// geojsonを送信
-		//sendFile2()
-		//sendFile()
 	})
 
 	server.On(gosocketio.OnDisconnection, func(c *gosocketio.Channel) {
@@ -204,115 +108,171 @@ func assetsFileHandler(w http.ResponseWriter, r *http.Request) {
 	http.ServeContent(w, r, file, fi.ModTime(), f)
 }
 
+type MapMarker struct {
+	mtype int32   `json:"mtype"`
+	id    int32   `json:"id"`
+	lat   float32 `json:"lat"`
+	lon   float32 `json:"lon"`
+	angle float32 `json:"angle"`
+	speed int32   `json:"speed"`
+	area  int32   `json:"area"`
+}
+
+// GetJson: json化する関数
+func (m *MapMarker) GetJson() string {
+	s := fmt.Sprintf("{\"mtype\":%d,\"id\":%d,\"lat\":%f,\"lon\":%f,\"angle\":%f,\"speed\":%d,\"area\":%d}",
+		m.mtype, m.id, m.lat, m.lon, m.angle, m.speed, m.area)
+	return s
+}
+
+// sendToHarmowareVis: harmowareVisに情報を送信する関数
+func sendToHarmowareVis(agents []*api.Agent) {
+
+	if agents != nil {
+		jsonAgents := make([]string, 0)
+		for _, agentInfo := range agents {
+
+			// agentInfoTypeによってエージェントを取得
+			switch agentInfo.Type {
+			case api.AgentType_PEDESTRIAN:
+				//ped := agentInfo.GetPedestrian()
+				mm := &MapMarker{
+					mtype: int32(agentInfo.Type),
+					id:    int32(agentInfo.Id),
+					lat:   float32(agentInfo.Route.Position.Latitude),
+					lon:   float32(agentInfo.Route.Position.Longitude),
+					angle: float32(agentInfo.Route.Direction),
+					speed: int32(agentInfo.Route.Speed),
+				}
+				jsonAgents = append(jsonAgents, mm.GetJson())
+
+			case api.AgentType_CAR:
+				//car := agentInfo.GetCar()
+				mm := &MapMarker{
+					mtype: int32(agentInfo.Type),
+					id:    int32(agentInfo.Id),
+					lat:   float32(agentInfo.Route.Position.Latitude),
+					lon:   float32(agentInfo.Route.Position.Longitude),
+					angle: float32(agentInfo.Route.Direction),
+					speed: int32(agentInfo.Route.Speed),
+				}
+				jsonAgents = append(jsonAgents, mm.GetJson())
+			}
+		}
+		mu.Lock()
+		ioserv.BroadcastToAll("event", jsonAgents)
+		mu.Unlock()
+	}
+}
+
+// callbackForwardClockRequest: クロックを進める関数
+func forwardClock(dm *api.Demand) {
+	//log.Printf("\x1b[30m\x1b[47m \n Start: Clock forwarded \n Time:  %v \x1b[0m\n", sim.Clock.GlobalTime)
+	//senderId := myProvider.Id
+
+	//targets := []uint64{}
+	//_, sameAreaAgents := simapi.GetAgentRequest(senderId, targets)
+	agents := []*api.Agent{}
+	// Harmowareに送る
+	sendToHarmowareVis(agents)
+}
+
 // callback for each Supply
-func demandCallback(clt *sxutil.SMServiceClient, dm *pb.Demand) {
-	tid := dm.GetSimDemand().GetPid()
-	pid := providerManager.MyProvider.Id
+func demandCallback(clt *api.SMServiceClient, dm *api.Demand) {
 	switch dm.GetSimDemand().GetType() {
-	case simapi.DemandType_UPDATE_PROVIDERS_REQUEST:
-		providers := dm.GetSimDemand().GetUpdateProvidersRequest().GetProviders()
-		//logger.Error("Update Provider %v\n", providers)
-		providerManager.UpdateProviders(providers)
-		providerManager.CreateIDMap()
-		targets := []uint64{tid}
-		senderInfo := providerManager.MyProvider
-		com.UpdateProvidersResponse(senderInfo, targets, pid, tid)
-		// 参加者リストをセットする要求
-		//callbackSetParticipantsRequest(dm)
-	case simapi.DemandType_FORWARD_CLOCK_REQUEST:
+	case api.DemandType_FORWARD_CLOCK_REQUEST:
 		// クロックを進める
 		forwardClock(dm)
 
-	/*case simapi.DemandType_SET_AGENTS_REQUEST:
-	// Agentをセットする
-
-	// セット完了通知
-	targets := []uint64{tid}
-	senderInfo := providerManager.MyProvider
-	com.SetAgentsResponse(senderInfo, targets, pid, tid)*/
-
-	case simapi.DemandType_UPDATE_CLOCK_REQUEST:
-		// Clockをセットする
-		clockInfo := dm.GetSimDemand().GetSetClockRequest().GetClock()
-		sim.Clock = clockInfo
-		logger.Info("Finish Update Clock %v, %v", pid, tid)
-		targets := []uint64{tid}
-		senderInfo := providerManager.MyProvider
-		com.UpdateClockResponse(senderInfo, targets, pid, tid)
+		// response
+		senderId := myProvider.Id
+		targets := []uint64{dm.GetSimDemand().GetSenderId()}
+		msgId := dm.GetSimDemand().GetMsgId()
+		simapi.ForwardClockResponse(senderId, targets, msgId)
+		logger.Info("Finish: Forward Clock")
 	}
 
 }
 
 // callback for each Supply
-func supplyCallback(clt *sxutil.SMServiceClient, sp *pb.Supply) {
-	// 自分宛かどうか
-	if sp.GetTargetId() == providerManager.MyProvider.Id {
-		switch sp.GetSimSupply().GetType() {
-		case simapi.SupplyType_GET_CLOCK_RESPONSE:
-			com.SendToWaitCh(sp, sp.GetSimSupply().GetType())
-		case simapi.SupplyType_GET_AGENTS_RESPONSE:
-			com.SendToWaitCh(sp, sp.GetSimSupply().GetType())
-		case simapi.SupplyType_REGIST_PROVIDER_RESPONSE:
-			com.SendToWaitCh(sp, sp.GetSimSupply().GetType())
-		}
+func supplyCallback(clt *api.SMServiceClient, sp *api.Supply) {
+	switch sp.GetSimSupply().GetType() {
+	//case api.SupplyType_GET_AGENT_RESPONSE:
+	//	fmt.Printf("get agents response")
+	case api.SupplyType_REGIST_PROVIDER_RESPONSE:
+		fmt.Printf("resist provider request")
+	}
+}
+
+///////////////////////////
+/////    test      ////////
+///////////////////////////
+var mockAgents []*api.Agent
+
+func init() {
+	mockAgents = []*api.Agent{}
+	for i := 0; i < 100; i++ {
+		uid, _ := uuid.NewRandom()
+		mockAgents = append(mockAgents, &api.Agent{
+			Type: api.AgentType_PEDESTRIAN,
+			Id:   uint64(uid.ID()),
+			Route: &api.Route{
+				Position: &api.Coord{
+					Longitude: 136.97285 + float64(rand.Int())*0.01,
+					Latitude:  35.15333 + float64(rand.Int())*0.01,
+				},
+				Direction: 0,
+				Speed:     0,
+			},
+		})
+	}
+}
+
+func sendAgents() {
+	for {
+		time.Sleep(1 * time.Second)
+		fmt.Printf("send agents")
+		sendToHarmowareVis(mockAgents)
 	}
 }
 
 func main() {
-
-	logger.Info("StartUp Provider %v, %v, %v", *serverAddr, myProvider, scenarioProvider)
-	// ProviderManager
-	//myProvider := provider.NewProvider("VisualizationProvider", provider.ProviderType_VISUALIZATION)
-	providerManager = simutil.NewProviderManager(myProvider)
-	providerManager.AddProvider(scenarioProvider)
-	providerManager.CreateIDMap()
+	logger.Info("StartUp Provider %v, %v", synerexAddr, myProvider)
+	// Provider
+	uid, _ := uuid.NewRandom()
+	myProvider = &api.Provider{
+		Id:   uint64(uid.ID()),
+		Name: "VisualizationProvider",
+		Type: api.ProviderType_WORKER,
+	}
 
 	// Connect to Node Server
-	sxutil.RegisterNodeName(*nodesrv, "VisualizationProvider", false)
-	go sxutil.HandleSigInt()
-	sxutil.RegisterDeferFunction(sxutil.UnRegisterNode)
+	api.RegisterNodeName(nodeIdAddr, "VisualizationProvider", false)
+	go api.HandleSigInt()
+	api.RegisterDeferFunction(api.UnRegisterNode)
 
 	// Connect to Synerex Server
 	var opts []grpc.DialOption
 	opts = append(opts, grpc.WithInsecure())
-	conn, err := grpc.Dial(*serverAddr, opts...)
+	conn, err := grpc.Dial(synerexAddr, opts...)
 	if err != nil {
 		log.Fatalf("fail to dial: %v", err)
 	}
-	sxutil.RegisterDeferFunction(func() { conn.Close() })
-	client := pb.NewSynerexClient(conn)
+	api.RegisterDeferFunction(func() { conn.Close() })
+	client := api.NewSynerexClient(conn)
 	argJson := fmt.Sprintf("{Client:Visualization}")
 
-	// Simulator
-	clockInfo := clock.NewClock(0, 1, 1)
-	sim = NewSimulator(clockInfo)
+	// WorkerAPI作成
+	simapi = api.NewSimAPI()
+	simapi.RegistClients(client, myProvider.Id, argJson) // channelごとのClientを作成
+	simapi.SubscribeAll(demandCallback, supplyCallback)  // ChannelにSubscribe
 
-	// Communicator
-	//visInfo := &provider.VisualizationStatus{}
-	//provider := provider.NewVisualizationProvider("VisualizationProvider", visInfo)
-	com = simutil.NewCommunicator()
-	com.RegistClients(client, argJson)               // channelごとのClientを作成
-	com.SubscribeAll(demandCallback, supplyCallback) // ChannelにSubscribe
+	// workerへ登録
+	senderId := myProvider.Id
+	targets := make([]uint64, 0)
+	simapi.RegistProviderRequest(senderId, targets, myProvider)
 
-	// 新規参加登録
-	// 同期するIDリスト
-	idList := providerManager.GetIDList([]simutil.IDType{
-		simutil.IDType_SCENARIO,
-	})
-	pid := providerManager.MyProvider.Id
-	senderInfo := providerManager.MyProvider
-	targets := idList
-	com.RegistProviderRequest(senderInfo, targets, pid, idList, myProvider)
-	logger.Info("Finish Provider Registration.")
-
-	// Clock情報を取得
-	idList = providerManager.GetIDList([]simutil.IDType{
-		simutil.IDType_CLOCK,
-	})
-	targets = idList
-	_, clockInfo = com.GetClockRequest(senderInfo, targets, pid, idList)
-	sim.Clock = clockInfo
-	logger.Info("Finish Setting Clock. \n")
+	go sendAgents()
 
 	// Run HarmowareVis Monitor
 	ioserv = runServer()
@@ -323,8 +283,8 @@ func main() {
 	serveMux := http.NewServeMux()
 	serveMux.Handle("/socket.io/", ioserv)
 	serveMux.HandleFunc("/", assetsFileHandler)
-	log.Printf("Starting Harmoware VIS  Provider on %v", *visAddr)
-	err = http.ListenAndServe(*visAddr, serveMux)
+	log.Printf("Starting Harmoware VIS  Provider on %v", visAddr)
+	err = http.ListenAndServe(visAddr, serveMux)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -332,8 +292,6 @@ func main() {
 	// プロバイダのsetup
 	wg := sync.WaitGroup{}
 	wg.Add(1)
-
 	wg.Wait()
-
-	sxutil.CallDeferFunctions() // cleanup!
+	api.CallDeferFunctions() // cleanup!
 }

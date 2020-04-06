@@ -345,6 +345,7 @@ func main() {
 	simapi = api.NewSimAPI()
 	simapi.RegistClients(client, myProvider.Id, argJson) // channelごとのClientを作成
 	simapi.SubscribeAll(demandCallback, supplyCallback)  // ChannelにSubscribe*/
+	logger.Info("Connected Synerex Server!\n")
 
 	wg := sync.WaitGroup{}
 	wg.Add(1)

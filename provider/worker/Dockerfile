@@ -31,4 +31,5 @@ RUN cd provider/worker && \
 # expose port
 #EXPOSE 10000
 WORKDIR /synerex_simulation/provider/worker
+RUN go build worker-provider.go
 ENTRYPOINT [ "./entrypoint.sh" ]

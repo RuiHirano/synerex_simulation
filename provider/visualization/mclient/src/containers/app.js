@@ -163,7 +163,7 @@ class App extends Container {
         //const setMovedData = [];
         const movesbasedata = [...movesbase];
 
-        console.log("socketData length", socketsData.length);
+        console.log("socketData length", socketsData);
         //console.log("movesbasedata length", movesbasedata.length)
 
         socketsData.forEach(socketData => {
@@ -457,8 +457,8 @@ class App extends Container {
                     lightSettings,
                     visible: this.state.moveDataVisible,
                     optionVisible: this.state.moveOptionVisible,
-                    layerRadiusScale: 0.01,
-                    getRaduis: x => 0.02,
+                    layerRadiusScale: 0.1,
+                    getRaduis: x => 0.1,
                     getStrokeWidth: 0.01,
                     optionCellSize: 2,
                     sizeScale: 1,
@@ -495,8 +495,8 @@ class App extends Container {
                     ></InteractiveMap>
                 </DeckGL>
             ) : (
-                <LoadingIcon loading={true} />
-            );
+                    <LoadingIcon loading={true} />
+                );
 
         /*					<div style={{ position: "absolute", left: 30, top: 120, zIndex: 1 }}>
 						<NavigationControl />
@@ -538,16 +538,16 @@ class App extends Container {
                     <g fill="white" fontSize="12">
                         {this.state.popup[2].length > 0
                             ? this.state.popup[2]
-                                  .split("\n")
-                                  .map((value, index) => (
-                                      <text
-                                          x={this.state.popup[0] + 10}
-                                          y={this.state.popup[1] + index * 12}
-                                          key={index.toString()}
-                                      >
-                                          {value}
-                                      </text>
-                                  ))
+                                .split("\n")
+                                .map((value, index) => (
+                                    <text
+                                        x={this.state.popup[0] + 10}
+                                        y={this.state.popup[1] + index * 12}
+                                        key={index.toString()}
+                                    >
+                                        {value}
+                                    </text>
+                                ))
                             : null}
                     </g>
                 </svg>

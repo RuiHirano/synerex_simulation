@@ -1,12 +1,11 @@
 package simutil
 
-/*import (
+import (
 	"math"
 	"sort"
 
 	"github.com/google/uuid"
 	api "github.com/synerex/synerex_alpha/api"
-	area "github.com/synerex/synerex_alpha/api/simulation/area"
 )
 
 ////////////////////////////////////////////////////////////
@@ -14,19 +13,19 @@ package simutil
 ///////////////////////////////////////////////////////////
 
 type AreaManager struct {
-	Areas []*area.Area
+	Areas []*api.Area
 }
 
-func NewAreaManager(initArea *area.Area) *AreaManager {
+func NewAreaManager(initArea *api.Area) *AreaManager {
 	am := &AreaManager{
-		Areas: []*area.Area{initArea},
+		Areas: []*api.Area{initArea},
 	}
 	//am.CreateNeighborIds()
 	return am
 }
 
 // エリアを取得する
-func (am *AreaManager) GetArea(areaId uint64) *area.Area {
+func (am *AreaManager) GetArea(areaId uint64) *api.Area {
 	for _, areaInfo := range am.Areas {
 		if areaInfo.Id == areaId {
 			return areaInfo
@@ -36,7 +35,7 @@ func (am *AreaManager) GetArea(areaId uint64) *area.Area {
 }
 
 // エリアをセットする
-func (am *AreaManager) SetArea(areaInfo *area.Area) {
+func (am *AreaManager) SetArea(areaInfo *api.Area) {
 	for i, ai := range am.Areas {
 		if ai.Id == areaInfo.Id {
 			am.Areas[i] = areaInfo
@@ -45,13 +44,13 @@ func (am *AreaManager) SetArea(areaInfo *area.Area) {
 }
 
 // エリアの追加
-func (am *AreaManager) AddArea(areaInfo *area.Area) {
+func (am *AreaManager) AddArea(areaInfo *api.Area) {
 	am.Areas = append(am.Areas, areaInfo)
 }
 
 // エリアの削除
 func (am *AreaManager) DeleteArea(areaId uint64) {
-	newAreas := make([]*area.Area, 0)
+	newAreas := make([]*api.Area, 0)
 	for _, ai := range am.Areas {
 		if ai.Id != areaId {
 			newAreas = append(newAreas, ai)
@@ -60,7 +59,7 @@ func (am *AreaManager) DeleteArea(areaId uint64) {
 	am.Areas = newAreas
 }
 
-func (am *AreaManager) DivideArea(areaInfo *area.Area) []*area.Area {
+func (am *AreaManager) DivideArea(areaInfo *api.Area) []*api.Area {
 	DUPLICATE_RANGE := 0.001
 	// エリアを分割する
 	// 最初は単純にエリアを半分にする
@@ -112,10 +111,10 @@ func (am *AreaManager) DivideArea(areaInfo *area.Area) []*area.Area {
 	}
 
 	// calc areaInfo
-	dividedAreaInfos := make([]*area.Area, 0)
+	dividedAreaInfos := make([]*api.Area, 0)
 	for i, control := range controls {
 		uid, _ := uuid.NewRandom()
-		dividedAreaInfos = append(dividedAreaInfos, &area.Area{
+		dividedAreaInfos = append(dividedAreaInfos, &api.Area{
 			Id:              uint64(uid.ID()),
 			Name:            "test",
 			DuplicateArea:   duplicates[i],
@@ -132,7 +131,7 @@ func (am *AreaManager) DivideArea(areaInfo *area.Area) []*area.Area {
 	am.DeleteArea(areaInfo.Id)
 
 	// neighbor更新後の分割されたエリア情報を取得
-	areaInfos := make([]*area.Area, 0)
+	areaInfos := make([]*api.Area, 0)
 	for _, aInfo := range dividedAreaInfos {
 		areaInfos = append(areaInfos, am.GetArea(aInfo.Id))
 	}
@@ -141,7 +140,7 @@ func (am *AreaManager) DivideArea(areaInfo *area.Area) []*area.Area {
 }
 
 // 分割されたエリアを加える
-func (am *AreaManager) AddDevidedArea(sourceArea *area.Area, dividedArea []*area.Area) {
+func (am *AreaManager) AddDevidedArea(sourceArea *api.Area, dividedArea []*api.Area) {
 	// 分割されたエリアの隣接エリアを対象に隣接判定を行う
 	for _, area1 := range dividedArea {
 		for _, areaInfo := range am.Areas {
@@ -163,7 +162,7 @@ func (am *AreaManager) AddDevidedArea(sourceArea *area.Area, dividedArea []*area
 func (am *AreaManager) CreateNeighborIds() {
 	if len(am.Areas) != 0 {
 		for i, area1 := range am.Areas {
-			var area2 *area.Area
+			var area2 *api.Area
 			if i == 0 {
 				area2 = am.Areas[len(am.Areas)-1]
 			} else {
@@ -180,7 +179,7 @@ func (am *AreaManager) CreateNeighborIds() {
 }
 
 // 隣接しているかどうか
-func isNeighbor(area1 *area.Area, area2 *area.Area) bool {
+func isNeighbor(area1 *api.Area, area2 *api.Area) bool {
 	// latかlonが等しい時に、逆(latならlon,lonならlat)が重なっていれば隣接している
 	maxLat1, maxLon1, minLat1, minLon1 := GetCoordRange(area1.ControlArea)
 	maxLat2, maxLon2, minLat2, minLon2 := GetCoordRange(area2.ControlArea)
@@ -221,4 +220,3 @@ func GetCoordRange(coords []*api.Coord) (float64, float64, float64, float64) {
 	}
 	return maxLat, maxLon, minLat, minLon
 }
-*/

@@ -490,7 +490,7 @@ func (clt *SMServiceClient) RegisterSupply(spo *SupplyOpts) uint64 {
 // add sync function////////
 /////////////////////////
 // RegisterDemand sends Typed Demand to Server
-func (clt *SMServiceClient) SyncDemand(dmo *DemandOpts, targetIds []uint64) uint64 {
+func (clt *SMServiceClient) SyncDemand(dmo *DemandOpts) uint64 {
 	id := GenerateIntID()
 	ts := ptypes.TimestampNow()
 	dm := &Demand{
@@ -522,7 +522,7 @@ func (clt *SMServiceClient) SyncDemand(dmo *DemandOpts, targetIds []uint64) uint
 }
 
 // SyncSupply sends Typed Supply to Server
-func (clt *SMServiceClient) SyncSupply(spo *SupplyOpts, targetIds []uint64) uint64 {
+func (clt *SMServiceClient) SyncSupply(spo *SupplyOpts) uint64 {
 	id := GenerateIntID()
 	ts := ptypes.TimestampNow()
 	sp := &Supply{

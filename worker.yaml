@@ -28,14 +28,32 @@ spec:
         app: worker
     spec:
       containers:
+      - name: nodeid-server
+        image: synerex-simulation/nodeid-server:latest 
+        imagePullPolicy: Never
+        env: 
+        - name: NODEID_SERVER
+          value: :9000
+        ports:
+        - containerPort: 9000
+      - name: synerex-server
+        image: synerex-simulation/synerex-server:latest 
+        imagePullPolicy: Never
+        env: 
+        - name: NODEID_SERVER
+          value: :9000
+        - name: SYNEREX_SERVER
+          value: :10000
+        ports:
+        - containerPort: 10000
       - name: worker-provider
         image: synerex-simulation/worker-provider:latest 
         imagePullPolicy: Never
         env: 
         - name: NODEID_SERVER
-          value: localhost:9000
+          value: :9000
         - name: SYNEREX_SERVER
-          value: localhost:10000
+          value: :10000
         - name: MASTER_SYNEREX_SERVER
           value: master:700
         - name: MASTER_NODEID_SERVER
@@ -44,3 +62,22 @@ spec:
           value: '9980'
         ports:
         - containerPort: 9980
+      - name: agent-provider
+        image: synerex-simulation/agent-provider:latest 
+        imagePullPolicy: Never
+        env: 
+        - name: NODEID_SERVER
+          value: :9000
+        - name: SYNEREX_SERVER
+          value: :10000
+      - name: visualization-provider
+        image: synerex-simulation/visualization-provider:latest 
+        imagePullPolicy: Never
+        env: 
+        - name: NODEID_SERVER
+          value: :9000
+        - name: SYNEREX_SERVER
+          value: :10000
+        - name: VIS_ADDRESS
+          value: 'localhost:9500'
+      
