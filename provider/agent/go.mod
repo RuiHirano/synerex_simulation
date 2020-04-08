@@ -10,7 +10,7 @@ require (
 	golang.org/x/sys v0.0.0-20200202164722-d101bd2416d5 // indirect
 	golang.org/x/text v0.3.2 // indirect
 	google.golang.org/genproto v0.0.0-20200207204624-4f3edf09f4f6 // indirect
-	google.golang.org/grpc v1.28.0
+	google.golang.org/grpc v1.28.1
 )
 
 replace (

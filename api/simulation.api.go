@@ -186,6 +186,46 @@ func (s *SimAPI) SetAgentResponse(senderId uint64, targets []uint64, msgId uint6
 	return msgId
 }
 
+// AgentをセットするDemand
+func (s *SimAPI) GetAgentRequest(senderId uint64, targets []uint64) uint64 {
+
+	uid, _ := uuid.NewRandom()
+	getAgentRequest := &GetAgentRequest{}
+
+	msgId := uint64(uid.ID())
+	simDemand := &SimDemand{
+		MsgId:    msgId,
+		SenderId: senderId,
+		Type:     DemandType_GET_AGENT_REQUEST,
+		Data:     &SimDemand_GetAgentRequest{getAgentRequest},
+		Targets:  targets,
+	}
+
+	sendSyncDemand(s.MyClients.AgentClient, simDemand)
+
+	return msgId
+}
+
+// Agentのセット完了
+func (s *SimAPI) GetAgentResponse(senderId uint64, targets []uint64, msgId uint64, agents []*Agent) uint64 {
+	getAgentResponse := &GetAgentResponse{
+		Agents: agents,
+	}
+
+	simSupply := &SimSupply{
+		MsgId:    msgId,
+		SenderId: senderId,
+		Type:     SupplyType_GET_AGENT_RESPONSE,
+		Status:   StatusType_OK,
+		Data:     &SimSupply_GetAgentResponse{getAgentResponse},
+		Targets:  targets,
+	}
+
+	sendSyncSupply(s.MyClients.AgentClient, simSupply)
+
+	return msgId
+}
+
 ///////////////////////////////////////////
 /////////////   Provider API   //////////////
 //////////////////////////////////////////
@@ -212,8 +252,10 @@ func (s *SimAPI) RegistProviderRequest(senderId uint64, targets []uint64, provid
 }
 
 // Providerを登録するSupply
-func (s *SimAPI) RegistProviderResponse(senderId uint64, targets []uint64, msgId uint64) uint64 {
-	registProviderResponse := &RegistProviderResponse{}
+func (s *SimAPI) RegistProviderResponse(senderId uint64, targets []uint64, msgId uint64, providerInfo *Provider) uint64 {
+	registProviderResponse := &RegistProviderResponse{
+		Provider: providerInfo,
+	}
 
 	simSupply := &SimSupply{
 		MsgId:    msgId,
@@ -221,6 +263,45 @@ func (s *SimAPI) RegistProviderResponse(senderId uint64, targets []uint64, msgId
 		Type:     SupplyType_REGIST_PROVIDER_RESPONSE,
 		Status:   StatusType_OK,
 		Data:     &SimSupply_RegistProviderResponse{registProviderResponse},
+		Targets:  targets,
+	}
+
+	sendSyncSupply(s.MyClients.ProviderClient, simSupply)
+
+	return msgId
+}
+
+// Providerを登録するDemand
+func (s *SimAPI) UpdateProvidersRequest(senderId uint64, targets []uint64, providers []*Provider) uint64 {
+	updateProvidersRequest := &UpdateProvidersRequest{
+		Providers: providers,
+	}
+
+	uid, _ := uuid.NewRandom()
+	msgId := uint64(uid.ID())
+	simDemand := &SimDemand{
+		MsgId:    msgId,
+		SenderId: senderId,
+		Type:     DemandType_UPDATE_PROVIDERS_REQUEST,
+		Data:     &SimDemand_UpdateProvidersRequest{updateProvidersRequest},
+		Targets:  targets,
+	}
+
+	sendSyncDemand(s.MyClients.ProviderClient, simDemand)
+
+	return msgId
+}
+
+// Providerを登録するSupply
+func (s *SimAPI) UpdateProvidersResponse(senderId uint64, targets []uint64, msgId uint64) uint64 {
+	updateProvidersResponse := &UpdateProvidersResponse{}
+
+	simSupply := &SimSupply{
+		MsgId:    msgId,
+		SenderId: senderId,
+		Type:     SupplyType_UPDATE_PROVIDERS_RESPONSE,
+		Status:   StatusType_OK,
+		Data:     &SimSupply_UpdateProvidersResponse{updateProvidersResponse},
 		Targets:  targets,
 	}
 
@@ -384,23 +465,30 @@ func (s *SimAPI) StopClockResponse(senderId uint64, targets []uint64, msgId uint
 //////////////////////////////////////////
 
 type Waiter struct {
-	WaitChMap map[uint64]chan *Supply
-	SpMap     map[uint64][]*Supply
+	WaitSpChMap map[uint64]chan *Supply
+	SpMap       map[uint64][]*Supply
+	WaitDmChMap map[uint64]chan *Demand
+	DmMap       map[uint64][]*Demand
 }
 
 func NewWaiter() *Waiter {
 	w := &Waiter{
-		WaitChMap: make(map[uint64]chan *Supply),
-		SpMap:     make(map[uint64][]*Supply),
+		WaitSpChMap: make(map[uint64]chan *Supply),
+		SpMap:       make(map[uint64][]*Supply),
+		WaitDmChMap: make(map[uint64]chan *Demand),
+		DmMap:       make(map[uint64][]*Demand),
 	}
 	return w
 }
 
-func (w *Waiter) Wait(msgId uint64, targets []uint64) []*Supply {
+func (w *Waiter) WaitSp(msgId uint64, targets []uint64) []*Supply {
+	if len(targets) == 0 {
+		return nil
+	}
 	mu.Lock()
 	CHANNEL_BUFFER_SIZE := 10
 	waitCh := make(chan *Supply, CHANNEL_BUFFER_SIZE)
-	w.WaitChMap[msgId] = waitCh
+	w.WaitSpChMap[msgId] = waitCh
 	w.SpMap[msgId] = make([]*Supply, 0)
 	mu.Unlock()
 
@@ -416,7 +504,7 @@ func (w *Waiter) Wait(msgId uint64, targets []uint64) []*Supply {
 					w.SpMap[sp.GetSimSupply().GetMsgId()] = append(w.SpMap[sp.GetSimSupply().GetMsgId()], sp)
 
 					// 同期が終了したかどうか
-					if w.isFinishSync(msgId, targets) {
+					if w.isFinishSpSync(msgId, targets) {
 						log.Printf("Finish Wait!")
 						mu.Unlock()
 						wg.Done()
@@ -433,14 +521,14 @@ func (w *Waiter) Wait(msgId uint64, targets []uint64) []*Supply {
 	return w.SpMap[msgId]
 }
 
-func (w *Waiter) SendToWait(sp *Supply) {
+func (w *Waiter) SendSpToWait(sp *Supply) {
 	mu.Lock()
-	waitCh := w.WaitChMap[sp.GetSimSupply().GetMsgId()]
+	waitCh := w.WaitSpChMap[sp.GetSimSupply().GetMsgId()]
 	mu.Unlock()
 	waitCh <- sp
 }
 
-func (w *Waiter) isFinishSync(msgId uint64, targets []uint64) bool {
+func (w *Waiter) isFinishSpSync(msgId uint64, targets []uint64) bool {
 	for _, sp := range w.SpMap[msgId] {
 		senderId := sp.GetSimSupply().GetSenderId()
 		isMatch := false
@@ -456,41 +544,31 @@ func (w *Waiter) isFinishSync(msgId uint64, targets []uint64) bool {
 	return true
 }
 
-// SendToSetAgentsResponse : SetAgentsResponseを送る
-func (s *SimAPI) SendToWaitCh(sp *Supply, supplyType SupplyType) {
+func (w *Waiter) WaitDm(msgId uint64, targets []uint64) []*Demand {
+	if len(targets) == 0 {
+		return nil
+	}
 	mu.Lock()
-	waitCh := waitChMap[supplyType]
-	mu.Unlock()
-	waitCh <- sp
-}
-
-// Wait: 同期が完了するまで待機する関数
-func wait(idList []uint64, supplyType SupplyType) map[uint64]*Supply {
-
-	mu.Lock()
-	waitCh := make(chan *Supply, CHANNEL_BUFFER_SIZE)
-	waitChMap[supplyType] = waitCh
+	CHANNEL_BUFFER_SIZE := 10
+	waitCh := make(chan *Demand, CHANNEL_BUFFER_SIZE)
+	w.WaitDmChMap[msgId] = waitCh
+	w.DmMap[msgId] = make([]*Demand, 0)
 	mu.Unlock()
 
 	wg := sync.WaitGroup{}
 	wg.Add(1)
-	pspMap := make(map[uint64]*Supply)
 	go func() {
 		for {
 			select {
-			case psp, _ := <-waitCh:
+			case dm, _ := <-waitCh:
 				mu.Lock()
-				// spのidがidListに入っているか
-				if isPidInIdList(psp, idList) {
-					//logger.Debug("isPidInIDList %v, %v", psp.GetSimSupply().GetSenderId(), idList)
-					pspMap[psp.GetSimSupply().GetSenderId()] = psp
-					//logger.Debug("isFinishSync %v, %v", isFinishSync(pspMap, idList), idList)
-					//for _, sp := range pspMap {
-					//	logger.Debug("pspMap %v", sp.GetSimSupply().GetSenderId(), idList)
-					//}
+				// dmのidがidListに入っているか
+				if dm.GetSimDemand().GetMsgId() == msgId {
+					w.DmMap[dm.GetSimDemand().GetMsgId()] = append(w.DmMap[dm.GetSimDemand().GetMsgId()], dm)
+
 					// 同期が終了したかどうか
-					if isFinishSync(pspMap, idList) {
-						//logger.Debug("isFinishSync")
+					if w.isFinishDmSync(msgId, targets) {
+						log.Printf("Finish Wait!")
 						mu.Unlock()
 						wg.Done()
 						return
@@ -498,63 +576,27 @@ func wait(idList []uint64, supplyType SupplyType) map[uint64]*Supply {
 				}
 				mu.Unlock()
 			case <-time.After(1500 * time.Millisecond):
-				noIds := make([]uint64, 0)
-				for _, id := range idList {
-					noFlag := true
-					for _, sp := range pspMap {
-						if sp.GetSimSupply().GetSenderId() == id {
-							noFlag = false
-						}
-
-					}
-					if noFlag {
-						noIds = append(noIds, id)
-					}
-				}
-
-				//logger.Error("Sync Error: NoIds: %v", noIds)
+				log.Printf("Sync Error...")
 			}
 		}
 	}()
 	wg.Wait()
-	return pspMap
+	return w.DmMap[msgId]
 }
 
-// isSpInIdList : spのidがidListに入っているか
-func isPidInIdList(sp *Supply, idlist []uint64) bool {
-	pid := sp.GetSimSupply().GetSenderId()
-	for _, id := range idlist {
-		if pid == id {
-			return true
-		}
-	}
-	return false
+func (w *Waiter) SendDmToWait(dm *Demand) {
+	mu.Lock()
+	waitCh := w.WaitDmChMap[dm.GetSimDemand().GetMsgId()]
+	mu.Unlock()
+	waitCh <- dm
 }
 
-/*// isFinishSync : 必要な全てのSupplyを受け取り同期が完了したかどうか
-func isFinishSync2(spList []*Supply, idlist []uint64) bool {
-	for _, id := range idlist {
+func (w *Waiter) isFinishDmSync(msgId uint64, targets []uint64) bool {
+	for _, dm := range w.DmMap[msgId] {
+		senderId := dm.GetSimDemand().GetSenderId()
 		isMatch := false
-		for _, sp := range spList {
-			pid := sp.GetSimSupply().GetSenderId()
-			if id == pid {
-				isMatch = true
-			}
-		}
-		if isMatch == false {
-			return false
-		}
-	}
-	return true
-}*/
-
-// isFinishSync : 必要な全てのSupplyを受け取り同期が完了したかどうか
-func isFinishSync(pspMap map[uint64]*Supply, idlist []uint64) bool {
-	for _, id := range idlist {
-		isMatch := false
-		for _, sp := range pspMap {
-			pid := sp.GetSimSupply().GetSenderId()
-			if id == pid {
+		for _, pid := range targets {
+			if senderId == pid {
 				isMatch = true
 			}
 		}

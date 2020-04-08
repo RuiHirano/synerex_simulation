@@ -1,22 +1,6 @@
 package algorithm
 
-import (
-	//"fmt"
-	"math"
-
-	"github.com/paulmach/orb"
-	"github.com/paulmach/orb/geojson"
-
-	//monitor "github.com/RuiHirano/rvo2-go/monitor"
-
-	"io/ioutil"
-	"log"
-
-	rvo "github.com/RuiHirano/rvo2-go/src/rvosimulator"
-	"github.com/synerex/synerex_alpha/api"
-)
-
-var (
+/*var (
 	sim *rvo.RVOSimulator
 	fcs *geojson.FeatureCollection
 )
@@ -212,3 +196,4 @@ func (rvo2route *RVO2Route) CalcNextAgents() []*api.Agent {
 
 	return nextControlAgents
 }
+*/

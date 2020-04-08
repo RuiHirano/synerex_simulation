@@ -3,8 +3,8 @@ package main
 import (
 	//"flag"
 	"log"
-	"math/rand"
-	"time"
+	//"math/rand"
+	//"time"
 
 	//"strings"
 	"sync"
@@ -25,15 +25,18 @@ import (
 )
 
 var (
-	synerexAddr string
-	nodeIdAddr  string
-	visAddr     string
-	myProvider  *api.Provider
-	mu          sync.Mutex
-	assetsDir   http.FileSystem
-	ioserv      *gosocketio.Server
-	logger      *simutil.Logger
-	simapi      *api.SimAPI
+	synerexAddr    string
+	nodeIdAddr     string
+	visAddr        string
+	myProvider     *api.Provider
+	workerProvider *api.Provider
+	pm             *simutil.ProviderManager
+	mu             sync.Mutex
+	assetsDir      http.FileSystem
+	ioserv         *gosocketio.Server
+	logger         *simutil.Logger
+	simapi         *api.SimAPI
+	waiter         *api.Waiter
 )
 
 func init() {
@@ -51,6 +54,8 @@ func init() {
 	if visAddr == "" {
 		visAddr = "127.0.0.1:9500"
 	}
+
+	waiter = api.NewWaiter()
 }
 
 ////////////////////////////////////////////////////////////
@@ -169,17 +174,42 @@ func sendToHarmowareVis(agents []*api.Agent) {
 func forwardClock(dm *api.Demand) {
 	//log.Printf("\x1b[30m\x1b[47m \n Start: Clock forwarded \n Time:  %v \x1b[0m\n", sim.Clock.GlobalTime)
 	//senderId := myProvider.Id
+	// エージェントからの可視化リクエスト待ち
+	targets := pm.GetProviderIds([]simutil.IDType{
+		simutil.IDType_AGENT,
+	})
+	//uid, _ := uuid.NewRandom()
+	senderId := myProvider.Id
+	msgId := simapi.GetAgentRequest(senderId, targets)
+	sps := waiter.WaitSp(msgId, targets)
+
+	allAgents := []*api.Agent{}
+	for _, sp := range sps {
+		agents := sp.GetSimSupply().GetGetAgentResponse().GetAgents()
+		allAgents = append(allAgents, agents...)
+	}
 
 	//targets := []uint64{}
 	//_, sameAreaAgents := simapi.GetAgentRequest(senderId, targets)
-	agents := []*api.Agent{}
+	//agents := []*api.Agent{}
 	// Harmowareに送る
-	sendToHarmowareVis(agents)
+	sendToHarmowareVis(allAgents)
 }
 
 // callback for each Supply
 func demandCallback(clt *api.SMServiceClient, dm *api.Demand) {
 	switch dm.GetSimDemand().GetType() {
+	case api.DemandType_UPDATE_PROVIDERS_REQUEST:
+		providers := dm.GetSimDemand().GetUpdateProvidersRequest().GetProviders()
+		pm.SetProviders(providers)
+
+		// response
+		targets := []uint64{dm.GetSimDemand().GetSenderId()}
+		senderId := myProvider.Id
+		msgId := dm.GetSimDemand().GetMsgId()
+		simapi.UpdateProvidersResponse(senderId, targets, msgId)
+		logger.Info("Finish: Update Providers ")
+
 	case api.DemandType_FORWARD_CLOCK_REQUEST:
 		// クロックを進める
 		forwardClock(dm)
@@ -190,6 +220,16 @@ func demandCallback(clt *api.SMServiceClient, dm *api.Demand) {
 		msgId := dm.GetSimDemand().GetMsgId()
 		simapi.ForwardClockResponse(senderId, targets, msgId)
 		logger.Info("Finish: Forward Clock")
+		/*case api.DemandType_SET_AGENT_REQUEST:
+
+		//waiter.SendDmToWait(msgId)
+
+		// セット完了通知を送る
+		targets := []uint64{dm.GetSimDemand().GetSenderId()}
+		senderId := myProvider.Id
+		msgId := dm.GetSimDemand().GetMsgId()
+		simapi.SetAgentResponse(senderId, targets, msgId)
+		logger.Info("Finish: Set Agents Add ")*/
 	}
 
 }
@@ -197,9 +237,11 @@ func demandCallback(clt *api.SMServiceClient, dm *api.Demand) {
 // callback for each Supply
 func supplyCallback(clt *api.SMServiceClient, sp *api.Supply) {
 	switch sp.GetSimSupply().GetType() {
-	//case api.SupplyType_GET_AGENT_RESPONSE:
-	//	fmt.Printf("get agents response")
+	case api.SupplyType_GET_AGENT_RESPONSE:
+		fmt.Printf("get agents response")
+		waiter.SendSpToWait(sp)
 	case api.SupplyType_REGIST_PROVIDER_RESPONSE:
+		workerProvider = sp.GetSimSupply().GetRegistProviderResponse().GetProvider()
 		fmt.Printf("resist provider request")
 	}
 }
@@ -207,7 +249,7 @@ func supplyCallback(clt *api.SMServiceClient, sp *api.Supply) {
 ///////////////////////////
 /////    test      ////////
 ///////////////////////////
-var mockAgents []*api.Agent
+/*var mockAgents []*api.Agent
 
 func init() {
 	mockAgents = []*api.Agent{}
@@ -234,7 +276,7 @@ func sendAgents() {
 		fmt.Printf("send agents")
 		sendToHarmowareVis(mockAgents)
 	}
-}
+}*/
 
 func main() {
 	logger.Info("StartUp Provider %v, %v", synerexAddr, myProvider)
@@ -243,8 +285,9 @@ func main() {
 	myProvider = &api.Provider{
 		Id:   uint64(uid.ID()),
 		Name: "VisualizationProvider",
-		Type: api.ProviderType_WORKER,
+		Type: api.ProviderType_VISUALIZATION,
 	}
+	pm = simutil.NewProviderManager(myProvider)
 
 	// Connect to Node Server
 	api.RegisterNodeName(nodeIdAddr, "VisualizationProvider", false)
@@ -272,7 +315,8 @@ func main() {
 	targets := make([]uint64, 0)
 	simapi.RegistProviderRequest(senderId, targets, myProvider)
 
-	go sendAgents()
+	// test
+	//go sendAgents()
 
 	// Run HarmowareVis Monitor
 	ioserv = runServer()

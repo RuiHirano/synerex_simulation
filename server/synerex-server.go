@@ -192,10 +192,11 @@ func syncDemandServerFunc(ch chan *api.Demand, stream api.Synerex_SubscribeSyncD
 			//dmId = dm.GetId()
 			//s.SyncMap[dmId] = targets
 
-			targets := dm.GetSimDemand().GetTargets() // id is channelID, targets is target channelIDs
-			fmt.Println("get dm %v targets: %v\n", targets)
-			if contains(id, targets) || len(targets) == 0 {
-				fmt.Println("dm %v\n", dm)
+			targets := dm.GetSimDemand().GetTargets()   // id is channelID, targets is target channelIDs
+			senderId := dm.GetSimDemand().GetSenderId() // not to recieve own message
+			//fmt.Println("get dm %v targets: %v\n", targets)
+			if contains(id, targets) || (len(targets) == 0 && id != senderId) {
+				//fmt.Println("dm %v\n", dm)
 				err := stream.Send(dm)
 
 				if err != nil {
@@ -241,10 +242,11 @@ func syncSupplyServerFunc(ch chan *api.Supply, stream api.Synerex_SubscribeSyncS
 	for {
 		select {
 		case sp := <-ch:
-			targets := sp.GetSimSupply().GetTargets() // id is channelID, targets is target channelIDs
-			fmt.Println("get sp %v targets: %v\n", sp, targets)
-			if contains(id, targets) || len(targets) == 0 { //len(targets) == 0: broadcast, else unicast
-				fmt.Println("sp %v\n", sp)
+			targets := sp.GetSimSupply().GetTargets()   // id is channelID, targets is target channelIDs
+			senderId := sp.GetSimSupply().GetSenderId() // not to recieve own message
+			//fmt.Println("get sp %v targets: %v\n", sp, targets)
+			if contains(id, targets) || (len(targets) == 0 && id != senderId) { //len(targets) == 0: broadcast, else unicast
+				//fmt.Println("sp %v\n", sp)
 				err := stream.Send(sp) // send to client
 				if err != nil {
 					log.Printf("Error SupplyServer Error %v", err, sp, id)
@@ -272,7 +274,7 @@ func (s *synerexServerInfo) SubscribeSyncSupply(ch *api.Channel, stream api.Syne
 	s.supplyMap[tp][idt] = subCh // mapping from clientID to channel
 	s.smu.Unlock()
 	pid := ch.ProviderId // providerIDで送信先を決定する
-	fmt.Printf("ProviderID: %v\n", pid)
+	//fmt.Printf("ProviderID: %v\n", pid)
 	err := syncSupplyServerFunc(subCh, stream, pid)
 	// this supply stream may closed. so take care.
 

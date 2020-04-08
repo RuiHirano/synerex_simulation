@@ -1,14 +1,6 @@
 package algorithm
 
-import (
-	"fmt"
-	"math"
-
-	"github.com/synerex/synerex_alpha/api"
-	"github.com/synerex/synerex_alpha/provider/simutil"
-)
-
-type SimpleRoute struct {
+/*type SimpleRoute struct {
 	TimeStep       float64
 	GlobalTime     float64
 	Area           *api.Area
@@ -119,16 +111,7 @@ func (simple *SimpleRoute) CalcNextRoute(agentInfo *api.Agent, sameAreaAgents []
 
 	//fmt.Printf("\x1b[30m\x1b[47m Position %v, NextTransit: %v, NextTransit: %v, Direction: %v, Distance: %v \x1b[0m\n", currentPosition, nextTransit, destination, direction, distance)
 	//fmt.Printf("\x1b[30m\x1b[47m 上下:  %v, 左右: %v \x1b[0m\n", nextTransit.Lat-currentPosition.Lat, nextTransit.Lon-currentPosition.Lon)
-	/*nextPosition := &api.Coord{
-		Latitude: currentPosition.Latitude,
-		Lonitude: currentPosition.Longitude,
-	}
-	//TODO: Fix this
-	if newLat < 40 && newLat > 0 && newLon < 150 && newLon > 0 {
-		nextPosition = &api.Coord{
-			Latitude: newLat,
-			Longitude: newLon,
-		}*/
+
 	//} else {
 	//	log.Printf("\x1b[30m\x1b[47m LOCATION CULC ERROR %v \x1b[0m\n", nextPosition)
 	//}
@@ -183,3 +166,4 @@ func IsAgentInArea(position *api.Coord, areaCoords []*api.Coord) bool {
 		return false
 	}
 }
+*/

@@ -30,6 +30,7 @@ import Controller from "../components/controller";
 import * as io from "socket.io-client";
 
 const MAPBOX_TOKEN = process.env.MAPBOX_ACCESS_TOKEN; //Acquire Mapbox accesstoken
+console.log("Mapbox Access Token: ", MAPBOX_TOKEN)
 
 class App extends Container {
     constructor(props) {

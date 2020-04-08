@@ -4,8 +4,10 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"math/rand"
 	"os"
 	"sync"
+	"time"
 
 	"github.com/google/uuid"
 	api "github.com/synerex/synerex_alpha/api"
@@ -15,6 +17,7 @@ import (
 
 var (
 	myProvider        *api.Provider
+	masterProvider    *api.Provider
 	workerSynerexAddr string
 	workerNodeIdAddr  string
 	masterNodeIdAddr  string
@@ -25,8 +28,9 @@ var (
 	workerClock       int
 	providerHosts     []string
 	logger            *simutil.Logger
-	providerManager   *Manager
-	waiter            *api.Waiter
+	//providerManager   *Manager
+	pm     *simutil.ProviderManager
+	waiter *api.Waiter
 )
 
 const MAX_AGENTS_NUM = 1000
@@ -55,7 +59,7 @@ func init() {
 		masterNodeIdAddr = "127.0.0.1:9000"
 	}
 
-	providerManager = NewManager()
+	//providerManager = NewManager()
 	waiter = api.NewWaiter()
 }
 
@@ -96,7 +100,9 @@ func masterSupplyCallback(clt *api.SMServiceClient, sp *api.Supply) {
 	// check if supply is match with my demand.
 	switch sp.GetSimSupply().GetType() {
 	case api.SupplyType_REGIST_PROVIDER_RESPONSE:
+		masterProvider = sp.GetSimSupply().GetRegistProviderResponse().GetProvider()
 		fmt.Printf("regist provider to Master Provider!\n")
+
 	}
 }
 
@@ -108,9 +114,12 @@ func masterDemandCallback(clt *api.SMServiceClient, dm *api.Demand) {
 		fmt.Printf("get forwardClockRequest")
 
 		// request to worker providers
-		targets := providerManager.GetProviderIds()
+		targets := pm.GetProviderIds([]simutil.IDType{
+			simutil.IDType_AGENT,
+			simutil.IDType_VISUALIZATION,
+		})
 		msgId := workerapi.ForwardClockRequest(senderId, targets)
-		waiter.Wait(msgId, targets)
+		waiter.WaitSp(msgId, targets)
 
 		// response to master
 		targets = []uint64{dm.GetSimDemand().GetSenderId()}
@@ -121,9 +130,11 @@ func masterDemandCallback(clt *api.SMServiceClient, dm *api.Demand) {
 		fmt.Printf("set agent")
 		// request to providers
 		agents := dm.GetSimDemand().GetSetAgentRequest().GetAgents()
-		targets := providerManager.GetProviderIds()
+		targets := pm.GetProviderIds([]simutil.IDType{
+			simutil.IDType_AGENT,
+		})
 		msgId := workerapi.SetAgentRequest(senderId, targets, agents)
-		waiter.Wait(msgId, targets)
+		waiter.WaitSp(msgId, targets)
 
 		// response to master
 		targets = []uint64{dm.GetSimDemand().GetSenderId()}
@@ -141,15 +152,18 @@ func workerSupplyCallback(clt *api.SMServiceClient, sp *api.Supply) {
 	// 自分宛かどうか
 	// check if supply is match with my demand.
 	switch sp.GetSimSupply().GetType() {
+	case api.SupplyType_UPDATE_PROVIDERS_RESPONSE:
+		logger.Info("get sp: %v\n", sp)
+		waiter.SendSpToWait(sp)
 	case api.SupplyType_SET_CLOCK_RESPONSE:
 		logger.Info("get sp: %v\n", sp)
-		waiter.SendToWait(sp)
+		waiter.SendSpToWait(sp)
 	case api.SupplyType_SET_AGENT_RESPONSE:
 		logger.Info("get sp: %v\n", sp)
-		waiter.SendToWait(sp)
+		waiter.SendSpToWait(sp)
 	case api.SupplyType_FORWARD_CLOCK_RESPONSE:
 		logger.Info("get sp: %v\n", sp)
-		waiter.SendToWait(sp)
+		waiter.SendSpToWait(sp)
 	}
 }
 
@@ -159,18 +173,89 @@ func workerDemandCallback(clt *api.SMServiceClient, dm *api.Demand) {
 	case api.DemandType_REGIST_PROVIDER_REQUEST:
 		// providerを追加する
 		p := dm.GetSimDemand().GetRegistProviderRequest().GetProvider()
-		providerManager.AddProvider(p)
-		fmt.Printf("regist request from agent of vis provider! %v\n", providerManager.Providers)
+		pm.AddProvider(p)
+		fmt.Printf("regist request from agent of vis provider! %v\n")
 		// 登録完了通知
 		senderId := myProvider.Id
 		targets := []uint64{p.GetId()}
 		msgId := dm.GetSimDemand().GetMsgId()
-		workerapi.RegistProviderResponse(senderId, targets, msgId)
+		workerapi.RegistProviderResponse(senderId, targets, msgId, myProvider)
 
 		logger.Info("Success Regist Agent or Vis Providers", targets)
 
+		// 参加プロバイダの更新命令
+		// request to worker providers
+		targets = pm.GetProviderIds([]simutil.IDType{
+			simutil.IDType_AGENT,
+			simutil.IDType_VISUALIZATION,
+		})
+		providers := pm.GetProviders()
+		msgId = workerapi.UpdateProvidersRequest(senderId, targets, providers)
+		logger.Info("Wait response from &v\n", targets)
+		waiter.WaitSp(msgId, targets)
+
 	}
 }
+
+///////////////////////////
+/////    test      ////////
+///////////////////////////
+/*var mockAgents []*api.Agent
+
+func init() {
+	mockAgents = []*api.Agent{}
+	for i := 0; i < 100; i++ {
+		uid, _ := uuid.NewRandom()
+		departure := &api.Coord{
+			Longitude: 136.87285 + rand.Float64()*0.01,
+			Latitude:  35.17333 + rand.Float64()*0.01,
+		}
+		destination := &api.Coord{
+			Longitude: 136.92285 + rand.Float64()*0.01,
+			Latitude:  35.19333 + rand.Float64()*0.01,
+		}
+		transitPoints := []*api.Coord{destination}
+		mockAgents = append(mockAgents, &api.Agent{
+			Type: api.AgentType_PEDESTRIAN,
+			Id:   uint64(uid.ID()),
+			Route: &api.Route{
+				Position: &api.Coord{
+					Longitude: 136.97285 + rand.Float64()*0.01,
+					Latitude:  35.15333 + rand.Float64()*0.01,
+				},
+				Direction:     30,
+				Speed:         60,
+				Departure:     departure,
+				Destination:   destination,
+				TransitPoints: transitPoints,
+				NextTransit:   destination,
+			},
+		})
+	}
+}
+
+func forwardCLock() {
+	time.Sleep(5 * time.Second) // 5s以内にregist providerすること
+	senderId := myProvider.Id
+	agents := mockAgents
+	targets := pm.GetProviderIds([]simutil.IDType{
+		simutil.IDType_AGENT,
+	})
+	msgId := workerapi.SetAgentRequest(senderId, targets, agents)
+	waiter.WaitSp(msgId, targets)
+	fmt.Printf("finish set agents")
+	for {
+		time.Sleep(1 * time.Second)
+		// request to worker providers
+		targets := pm.GetProviderIds([]simutil.IDType{
+			simutil.IDType_AGENT,
+			simutil.IDType_VISUALIZATION,
+		})
+		msgId := workerapi.ForwardClockRequest(senderId, targets)
+		waiter.WaitSp(msgId, targets)
+		fmt.Printf("finish forward clock")
+	}
+}*/
 
 func main() {
 
@@ -181,6 +266,7 @@ func main() {
 		Name: "WorkerServer",
 		Type: api.ProviderType_WORKER,
 	}
+	pm = simutil.NewProviderManager(myProvider)
 
 	// For Master
 	// Connect to Node Server
@@ -231,6 +317,8 @@ func main() {
 	workerapi.RegistClients(wclient, myProvider.Id, wargJson)          // channelごとのClientを作成
 	workerapi.SubscribeAll(workerDemandCallback, workerSupplyCallback) // ChannelにSubscribe
 
+	// test
+	//go forwardCLock()
 	wg := sync.WaitGroup{}
 	wg.Add(1)
 	wg.Wait()

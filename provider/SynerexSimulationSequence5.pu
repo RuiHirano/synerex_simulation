@@ -43,6 +43,29 @@ MasterSynerex->MasterProvider: RegistProviderRequest
 note over MasterProvider: Workerを登録
 MasterProvider->MasterSynerex: RegistProviderResponse
 MasterSynerex->WorkerProvider: RegistProviderResponse
+note over WorkerProvider: Masterを登録
+
+Ped->WorkerSynerex: RegistProviderRequest
+WorkerSynerex->WorkerProvider: RegistProviderRequest
+note over WorkerProvider: Pedを登録
+WorkerProvider->WorkerSynerex: RegistProviderResponse
+WorkerSynerex->Ped: RegistProviderResponse
+note over Ped: Workerを登録
+
+Car->WorkerSynerex: RegistProviderRequest
+WorkerSynerex->WorkerProvider: RegistProviderRequest
+note over WorkerProvider: Carを登録
+WorkerProvider->WorkerSynerex: RegistProviderResponse
+WorkerSynerex->Car: RegistProviderResponse
+note over Car: Workerを登録
+
+Vis->WorkerSynerex: RegistProviderRequest
+WorkerSynerex->WorkerProvider: RegistProviderRequest
+note over WorkerProvider: Visを登録
+WorkerProvider->WorkerSynerex: RegistProviderResponse
+WorkerSynerex->Vis: RegistProviderResponse
+note over Vis: Workerを登録
+
 
 == SetClock ==
 Simulator->MasterProvider: SetClockRequest

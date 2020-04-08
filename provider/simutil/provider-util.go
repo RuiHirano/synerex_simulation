@@ -1,10 +1,10 @@
 package simutil
 
-/*import (
-	//"log"
+import (
+	"log"
 	"sync"
 
-	"github.com/synerex/synerex_alpha/api/simulation/provider"
+	"github.com/synerex/synerex_alpha/api"
 )
 
 var (
@@ -18,8 +18,8 @@ var (
 type IDType int
 
 const (
-	IDType_SCENARIO      IDType = 1
-	IDType_CLOCK         IDType = 2
+	IDType_MASTER        IDType = 1
+	IDType_WORKER        IDType = 2
 	IDType_VISUALIZATION IDType = 3
 	IDType_AGENT         IDType = 4
 	IDType_NEIGHBOR      IDType = 5
@@ -28,43 +28,37 @@ const (
 )
 
 type ProviderManager struct {
-	MyProvider    *provider.Provider
-	Providers     []*provider.Provider
-	MyProviders   []*provider.Provider
-	ProviderIDMap map[IDType][]uint64
+	MyProvider   *api.Provider
+	Providers    []*api.Provider
+	ProvidersMap map[IDType][]*api.Provider
 }
 
-func NewProviderManager(myProvider *provider.Provider) *ProviderManager {
+func NewProviderManager(myProvider *api.Provider) *ProviderManager {
 	pm := &ProviderManager{
-		MyProvider:  myProvider,
-		Providers:   []*provider.Provider{myProvider},
-		MyProviders: []*provider.Provider{myProvider},
+		MyProvider:   myProvider,
+		Providers:    []*api.Provider{},
+		ProvidersMap: make(map[IDType][]*api.Provider),
 	}
 	return pm
 }
 
-func (pm *ProviderManager) AddProvider(p *provider.Provider) {
+func (pm *ProviderManager) AddProvider(p *api.Provider) {
 	mu.Lock()
 	pm.Providers = append(pm.Providers, p)
+	pm.CreateProvidersMap()
 	mu.Unlock()
 	//log.Printf("Providers: %v\n", pm.Providers)
 }
 
-func (pm *ProviderManager) AddMyProvider(p *provider.Provider) {
-	mu.Lock()
-	pm.MyProviders = append(pm.MyProviders, p)
-	mu.Unlock()
-	//log.Printf("Providers: %v\n", pm.Providers)
-}
-
-func (pm *ProviderManager) UpdateProviders(ps []*provider.Provider) {
+func (pm *ProviderManager) SetProviders(ps []*api.Provider) {
 	mu.Lock()
 	pm.Providers = ps
+	pm.CreateProvidersMap()
 	mu.Unlock()
 	//log.Printf("Providers: %v\n", pm.Providers)
 }
 
-func (pm *ProviderManager) GetProviders() []*provider.Provider {
+func (pm *ProviderManager) GetProviders() []*api.Provider {
 	mu.Lock()
 	providers := pm.Providers
 	mu.Unlock()
@@ -72,14 +66,8 @@ func (pm *ProviderManager) GetProviders() []*provider.Provider {
 	//log.Printf("Providers: %v\n", pm.Providers)
 }
 
-func (pm *ProviderManager) SetProvider(index int, provider *provider.Provider) {
-	mu.Lock()
-	pm.Providers[index] = provider
-	mu.Unlock()
-}
-
 func (pm *ProviderManager) DeleteProvider(id uint64) {
-	newProviders := make([]*provider.Provider, 0)
+	newProviders := make([]*api.Provider, 0)
 	for _, provider := range pm.Providers {
 		if provider.Id == id {
 			continue
@@ -87,64 +75,61 @@ func (pm *ProviderManager) DeleteProvider(id uint64) {
 		newProviders = append(newProviders, provider)
 	}
 	pm.Providers = newProviders
+	pm.CreateProvidersMap()
 }
 
-func (pm *ProviderManager) GetProviderNum() uint64 {
-	return uint64(len(pm.Providers))
-}
-
-func (pm *ProviderManager) GetIDList(IdTypeList []IDType) []uint64 {
+func (pm *ProviderManager) GetProviderIds(IdTypeList []IDType) []uint64 {
 	idList := make([]uint64, 0)
 	for _, idType := range IdTypeList {
-		for _, id := range pm.ProviderIDMap[idType] {
+		for _, p := range pm.ProvidersMap[idType] {
+			id := p.GetId()
 			idList = append(idList, id)
 		}
 	}
 	return idList
 }
 
-func (pm *ProviderManager) CreateIDMap() {
-	providerIDMap := make(map[IDType][]uint64)
-	sameIDs := make([]uint64, 0)
-	neighborIDs := make([]uint64, 0)
-	agentIDs := make([]uint64, 0)
+func (pm *ProviderManager) CreateProvidersMap() {
+	providersMap := make(map[IDType][]*api.Provider)
+	//sameProviders := make([]*api.Provider, 0)
+	//neighborProviders := make([]*api.Provider, 0)
+	//agentProviders := make([]*api.Provider, 0)
+	log.Printf("providers: %v", pm.Providers)
 	for _, p := range pm.Providers {
 		switch p.GetType() {
-		case provider.ProviderType_SCENARIO:
-			providerIDMap[IDType_SCENARIO] = []uint64{p.GetId()}
-		case provider.ProviderType_GATEWAY:
-			providerIDMap[IDType_GATEWAY] = []uint64{p.GetId()}
-		case provider.ProviderType_CLOCK:
-			providerIDMap[IDType_CLOCK] = []uint64{p.GetId()}
-		case provider.ProviderType_VISUALIZATION:
-			providerIDMap[IDType_VISUALIZATION] = []uint64{p.GetId()}
-		case provider.ProviderType_AGENT:
-			if p.GetSynerexAddress() == pm.MyProvider.GetSynerexAddress() {
-				agentIDs = append(agentIDs, p.GetId())
-			}
+		case api.ProviderType_MASTER:
+			providersMap[IDType_MASTER] = append(providersMap[IDType_MASTER], p)
+		case api.ProviderType_WORKER:
+			providersMap[IDType_WORKER] = append(providersMap[IDType_WORKER], p)
+		case api.ProviderType_GATEWAY:
+			providersMap[IDType_GATEWAY] = append(providersMap[IDType_GATEWAY], p)
+		case api.ProviderType_VISUALIZATION:
+			providersMap[IDType_VISUALIZATION] = append(providersMap[IDType_VISUALIZATION], p)
+		case api.ProviderType_AGENT:
+			providersMap[IDType_AGENT] = append(providersMap[IDType_AGENT], p)
 			// AgentProviderでなければ必要ない
-			if pm.MyProvider.GetType() == provider.ProviderType_AGENT {
+			/*if pm.MyProvider.GetType() == api.ProviderType_AGENT {
 				//log.Printf("IsNeighbor %v", pm.IsNeighborArea(p))
 				if pm.IsNeighborArea(p) && p.GetAgentStatus().GetAgentType() == pm.MyProvider.GetAgentStatus().GetAgentType() {
 					// 隣接エリアかつAgentTypeが等しい場合
-					neighborIDs = append(neighborIDs, p.GetId())
+					neighborProviders = append(neighborProviders, p)
 
 				} else if pm.IsSameArea(p) && p.GetAgentStatus().GetAgentType() != pm.MyProvider.GetAgentStatus().GetAgentType() {
 					// 同じエリアかつAgentTypeが等しくない場合
-					sameIDs = append(sameIDs, p.GetId())
+					sameProviders = append(sameProviders, p)
 				}
-			}
+			}*/
 
 		}
 	}
-	providerIDMap[IDType_NEIGHBOR] = neighborIDs
-	providerIDMap[IDType_SAME] = sameIDs
-	providerIDMap[IDType_AGENT] = agentIDs
-	pm.ProviderIDMap = providerIDMap
+	//providersMap[IDType_NEIGHBOR] = neighborProviders
+	//providersMap[IDType_SAME] = sameProviders
+	//providersMap[IDType_AGENT] = agentProviders
+	pm.ProvidersMap = providersMap
 
 }
 
-func (pm *ProviderManager) IsSameArea(p *provider.Provider) bool {
+/*func (pm *ProviderManager) IsSameArea(p *provider.Provider) bool {
 	myAreaID := pm.MyProvider.GetAgentStatus().GetArea().GetId()
 	opAreaID := p.GetAgentStatus().GetArea().GetId()
 	if myAreaID == opAreaID {

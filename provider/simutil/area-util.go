@@ -1,18 +1,10 @@
 package simutil
 
-import (
-	"math"
-	"sort"
-
-	"github.com/google/uuid"
-	api "github.com/synerex/synerex_alpha/api"
-)
-
 ////////////////////////////////////////////////////////////
 /////////////        Area Manager Class        ////////////
 ///////////////////////////////////////////////////////////
 
-type AreaManager struct {
+/*type AreaManager struct {
 	Areas []*api.Area
 }
 
@@ -220,3 +212,4 @@ func GetCoordRange(coords []*api.Coord) (float64, float64, float64, float64) {
 	}
 	return maxLat, maxLon, minLat, minLon
 }
+*/

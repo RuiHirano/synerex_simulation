@@ -20,10 +20,12 @@ message SimDemand {
         oneof data {
 			SetAgentRequest set_agent_request = 6;
 			RegistProviderRequest regist_provider_request = 7;
-			SetClockRequest set_clock_request = 8;
-			StartClockRequest start_clock_request = 9;
-			StopClockRequest stop_clock_request = 10;
-			ForwardClockRequest forward_clock_request = 11;
+			UpdateProvidersRequest update_providers_request = 8;
+			SetClockRequest set_clock_request = 9;
+			StartClockRequest start_clock_request = 10;
+			StopClockRequest stop_clock_request = 11;
+			ForwardClockRequest forward_clock_request = 12;
+			GetAgentRequest get_agent_request = 13;
         }
     }
 
@@ -43,10 +45,12 @@ message SimDemand {
         oneof data {
 			SetAgentResponse set_agent_response = 7;
 			RegistProviderResponse regist_provider_response = 8;
-			SetClockResponse set_clock_response = 9;
-			StartClockResponse start_clock_response = 10;
-			StopClockResponse stop_clock_response = 11;
-			ForwardClockResponse forward_clock_response = 12;
+			UpdateProvidersResponse update_providers_response = 9;
+			SetClockResponse set_clock_response = 10;
+			StartClockResponse start_clock_response = 11;
+			StopClockResponse stop_clock_response = 12;
+			ForwardClockResponse forward_clock_response = 13;
+			GetAgentResponse get_agent_response = 14;
         }
 }
 
@@ -58,22 +62,25 @@ enum StatusType {
 
 enum DemandType {
     SET_AGENT_REQUEST = 0;
-	REGIST_PROVIDER_REQUEST = 1;
-	SET_CLOCK_REQUEST = 2;
-	START_CLOCK_REQUEST = 3;
-	STOP_CLOCK_REQUEST = 4;
-	FORWARD_CLOCK_REQUEST = 5;
+    GET_AGENT_REQUEST = 1;
+	REGIST_PROVIDER_REQUEST = 2;
+	UPDATE_PROVIDERS_REQUEST = 3;
+	SET_CLOCK_REQUEST = 4;
+	START_CLOCK_REQUEST = 5;
+	STOP_CLOCK_REQUEST = 6;
+	FORWARD_CLOCK_REQUEST = 7;
 }
 
 enum SupplyType {
     SET_AGENT_RESPONSE = 0;
-	REGIST_PROVIDER_RESPONSE = 1;
-	SET_CLOCK_RESPONSE = 2;
-	START_CLOCK_RESPONSE = 3;
-	STOP_CLOCK_RESPONSE = 4;
-	FORWARD_CLOCK_RESPONSE = 5;
+    GET_AGENT_RESPONSE = 1;
+	REGIST_PROVIDER_RESPONSE = 2;
+	UPDATE_PROVIDERS_RESPONSE = 3;
+	SET_CLOCK_RESPONSE = 4;
+	START_CLOCK_RESPONSE = 5;
+	STOP_CLOCK_RESPONSE = 6;
+	FORWARD_CLOCK_RESPONSE = 7;
 }
-
 
 
 message RegistProviderRequest {
@@ -81,6 +88,14 @@ message RegistProviderRequest {
 }
 
 message RegistProviderResponse {
+    Provider provider = 1;
+}
+
+message UpdateProvidersRequest {
+    repeated Provider providers = 1;
+}
+
+message UpdateProvidersResponse {
 }
 
 message SetClockRequest {
@@ -97,6 +112,12 @@ message SetAgentRequest {
 message SetAgentResponse {
 }
 
+message GetAgentRequest {
+}
+
+message GetAgentResponse {
+    repeated Agent agents = 1;
+}
 
 message StartClockRequest {
 	
@@ -178,7 +199,5 @@ message Coord {
 message Area {
     uint64 id = 1;
     string name = 2;
-    repeated Coord duplicate_area = 3;
-    repeated Coord control_area = 4;
-    repeated uint64 neighbor_area_ids = 5;
+    repeated Coord coords = 3;
 }

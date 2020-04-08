@@ -19,18 +19,19 @@ import (
 )
 
 var (
-	myProvider      *api.Provider
-	synerexAddr     string
-	nodeIdAddr      string
-	port            string
-	startFlag       bool
-	masterClock     int
-	workerHosts     []string
-	mu              sync.Mutex
-	simapi          *api.SimAPI
-	providerManager *Manager
-	logger          *simutil.Logger
-	waiter          *api.Waiter
+	myProvider  *api.Provider
+	synerexAddr string
+	nodeIdAddr  string
+	port        string
+	startFlag   bool
+	masterClock int
+	workerHosts []string
+	mu          sync.Mutex
+	simapi      *api.SimAPI
+	//providerManager *Manager
+	pm     *simutil.ProviderManager
+	logger *simutil.Logger
+	waiter *api.Waiter
 )
 
 func init() {
@@ -41,7 +42,7 @@ func init() {
 	logger = simutil.NewLogger()
 	logger.SetPrefix("Master")
 	flag.Parse()
-	providerManager = NewManager()
+	//providerManager = NewManager()
 
 	synerexAddr = os.Getenv("SYNEREX_SERVER")
 	if synerexAddr == "" {
@@ -146,13 +147,13 @@ func supplyCallback(clt *api.SMServiceClient, sp *api.Supply) {
 	switch sp.GetSimSupply().GetType() {
 	case api.SupplyType_SET_CLOCK_RESPONSE:
 		logger.Info("get sp: %v\n", sp)
-		waiter.SendToWait(sp)
+		waiter.SendSpToWait(sp)
 	case api.SupplyType_SET_AGENT_RESPONSE:
 		logger.Info("get sp: %v\n", sp)
-		waiter.SendToWait(sp)
+		waiter.SendSpToWait(sp)
 	case api.SupplyType_FORWARD_CLOCK_RESPONSE:
 		logger.Info("get sp: %v\n", sp)
-		waiter.SendToWait(sp)
+		waiter.SendSpToWait(sp)
 	}
 }
 
@@ -165,14 +166,21 @@ func demandCallback(clt *api.SMServiceClient, dm *api.Demand) {
 	case api.DemandType_REGIST_PROVIDER_REQUEST:
 		// providerを追加する
 		p := dm.GetSimDemand().GetRegistProviderRequest().GetProvider()
-		providerManager.AddProvider(p)
-		fmt.Printf("regist provider! %v\n", providerManager.Providers)
+		//providerManager.AddProvider(p)
+		pm.AddProvider(p)
+		fmt.Printf("regist provider! %v\n", p.GetId())
 		// 登録完了通知
 		//targets := []uint64{tid}
 		senderInfo := myProvider.Id
 		targets := []uint64{p.GetId()}
 		msgId := dm.GetSimDemand().GetMsgId()
-		simapi.RegistProviderResponse(senderInfo, targets, msgId)
+		simapi.RegistProviderResponse(senderInfo, targets, msgId, pm.MyProvider)
+
+		// update provider to worker
+		targets = pm.GetProviderIds([]simutil.IDType{
+			simutil.IDType_WORKER,
+		})
+		simapi.UpdateProvidersRequest(senderInfo, targets, pm.GetProviders())
 
 		logger.Info("Success Update Providers", targets)
 
@@ -198,9 +206,11 @@ func setAgents(agentNum uint64) (bool, error) {
 
 	// エージェントを設置するリクエスト
 	senderId := myProvider.Id
-	targets := providerManager.GetProviderIds()
+	targets := pm.GetProviderIds([]simutil.IDType{
+		simutil.IDType_WORKER,
+	})
 	msgId := simapi.SetAgentRequest(senderId, targets, agents)
-	waiter.Wait(msgId, targets)
+	waiter.WaitSp(msgId, targets)
 
 	logger.Info("Finish Setting Agents \n Add: %v", len(agents))
 	return true, nil
@@ -212,9 +222,11 @@ func startClock() {
 	t1 := time.Now()
 
 	senderId := myProvider.Id
-	targets := providerManager.GetProviderIds()
+	targets := pm.GetProviderIds([]simutil.IDType{
+		simutil.IDType_WORKER,
+	})
 	msgId := simapi.ForwardClockRequest(senderId, targets)
-	waiter.Wait(msgId, targets)
+	waiter.WaitSp(msgId, targets)
 
 	// calc next time
 	masterClock++
@@ -320,6 +332,7 @@ func main() {
 		Name: "MasterServer",
 		Type: api.ProviderType_MASTER,
 	}
+	pm = simutil.NewProviderManager(myProvider)
 
 	// CLI, GUIの受信サーバ
 	go startSimulatorServer()
