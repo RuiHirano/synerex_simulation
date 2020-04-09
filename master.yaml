@@ -64,3 +64,11 @@ spec:
           value: '9990'
         ports:
         - containerPort: 9990
+        volumeMounts:
+        - name: claim-volume
+          mountPath: /data
+      volumes:
+      - name: claim-volume
+        persistentVolumeClaim:
+          claimName: pv-slow-claim
+      terminationGracePeriodSeconds: 0
