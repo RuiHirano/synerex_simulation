@@ -512,8 +512,9 @@ func (w *Waiter) WaitSp(msgId uint64, targets []uint64) []*Supply {
 					}
 				}
 				mu.Unlock()
-			case <-time.After(1500 * time.Millisecond):
+			case <-time.After(1000 * time.Millisecond):
 				log.Printf("Sync Error...")
+				return
 			}
 		}
 	}()

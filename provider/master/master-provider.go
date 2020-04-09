@@ -193,15 +193,32 @@ func setAgents(agentNum uint64) (bool, error) {
 	agents := make([]*api.Agent, 0)
 
 	for i := 0; i < int(agentNum); i++ {
-		uuid, err := uuid.NewRandom()
-		if err == nil {
-			agent := &api.Agent{
-				Id:    uint64(uuid.ID()),
-				Type:  api.AgentType_PEDESTRIAN,
-				Route: calcRoute(),
-			}
-			agents = append(agents, agent)
+		uid, _ := uuid.NewRandom()
+		departure := &api.Coord{
+			Longitude: 136.87285 + rand.Float64()*0.01,
+			Latitude:  35.17333 + rand.Float64()*0.01,
 		}
+		destination := &api.Coord{
+			Longitude: 136.92285 + rand.Float64()*0.01,
+			Latitude:  35.19333 + rand.Float64()*0.01,
+		}
+		transitPoints := []*api.Coord{destination}
+		agents = append(agents, &api.Agent{
+			Type: api.AgentType_PEDESTRIAN,
+			Id:   uint64(uid.ID()),
+			Route: &api.Route{
+				Position: &api.Coord{
+					Longitude: 136.97285 + rand.Float64()*0.01,
+					Latitude:  35.15333 + rand.Float64()*0.01,
+				},
+				Direction:     30,
+				Speed:         60,
+				Departure:     departure,
+				Destination:   destination,
+				TransitPoints: transitPoints,
+				NextTransit:   destination,
+			},
+		})
 	}
 
 	// エージェントを設置するリクエスト

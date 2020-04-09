@@ -4,10 +4,12 @@ import (
 	"flag"
 	"fmt"
 	"log"
-	"math/rand"
+
+	//"math/rand"
 	"os"
 	"sync"
-	"time"
+
+	//"time"
 
 	"github.com/google/uuid"
 	api "github.com/synerex/synerex_alpha/api"

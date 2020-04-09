@@ -1,10 +1,10 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: vis-monitor
+  name: vis-monitor3
 spec:
   selector:
-    app: worker
+    app: worker3
   ports:
     - name: http
       port: 80
@@ -16,10 +16,10 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: worker
+  name: worker3
 spec:
   selector:
-    app: worker
+    app: worker3
   ports:
     - name: http
       port: 80
@@ -29,18 +29,18 @@ spec:
 apiVersion: apps/v1
 kind: ReplicaSet
 metadata:
-  name: worker
+  name: worker3
   labels:
-    app: worker
+    app: worker3
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: worker
+      app: worker3
   template:
     metadata:
       labels:
-        app: worker
+        app: worker3
     spec:
       containers:
       - name: nodeid-server

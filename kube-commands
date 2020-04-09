@@ -20,3 +20,6 @@ kubectl describe pod worker-4xzb9
 
 # simulator
 kubectl exec -it simulator-bw29p -c simulator bash
+
+# delete Evitched
+kubectl get pods | awk '{if ($3 ~ /Evicted/) system ("kubectl delete pods " $1)}'
