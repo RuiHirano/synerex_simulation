@@ -11,7 +11,7 @@ spec:
   persistentVolumeReclaimPolicy: Delete
   storageClassName: slow
   hostPath:
-    path: /Users/ruihirano/MyProjects/LabProjects/synerex_simulation/data
+    path: /Users/ruihirano/MyProjects/LabProjects/synerex_simulation/kube/data
     type: DirectoryOrCreate
 
 ---

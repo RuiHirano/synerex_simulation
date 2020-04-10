@@ -4,323 +4,341 @@ package main
 // 基本的に一方通行
 
 import (
-	"flag"
+	//"flag"
 	"fmt"
 	"log"
-	"strings"
-	"sync"
-	"time"
+	"os"
 
-	"github.com/golang/protobuf/jsonpb"
-	pb "github.com/synerex/synerex_alpha/api"
-	simapi "github.com/synerex/synerex_alpha/api/simulation"
-	provider "github.com/synerex/synerex_alpha/api/simulation/provider"
+	//"strings"
+	"sync"
+	//"time"
+
+	"github.com/google/uuid"
+	//"github.com/golang/protobuf/jsonpb"
+	"github.com/synerex/synerex_alpha/api"
 	"github.com/synerex/synerex_alpha/provider/simutil"
-	"github.com/synerex/synerex_alpha/sxutil"
 	"google.golang.org/grpc"
 )
 
 var (
-	serverAddr           = flag.String("synerex", "127.0.0.1:10000", "The server address in the format of host:port")
-	gatewayAddr          = flag.String("gateway", "127.0.0.1:10000", "The server address in the format of host:port")
-	nodesrv              = flag.String("nodeid", "127.0.0.1:9990", "Node ID Server")
-	providerJson         = flag.String("provider_json", "", "Provider Json")
-	scenarioProviderJson = flag.String("scenario_provider_json", "", "Provider Json")
-	mu                   sync.Mutex
-	myProvider           *provider.Provider
-	scenarioProvider     *provider.Provider
-	com1                 *simutil.Communicator
-	com2                 *simutil.Communicator
-	providerManager1     *simutil.ProviderManager
-	providerManager2     *simutil.ProviderManager
-	logger               *simutil.Logger
-	mes1                 *Message
-	mes2                 *Message
+	workerSynerexAddr1 string
+	workerSynerexAddr2 string
+	workerNodeIdAddr1  string
+	workerNodeIdAddr2  string
+	//pm1                *simutil.ProviderManager
+	//pm2                *simutil.ProviderManager
+	apm        *AgentProviderManager
+	mu         sync.Mutex
+	myProvider *api.Provider
+	worker1api *api.SimAPI
+	worker2api *api.SimAPI
+	//scenarioProvider   *provider.Provider
+	//com1               *simutil.Communicator
+	//com2               *simutil.Communicator
+	//providerManager1   *simutil.ProviderManager
+	//providerManager2   *simutil.ProviderManager
+	logger *simutil.Logger
+	//mes1               *Message
+	//mes2               *Message
 )
 
-func flagToProviderInfo(pJson string) *provider.Provider {
-	pInfo := &provider.Provider{}
-	jsonpb.Unmarshal(strings.NewReader(pJson), pInfo)
-	return pInfo
-}
-
 func init() {
-	flag.Parse()
+	//flag.Parse()
 	logger = simutil.NewLogger()
-	myProvider = flagToProviderInfo(*providerJson)
-	scenarioProvider = flagToProviderInfo(*scenarioProviderJson)
-	mes1 = NewMessage()
-	mes2 = NewMessage()
-}
+	apm = NewAgentProviderManager()
+	//myProvider = flagToProviderInfo(*providerJson)
+	//scenarioProvider = flagToProviderInfo(*scenarioProviderJson)
 
-// Supplyのコールバック関数
-func supplyCallback1(clt *sxutil.SMServiceClient, sp *pb.Supply) {
-	//senderId := sp.GetSenderId()
-
-	tid := sp.GetTargetId()
-	pid := sp.GetSimSupply().GetPid()
-	targets := sp.GetSimSupply().GetTargets()
-	senderInfo := sp.GetSimSupply().GetSenderInfo()
-	switch sp.GetSimSupply().GetType() {
-	case simapi.SupplyType_GET_AGENTS_RESPONSE:
-		if com2 != nil && IsContainProviders(providerManager1.Providers, senderInfo) && IsContainTarget(providerManager2.Providers, targets) {
-			//logger.Error("GetAgentsResponse")
-			agents := sp.GetSimSupply().GetGetAgentsResponse().GetAgents()
-			agentType := sp.GetSimSupply().GetGetAgentsResponse().GetAgentType()
-			areaId := sp.GetSimSupply().GetGetAgentsResponse().GetAreaId()
-
-			//logger.Error("Send Agent from %v to %v", pid, tid)
-			com2.GetAgentsResponse(senderInfo, targets, pid, tid, agents, agentType, areaId)
-		}
-	case simapi.SupplyType_GET_PROVIDERS_RESPONSE:
-		providers := sp.GetSimSupply().GetGetProvidersResponse().GetProviders()
-		//logger.Info("mes1")
-		if mes1 != nil {
-			mes1.Set(providers)
-		}
+	workerSynerexAddr1 = os.Getenv("WORKER_SYNEREX_SERVER1")
+	if workerSynerexAddr1 == "" {
+		workerSynerexAddr1 = "127.0.0.1:10000"
 	}
 
-}
-
-// Demandのコールバック関数
-func demandCallback1(clt *sxutil.SMServiceClient, dm *pb.Demand) {
-
-	switch dm.GetSimDemand().GetType() {
-	case simapi.DemandType_GET_AGENTS_REQUEST:
-		//logger.Error("GetAgentsRequest2")
+	workerSynerexAddr2 = os.Getenv("WORKER_SYNEREX_SERVER2")
+	if workerSynerexAddr2 == "" {
+		workerSynerexAddr2 = "127.0.0.1:10000"
 	}
 
-	// check if supply is match with my demand.
-	pid := dm.GetSimDemand().GetPid()
-	targets := dm.GetSimDemand().GetTargets()
-	senderInfo := dm.GetSimDemand().GetSenderInfo()
-	//senderId := dm.GetSenderId()
-	if com2 != nil && IsContainProviders(providerManager1.Providers, senderInfo) && IsContainTarget(providerManager2.Providers, targets) {
-		switch dm.GetSimDemand().GetType() {
-		case simapi.DemandType_GET_AGENTS_REQUEST:
-			//logger.Error("GetAgentsRequest")
-			com2.GetAgentsRequest(senderInfo, targets, pid, nil)
-		}
-	}
-}
-
-// Supplyのコールバック関数
-func supplyCallback2(clt *sxutil.SMServiceClient, sp *pb.Supply) {
-	//senderId := sp.GetSenderId()
-
-	tid := sp.GetTargetId()
-	pid := sp.GetSimSupply().GetPid()
-	targets := sp.GetSimSupply().GetTargets()
-	senderInfo := sp.GetSimSupply().GetSenderInfo()
-	switch sp.GetSimSupply().GetType() {
-	case simapi.SupplyType_GET_AGENTS_RESPONSE:
-		if com1 != nil && IsContainProviders(providerManager2.Providers, senderInfo) && IsContainTarget(providerManager1.Providers, targets) {
-			//logger.Error("GetAgentsResponse")
-			agents := sp.GetSimSupply().GetGetAgentsResponse().GetAgents()
-			agentType := sp.GetSimSupply().GetGetAgentsResponse().GetAgentType()
-			areaId := sp.GetSimSupply().GetGetAgentsResponse().GetAreaId()
-
-			//logger.Error("Send Agent from %v to %v", pid, tid)
-			com1.GetAgentsResponse(senderInfo, targets, pid, tid, agents, agentType, areaId)
-		}
-
-	case simapi.SupplyType_GET_PROVIDERS_RESPONSE:
-		providers := sp.GetSimSupply().GetGetProvidersResponse().GetProviders()
-		if mes2 != nil {
-			mes2.Set(providers)
-		}
+	workerNodeIdAddr1 = os.Getenv("WORKER_NODEID_SERVER1")
+	if workerNodeIdAddr1 == "" {
+		workerNodeIdAddr1 = "127.0.0.1:10000"
 	}
 
-}
-
-// Demandのコールバック関数
-func demandCallback2(clt *sxutil.SMServiceClient, dm *pb.Demand) {
-	// check if supply is match with my demand.
-	//asenderId := dm.GetSenderId()
-	pid := dm.GetSimDemand().GetPid()
-
-	targets := dm.GetSimDemand().GetTargets()
-	senderInfo := dm.GetSimDemand().GetSenderInfo()
-	switch dm.GetSimDemand().GetType() {
-	case simapi.DemandType_GET_AGENTS_REQUEST:
-		//logger.Error("GetAgentsRequest2")
+	workerNodeIdAddr2 = os.Getenv("WORKER_NODEID_SERVER2")
+	if workerNodeIdAddr2 == "" {
+		workerNodeIdAddr2 = "127.0.0.1:10000"
 	}
-	// 相手のプロバイダーへのDemandかつ自分のプロバイダーであること
-	if com1 != nil && IsContainProviders(providerManager2.Providers, senderInfo) && IsContainTarget(providerManager1.Providers, targets) {
-		switch dm.GetSimDemand().GetType() {
-		case simapi.DemandType_GET_AGENTS_REQUEST:
-			//logger.Error("GetAgentsRequest")
-			com1.GetAgentsRequest(senderInfo, targets, pid, nil)
-		}
-	}
-}
-
-func IsContainProviders(providers []*provider.Provider, senderInfo *provider.Provider) bool {
-	for _, pr := range providers {
-		if pr.Id == senderInfo.Id {
-			return true
-		}
-	}
-	return false
-}
-
-func IsContainTarget(providers []*provider.Provider, targets []uint64) bool {
-	for _, pr := range providers {
-		for _, tgt := range targets {
-			if pr.Id == tgt {
-				return true
-			}
-		}
-	}
-	return false
-}
-
-func IsContainSameClientID(clients *simutil.Clients, id uint64) bool {
-	if uint64(clients.AgentClient.ClientID) == id {
-		return true
-	}
-	if uint64(clients.ClockClient.ClientID) == id {
-		return true
-	}
-	if uint64(clients.ProviderClient.ClientID) == id {
-		return true
-	}
-	return false
 }
 
 ////////////////////////////////////////////////////////////
-////////////            Message Class           ///////////
+//////////         Agent Provider Manager         /////////
 ///////////////////////////////////////////////////////////
 
-type Message struct {
-	ready     chan struct{}
-	providers []*provider.Provider
+type AgentProviderManager struct {
+	Providers1  []*api.Provider
+	Providers2  []*api.Provider
+	NeighborMap map[uint64][]*api.Provider // 隣接してるProviderマップ
+	MsgIdMap    map[uint64]uint64          // msgIdを結びつけるためのマップ
 }
 
-func NewMessage() *Message {
-	return &Message{ready: make(chan struct{})}
-}
-func (m *Message) Set(a []*provider.Provider) {
-	m.providers = a
-	logger.Info("Close")
-	close(m.ready)
+func NewAgentProviderManager() *AgentProviderManager {
+	apm := &AgentProviderManager{
+		Providers1:  []*api.Provider{},
+		Providers2:  []*api.Provider{},
+		NeighborMap: make(map[uint64][]*api.Provider),
+		MsgIdMap:    make(map[uint64]uint64),
+	}
+	return apm
 }
 
-func (m *Message) Get() []*provider.Provider {
-	<-m.ready
-	return m.providers
+func (apm *AgentProviderManager) SetProviders1(ps []*api.Provider) {
+	mu.Lock()
+	apm.Providers1 = ps
+	apm.CreateProvidersMap()
+	mu.Unlock()
+}
+
+func (apm *AgentProviderManager) SetProviders2(ps []*api.Provider) {
+	mu.Lock()
+	apm.Providers2 = ps
+	apm.CreateProvidersMap()
+	mu.Unlock()
+}
+
+func (apm *AgentProviderManager) SetMsgIdMap(msgId1 uint64, msgId2 uint64) {
+	mu.Lock()
+	apm.MsgIdMap[msgId1] = msgId2
+	apm.MsgIdMap[msgId2] = msgId1
+	mu.Unlock()
+}
+
+func (apm *AgentProviderManager) CreateProvidersMap() {
+	neighborMap := make(map[uint64][]*api.Provider)
+	for _, p1 := range apm.Providers1 {
+		p1Id := p1.GetId()
+		for _, p2 := range apm.Providers2 {
+			p2Id := p2.GetId()
+			//if isNeighborArea(p1, p2) {
+			// エリアが隣接していた場合
+			neighborMap[p1Id] = append(neighborMap[p1Id], p2)
+			neighborMap[p2Id] = append(neighborMap[p2Id], p1)
+			//}
+		}
+	}
+	apm.NeighborMap = neighborMap
+}
+
+/*func isNeighborArea(p1 *api.Provider, p2 *api.Provider) bool {
+	myControlArea := pm.MyProvider.GetAgentStatus().GetArea().GetControlArea()
+	tControlArea := p.GetAgentStatus().GetArea().GetControlArea()
+	maxLat, maxLon, minLat, minLon := GetCoordRange(myControlArea)
+	tMaxLat, tMaxLon, tMinLat, tMinLon := GetCoordRange(tControlArea)
+	if maxLat == tMinLat && (minLon <= tMaxLon && tMaxLon <= maxLon || minLon <= tMinLon && tMinLon <= maxLon) {
+		return true
+	}
+	if minLat == tMaxLat && (minLon <= tMaxLon && tMaxLon <= maxLon || minLon <= tMinLon && tMinLon <= maxLon) {
+		return true
+	}
+	if maxLon == tMinLon && (minLat <= tMaxLat && tMaxLat <= maxLat || minLat <= tMinLat && tMinLat <= maxLat) {
+		return true
+	}
+	if minLon == tMaxLon && (minLat <= tMaxLat && tMaxLat <= maxLat || minLat <= tMinLat && tMinLat <= maxLat) {
+		return true
+	}
+	return false
+}*/
+
+////////////////////////////////////////////////////////////
+//////////     Worker1 Demand Supply Callback     /////////
+///////////////////////////////////////////////////////////
+
+// Supplyのコールバック関数
+func supplyCallback1(clt *api.SMServiceClient, sp *api.Supply) {
+	switch sp.GetSimSupply().GetType() {
+	case api.SupplyType_GET_AGENT_RESPONSE:
+		/*msgId2 := sp.GetSimSupply().GetMsgId()
+		// send to worker1
+		msgId1 := apm.MsgIdMap[msgId2]
+		senderId := myProvider.Id
+		agents := sp.GetSimSupply().GetGetAgentResponse()
+		worker1api.GetAgentResponse(senderId, targets, msgId1, agents)*/
+
+	case api.SupplyType_REGIST_PROVIDER_RESPONSE:
+		//masterProvider = sp.GetSimSupply().GetRegistProviderResponse().GetProvider()
+		fmt.Printf("regist provider to Worler1 Provider!\n")
+	}
+}
+
+// Demandのコールバック関数
+func demandCallback1(clt *api.SMServiceClient, dm *api.Demand) {
+
+	switch dm.GetSimDemand().GetType() {
+	case api.DemandType_GET_AGENT_REQUEST:
+		// 隣接エリアがない場合はそのまま返す
+
+		targets := []uint64{dm.GetSimDemand().GetSenderId()}
+		senderId := myProvider.Id
+		msgId := dm.GetSimDemand().GetMsgId()
+		agents := []*api.Agent{}
+		worker1api.GetAgentResponse(senderId, targets, msgId, agents)
+		logger.Debug("Finish: Get Agent Request Worker1 ")
+
+		/*pid := dm.GetSimDemand().GetSenderId()
+		if len(apm.ProvidersMap[pid]) == 0{
+			// 隣接エリアがない場合はそのまま返す
+			targets := []uint64{dm.GetSimDemand().GetSenderId()}
+			senderId := myProvider.Id
+			msgId := dm.GetSimDemand().GetMsgId()
+			agents := []*api.Agent{}
+			worker1api.GetAgentResponse(senderId, targets, msgId, agents)
+		}else{
+			//隣接エリアが存在していたらそのAgentProviderへ送る
+			// senderIDの取り扱いに注意　workerからはgatewayのみが見えているようになっている
+			targets := dm.GetSimDemand().GetTargets()
+			senderId := myProvider.Id
+			msgId1 := dm.GetSimDemand().GetMsgId()
+			msgId2 := worker2api.GetAgentRequest(senderId, targets)
+			apm.SetMsgIdMap(msgId1, msgId2) // msgIdを紐づける
+		}*/
+
+	case api.DemandType_UPDATE_PROVIDERS_REQUEST:
+		ps1 := dm.GetSimDemand().GetUpdateProvidersRequest().GetProviders()
+		apm.SetProviders1(ps1)
+		//pm.SetProviders(providers)
+
+		// response
+		targets := []uint64{dm.GetSimDemand().GetSenderId()}
+		senderId := myProvider.Id
+		msgId := dm.GetSimDemand().GetMsgId()
+		worker1api.UpdateProvidersResponse(senderId, targets, msgId)
+		logger.Info("Finish: Update Providers ")
+	}
+}
+
+////////////////////////////////////////////////////////////
+//////////     Worker2 Demand Supply Callback     /////////
+///////////////////////////////////////////////////////////
+
+// Supplyのコールバック関数
+func supplyCallback2(clt *api.SMServiceClient, sp *api.Supply) {
+	switch sp.GetSimSupply().GetType() {
+	case api.SupplyType_GET_AGENT_RESPONSE:
+
+		// send to worker1 agent-provider
+
+	case api.SupplyType_REGIST_PROVIDER_RESPONSE:
+		//masterProvider = sp.GetSimSupply().GetRegistProviderResponse().GetProvider()
+		fmt.Printf("regist provider to Worler2 Provider!\n")
+	}
+}
+
+// Demandのコールバック関数
+func demandCallback2(clt *api.SMServiceClient, dm *api.Demand) {
+	switch dm.GetSimDemand().GetType() {
+	case api.DemandType_GET_AGENT_REQUEST:
+		// 隣接エリアがない場合はそのまま返す
+		targets := []uint64{dm.GetSimDemand().GetSenderId()}
+		senderId := myProvider.Id
+		msgId := dm.GetSimDemand().GetMsgId()
+		agents := []*api.Agent{}
+		worker2api.GetAgentResponse(senderId, targets, msgId, agents)
+		logger.Debug("Finish: Get Agent Request Worker2 ")
+		//隣接エリアが存在していたらそのAgentProviderへ送る
+
+		// ない場合はそのまま返す
+
+	case api.DemandType_UPDATE_PROVIDERS_REQUEST:
+		ps2 := dm.GetSimDemand().GetUpdateProvidersRequest().GetProviders()
+		apm.SetProviders2(ps2)
+		//pm.SetProviders(providers)
+
+		// response
+		targets := []uint64{dm.GetSimDemand().GetSenderId()}
+		senderId := myProvider.Id
+		msgId := dm.GetSimDemand().GetMsgId()
+		worker2api.UpdateProvidersResponse(senderId, targets, msgId)
+		logger.Info("Finish: Update Providers ")
+	}
+
 }
 
 func main() {
 	logger.Info("StartUp Provider")
 
 	// ProviderManager
-	providerManager1 = simutil.NewProviderManager(myProvider)
-	providerManager1.AddProvider(scenarioProvider)
-	providerManager1.CreateIDMap()
-
-	providerManager2 = simutil.NewProviderManager(myProvider)
-	providerManager2.CreateIDMap()
-
-	//////////////////////////////////////////////////
-	//////////        node server        ////////////
-	////////////////////////////////////////////////
-	sxutil.RegisterNodeName(*nodesrv, "GatewayProvider", false)
-	go sxutil.HandleSigInt()
-	sxutil.RegisterDeferFunction(sxutil.UnRegisterNode)
+	uid, _ := uuid.NewRandom()
+	myProvider = &api.Provider{
+		Id:   uint64(uid.ID()),
+		Name: "GatewayProvider",
+		Type: api.ProviderType_GATEWAY,
+	}
+	//pm1 = simutil.NewProviderManager(myProvider)
+	//pm2 = simutil.NewProviderManager(myProvider)
 
 	//////////////////////////////////////////////////
-	//////////      main synerex server      ////////
+	//////////           worker1             ////////
 	////////////////////////////////////////////////
-	go func() {
-		for {
-			var opts []grpc.DialOption
-			opts = append(opts, grpc.WithInsecure())
-			conn, err := grpc.Dial(*serverAddr, opts...)
-			if err != nil {
-				log.Fatalf("fail to dial: %v", err)
-				logger.Error("Fail to dial, Connect again...")
-				time.Sleep(500 * time.Millisecond)
-			} else {
-				sxutil.RegisterDeferFunction(func() { conn.Close() })
-				client := pb.NewSynerexClient(conn)
-				argJson := fmt.Sprintf("{Client:Gateway}")
 
-				// Communicator
-				com1 = simutil.NewCommunicator()
-				com1.RegistClients(client, argJson)                 // channelごとのClientを作成
-				com1.SubscribeAll(demandCallback1, supplyCallback1) // ChannelにSubscribe
-				logger.Info("Success to Connect! ServerAddr: %v", *serverAddr)
+	// Connect to Worker1 Node Server
+	api.RegisterNodeName(workerNodeIdAddr1, "GatewayProvider", false)
+	go api.HandleSigInt()
+	api.RegisterDeferFunction(api.UnRegisterNode)
 
-				return
-			}
-		}
-	}()
+	// Connect to Worker1 Synerex Server
+	var opts []grpc.DialOption
+	opts = append(opts, grpc.WithInsecure())
+	conn, err := grpc.Dial(workerSynerexAddr1, opts...)
+	if err != nil {
+		log.Fatalf("fail to dial: %v", err)
+	}
+	api.RegisterDeferFunction(func() { conn.Close() })
+	client := api.NewSynerexClient(conn)
+	argJson := fmt.Sprintf("{Client:Gateway}")
+
+	// Communicator
+	worker1api = api.NewSimAPI()
+	worker1api.RegistClients(client, myProvider.Id, argJson)  // channelごとのClientを作成
+	worker1api.SubscribeAll(demandCallback1, supplyCallback1) // ChannelにSubscribe
+
+	// workerへ登録
+	senderId := myProvider.Id
+	targets := make([]uint64, 0)
+	worker1api.RegistProviderRequest(senderId, targets, myProvider)
 
 	//////////////////////////////////////////////////
-	//////////       other synerex server    ////////
+	//////////           worker2             ////////
 	////////////////////////////////////////////////
 
-	ch := make(chan *grpc.ClientConn)
-	go func() {
-		var opts []grpc.DialOption
-		opts = append(opts, grpc.WithInsecure())
-		opts = append(opts, grpc.WithBlock())
-		conn, err := grpc.Dial(*gatewayAddr, opts...)
-		if err != nil {
-			logger.Error("fail to dial: %v", err)
-		} else {
-			ch <- conn
-			return
+	// Connect to Worker2 Node Server
+	api.RegisterNodeName(workerNodeIdAddr2, "GatewayProvider", false)
+	go api.HandleSigInt()
+	api.RegisterDeferFunction(api.UnRegisterNode)
 
-		}
-	}()
+	// Connect to Worker2 Synerex Server
+	var opts2 []grpc.DialOption
+	opts2 = append(opts, grpc.WithInsecure())
+	conn2, err2 := grpc.Dial(workerSynerexAddr2, opts2...)
+	if err2 != nil {
+		log.Fatalf("fail to dial: %v", err2)
+	}
+	api.RegisterDeferFunction(func() { conn2.Close() })
+	client2 := api.NewSynerexClient(conn2)
+	argJson2 := fmt.Sprintf("{Client:Gateway}")
 
-	go func() {
-		for {
-			select {
-			case conn := <-ch:
-				sxutil.RegisterDeferFunction(func() { conn.Close() })
-				client := pb.NewSynerexClient(conn)
-				argJson := fmt.Sprintf("{Client:Gateway}")
+	// Communicator
+	worker2api = api.NewSimAPI()
+	worker2api.RegistClients(client2, myProvider.Id, argJson2) // channelごとのClientを作成
+	worker2api.SubscribeAll(demandCallback2, supplyCallback2)  // ChannelにSubscribe
 
-				// Communicator
-				com2 = simutil.NewCommunicator()
-				com2.RegistClients(client, argJson) // channelごとのClientを作成
-				// Subscribeは必要ない?
-				com2.SubscribeAll(demandCallback2, supplyCallback2) // ChannelにSubscribe
-				logger.Info("Success to Connect! GatewayAddr: %v", *gatewayAddr)
-
-				// notify success connection to each synerex server
-				if com1 != nil {
-					pid := providerManager1.MyProvider.Id
-					targets := []uint64{}
-					senderInfo := providerManager2.MyProvider
-					com1.GetProvidersRequest(senderInfo, targets, pid, nil)
-					com2.GetProvidersRequest(senderInfo, targets, pid, nil)
-					providers1 := mes1.Get()
-					mes1 = nil
-					providers2 := mes2.Get()
-					mes2 = nil
-					providerManager1.UpdateProviders(providers1)
-					providerManager1.CreateIDMap()
-					providerManager2.UpdateProviders(providers2)
-					providerManager2.CreateIDMap()
-					com1.SetProvidersRequest(senderInfo, targets, pid, nil, providers2)
-					com2.SetProvidersRequest(senderInfo, targets, pid, nil, providers1)
-				}
-
-				return
-			case <-time.After(3 * time.Second):
-				logger.Error("fail to connect gateway. connect again...")
-			}
-		}
-	}()
+	// workerへ登録
+	senderId = myProvider.Id
+	targets = make([]uint64, 0)
+	worker2api.RegistProviderRequest(senderId, targets, myProvider)
 
 	wg := sync.WaitGroup{}
 	wg.Add(1)
 
 	wg.Wait()
-	sxutil.CallDeferFunctions() // cleanup!
+	api.CallDeferFunctions() // cleanup!
 
 }

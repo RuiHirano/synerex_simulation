@@ -21,9 +21,12 @@ spec:
   selector:
     app: worker3
   ports:
-    - name: http
-      port: 80
-      targetPort: 9980
+    - name: synerex
+      port: 700
+      targetPort: 10000
+    - name: nodeid
+      port: 600
+      targetPort: 9000
 
 ---
 apiVersion: apps/v1

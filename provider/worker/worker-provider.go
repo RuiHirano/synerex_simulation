@@ -188,6 +188,7 @@ func workerDemandCallback(clt *api.SMServiceClient, dm *api.Demand) {
 		// 参加プロバイダの更新命令
 		// request to worker providers
 		targets = pm.GetProviderIds([]simutil.IDType{
+			simutil.IDType_GATEWAY,
 			simutil.IDType_AGENT,
 			simutil.IDType_VISUALIZATION,
 		})

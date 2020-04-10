@@ -122,6 +122,12 @@ func forwardClock() {
 	//senderId := myProvider.Id
 
 	logger.Debug("1: 同エリアエージェント取得")
+	targets := pm.GetProviderIds([]simutil.IDType{
+		simutil.IDType_AGENT,
+	})
+	senderId := myProvider.Id
+	msgId := simapi.GetAgentRequest(senderId, targets)
+	waiter.WaitSp(msgId, targets)
 	//targets := []uint64{}
 	//_, sameAreaAgents := simapi.GetAgentRequest(senderId, targets)
 
@@ -131,6 +137,13 @@ func forwardClock() {
 	agentsMessage.Set(nextAgents)
 
 	logger.Debug("3: 隣接エージェントを取得")
+	targets = pm.GetProviderIds([]simutil.IDType{
+		simutil.IDType_AGENT,
+		simutil.IDType_GATEWAY,
+	})
+	senderId = myProvider.Id
+	msgId = simapi.GetAgentRequest(senderId, targets)
+	waiter.WaitSp(msgId, targets)
 	// [3. Get Neighbor Area Agents]隣接エリアのエージェントの情報を取得
 	//_, neighborAreaAgents := simapi.GetAgentRequest(senderId, targets)
 
@@ -203,6 +216,7 @@ func demandCallback(clt *api.SMServiceClient, dm *api.Demand) {
 		})
 		neighborAreaIds := pm.GetProviderIds([]simutil.IDType{
 			simutil.IDType_AGENT,
+			simutil.IDType_GATEWAY,
 		})
 		visIds := pm.GetProviderIds([]simutil.IDType{
 			simutil.IDType_VISUALIZATION,
@@ -225,7 +239,6 @@ func demandCallback(clt *api.SMServiceClient, dm *api.Demand) {
 		targets := []uint64{dm.GetSimDemand().GetSenderId()}
 		msgId := dm.GetSimDemand().GetMsgId()
 		simapi.GetAgentResponse(pId, targets, msgId, agents)
-		logger.Info("Finish: Forward Clock")
 
 	}
 }

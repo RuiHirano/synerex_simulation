@@ -21,13 +21,15 @@ RUN go get -u google.golang.org/grpc
 
 # build synerex daemon
 WORKDIR /synerex_simulation
-COPY /cli ./cli
-RUN cd cli && \
+COPY /provider/gateway ./provider/gateway
+COPY /provider/simutil ./provider/simutil
+COPY /api ./api
+RUN cd provider/gateway && \
     sed -i 's/\r//' ./entrypoint.sh && \
     chmod +x ./entrypoint.sh
 
 # expose port
 #EXPOSE 10000
-WORKDIR /synerex_simulation/cli
-RUN go build simulator.go
+WORKDIR /synerex_simulation/provider/gateway
+RUN go build gateway-provider.go
 ENTRYPOINT [ "./entrypoint.sh" ]
