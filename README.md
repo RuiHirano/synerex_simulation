@@ -2,111 +2,97 @@
 
 Simulation Services for Person and Traffic Trip using synerex-alpha
 
-# Introduction
-
-Synerex alpha is an alpha version of Synergic Exchange and its support systems.
-This project is supported by JST MIRAI.
-
-## Requirements
+# Requirements
 
 go 1.11 or later (we use go.mod files for module dependencies)
 nodejs(10.13.0) / npm(6.4.1) / yarn(1.12.1) for web client development.
 
-## How to start
+# How to start
 
-Starting from SynerexEngine.
-Synerex Engine is a daemon tool for controlling Synerex.
+## for Kubenetes
 
+1. build images
+
+at root directory, run command below.
 ```
-  cd cli/daemon
-  go build
-```
-
-Then move to provider directory and build provider.
-
-```
-  cd provider/simulation/scenario
-  go build
-
-  cd provider/simulation/car
-  go build
-
-  cd provider/simulation/pedestrian
-  go build
-
-  cd provider/simulation/area
-  go build
-
-  cd provider/simulation/visualization
-  go build
+$ bash docker_build.sh
 ```
 
-## Source Directories
-
-### cli
-
-#### deamon
-
-se-daemon for cli service
-It can start all providers.
+2. run master-pod
 
 ```
-go build se-daemon.go se-daemon_[os].go
+cd kube
+kubectl apply -f master.yaml
 ```
 
-#### se
-
-command line client for Synerex Engine
+3. run worker-pod
 
 ```
- go build   // build se command
- se clean all   // remove all binaries
- se run all     // start all servers and providers
- se stop all    // stop all servers and providers
- se ps -l       // list current running server and providers
+cd kube
+kubectl apply -f worker.yaml
 ```
 
-#### api
-
-Protocl Buffer / gRPC definition of Synergex API
-If you changed any protocol, you should re-generate pb.go files.
-To do so, you should change directory "server", and then
+4. run simulator-pod
 
 ```
- go generate
+cd kube
+$ kubectl apply -f simulator.yaml
 ```
 
-synerex-server.go contains grpc protocl compile code.
+5. check if running pod normally
 
-#### server
+```
+kubectl get pod
+```
 
-Synerex Server alpha version
+6. view visualization-map 
+```
+kubectl get svc
+NAME                  TYPE        CLUSTER-IP       EXTERNAL-IP   PORT(S)                   AGE
+vis-monitor           NodePort    10.110.7.17      <none>        80:31788/TCP              43s
+```
 
-#### provider
+Look at vis-monitor PORT. You can view visualized map in http://127.0.0.1:31788
 
-Synerex Service Providers
+7. send some command
 
-##### ad
+```
+$ kubectl get pod
+NAME              READY   STATUS    RESTARTS   AGE
+simulator-swf6b   1/1     Running   0          156m
 
-##### taxi
+// into simulator pod
+$ kubectl exec -it simulator-swf6b -c simulator bash
+```
 
-##### multi
+- send agents
 
-##### user
+```
+root@simulator-swf6b:/synerex_simulation/cli# /simulator order set agent -n 5
+```
 
-##### fleet
+- start
 
-##### map
+```
+root@simulator-swf6b:/synerex_simulation/cli# /simulator order start
+```
 
-##### datastore
+- stop
 
-##### ecotan
+```
+root@simulator-swf6b:/synerex_simulation/cli# /simulator order stop
+```
 
-Local community bus system. (only for regional restricted demo)
+### other tips
 
-#### sxutil
+- check pod logs
 
-Synerex Utility Package Both server and provider package will
-use this.
+```
+$ kubectl get pod
+NAME              READY   STATUS    RESTARTS   AGE
+master-tpq6k      3/3     Running   0          19m
 
-monitor Monitoring Server
+$ kubectl logs -f master-tpq6k -c master-provider
+$ kubectl logs -f master-tpq6k -c synerex-server
+$ kubectl logs -f master-tpq6k -c nodeid-server
+```
