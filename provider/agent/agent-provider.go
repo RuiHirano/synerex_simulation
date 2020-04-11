@@ -127,6 +127,7 @@ func forwardClock() {
 	})
 	senderId := myProvider.Id
 	msgId := simapi.GetAgentRequest(senderId, targets)
+	logger.Debug("1: targets %v\n", targets)
 	waiter.WaitSp(msgId, targets)
 	//targets := []uint64{}
 	//_, sameAreaAgents := simapi.GetAgentRequest(senderId, targets)

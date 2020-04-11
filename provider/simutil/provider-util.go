@@ -96,30 +96,32 @@ func (pm *ProviderManager) CreateProvidersMap() {
 	//agentProviders := make([]*api.Provider, 0)
 	log.Printf("providers: %v", pm.Providers)
 	for _, p := range pm.Providers {
-		switch p.GetType() {
-		case api.ProviderType_MASTER:
-			providersMap[IDType_MASTER] = append(providersMap[IDType_MASTER], p)
-		case api.ProviderType_WORKER:
-			providersMap[IDType_WORKER] = append(providersMap[IDType_WORKER], p)
-		case api.ProviderType_GATEWAY:
-			providersMap[IDType_GATEWAY] = append(providersMap[IDType_GATEWAY], p)
-		case api.ProviderType_VISUALIZATION:
-			providersMap[IDType_VISUALIZATION] = append(providersMap[IDType_VISUALIZATION], p)
-		case api.ProviderType_AGENT:
-			providersMap[IDType_AGENT] = append(providersMap[IDType_AGENT], p)
-			// AgentProviderでなければ必要ない
-			/*if pm.MyProvider.GetType() == api.ProviderType_AGENT {
-				//log.Printf("IsNeighbor %v", pm.IsNeighborArea(p))
-				if pm.IsNeighborArea(p) && p.GetAgentStatus().GetAgentType() == pm.MyProvider.GetAgentStatus().GetAgentType() {
-					// 隣接エリアかつAgentTypeが等しい場合
-					neighborProviders = append(neighborProviders, p)
+		if p.GetId() != pm.MyProvider.GetId() { // 自分は含まない
+			switch p.GetType() {
+			case api.ProviderType_MASTER:
+				providersMap[IDType_MASTER] = append(providersMap[IDType_MASTER], p)
+			case api.ProviderType_WORKER:
+				providersMap[IDType_WORKER] = append(providersMap[IDType_WORKER], p)
+			case api.ProviderType_GATEWAY:
+				providersMap[IDType_GATEWAY] = append(providersMap[IDType_GATEWAY], p)
+			case api.ProviderType_VISUALIZATION:
+				providersMap[IDType_VISUALIZATION] = append(providersMap[IDType_VISUALIZATION], p)
+			case api.ProviderType_AGENT:
+				providersMap[IDType_AGENT] = append(providersMap[IDType_AGENT], p)
+				// AgentProviderでなければ必要ない
+				/*if pm.MyProvider.GetType() == api.ProviderType_AGENT {
+					//log.Printf("IsNeighbor %v", pm.IsNeighborArea(p))
+					if pm.IsNeighborArea(p) && p.GetAgentStatus().GetAgentType() == pm.MyProvider.GetAgentStatus().GetAgentType() {
+						// 隣接エリアかつAgentTypeが等しい場合
+						neighborProviders = append(neighborProviders, p)
 
-				} else if pm.IsSameArea(p) && p.GetAgentStatus().GetAgentType() != pm.MyProvider.GetAgentStatus().GetAgentType() {
-					// 同じエリアかつAgentTypeが等しくない場合
-					sameProviders = append(sameProviders, p)
-				}
-			}*/
+					} else if pm.IsSameArea(p) && p.GetAgentStatus().GetAgentType() != pm.MyProvider.GetAgentStatus().GetAgentType() {
+						// 同じエリアかつAgentTypeが等しくない場合
+						sameProviders = append(sameProviders, p)
+					}
+				}*/
 
+			}
 		}
 	}
 	//providersMap[IDType_NEIGHBOR] = neighborProviders

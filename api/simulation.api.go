@@ -461,6 +461,86 @@ func (s *SimAPI) StopClockResponse(senderId uint64, targets []uint64, msgId uint
 }
 
 ///////////////////////////////////////////
+/////////////   Pod API   //////////////
+//////////////////////////////////////////
+
+// AgentをセットするDemand
+func (s *SimAPI) CreatePodRequest(senderId uint64, targets []uint64) uint64 {
+
+	uid, _ := uuid.NewRandom()
+	createPodRequest := &CreatePodRequest{}
+
+	msgId := uint64(uid.ID())
+	simDemand := &SimDemand{
+		MsgId:    msgId,
+		SenderId: senderId,
+		Type:     DemandType_SET_AGENT_REQUEST,
+		Data:     &SimDemand_CreatePodRequest{createPodRequest},
+		Targets:  targets,
+	}
+
+	sendSyncDemand(s.MyClients.AgentClient, simDemand)
+
+	return msgId
+}
+
+// Agentのセット完了
+func (s *SimAPI) CreatePodResponse(senderId uint64, targets []uint64, msgId uint64) uint64 {
+	createPodResponse := &CreatePodResponse{}
+
+	simSupply := &SimSupply{
+		MsgId:    msgId,
+		SenderId: senderId,
+		Type:     SupplyType_SET_AGENT_RESPONSE,
+		Status:   StatusType_OK,
+		Data:     &SimSupply_CreatePodResponse{createPodResponse},
+		Targets:  targets,
+	}
+
+	sendSyncSupply(s.MyClients.AgentClient, simSupply)
+
+	return msgId
+}
+
+// AgentをセットするDemand
+func (s *SimAPI) DeletePodRequest(senderId uint64, targets []uint64) uint64 {
+
+	uid, _ := uuid.NewRandom()
+	deletePodRequest := &DeletePodRequest{}
+
+	msgId := uint64(uid.ID())
+	simDemand := &SimDemand{
+		MsgId:    msgId,
+		SenderId: senderId,
+		Type:     DemandType_GET_AGENT_REQUEST,
+		Data:     &SimDemand_DeletePodRequest{deletePodRequest},
+		Targets:  targets,
+	}
+
+	sendSyncDemand(s.MyClients.AgentClient, simDemand)
+
+	return msgId
+}
+
+// Agentのセット完了
+func (s *SimAPI) DeletePodResponse(senderId uint64, targets []uint64, msgId uint64) uint64 {
+	deletePodResponse := &DeletePodResponse{}
+
+	simSupply := &SimSupply{
+		MsgId:    msgId,
+		SenderId: senderId,
+		Type:     SupplyType_GET_AGENT_RESPONSE,
+		Status:   StatusType_OK,
+		Data:     &SimSupply_DeletePodResponse{deletePodResponse},
+		Targets:  targets,
+	}
+
+	sendSyncSupply(s.MyClients.AgentClient, simSupply)
+
+	return msgId
+}
+
+///////////////////////////////////////////
 /////////////      Wait      //////////////
 //////////////////////////////////////////
 
@@ -483,7 +563,7 @@ func NewWaiter() *Waiter {
 
 func (w *Waiter) WaitSp(msgId uint64, targets []uint64) []*Supply {
 	if len(targets) == 0 {
-		return nil
+		return []*Supply{}
 	}
 	mu.Lock()
 	CHANNEL_BUFFER_SIZE := 10
@@ -513,7 +593,8 @@ func (w *Waiter) WaitSp(msgId uint64, targets []uint64) []*Supply {
 				}
 				mu.Unlock()
 			case <-time.After(1000 * time.Millisecond):
-				log.Printf("Sync Error...")
+				log.Printf("Sync Error... \n")
+				wg.Done()
 				return
 			}
 		}
@@ -547,7 +628,7 @@ func (w *Waiter) isFinishSpSync(msgId uint64, targets []uint64) bool {
 
 func (w *Waiter) WaitDm(msgId uint64, targets []uint64) []*Demand {
 	if len(targets) == 0 {
-		return nil
+		return []*Demand{}
 	}
 	mu.Lock()
 	CHANNEL_BUFFER_SIZE := 10
@@ -576,8 +657,10 @@ func (w *Waiter) WaitDm(msgId uint64, targets []uint64) []*Demand {
 					}
 				}
 				mu.Unlock()
-			case <-time.After(1500 * time.Millisecond):
-				log.Printf("Sync Error...")
+			case <-time.After(1000 * time.Millisecond):
+				log.Printf("Sync Error... \n")
+				wg.Done()
+				return
 			}
 		}
 	}()
