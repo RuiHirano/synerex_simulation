@@ -21,9 +21,17 @@ kubectl describe pod worker-4xzb9
 # simulator
 kubectl exec -it simulator-bw29p -c simulator bash
 
+# pod-manager
+kubectl logs -f pod-manager-jgtrh -c pod-manager
+kubectl exec -it pod-manager-jgtrh -c pod-manager bash
+
 # delete Evitched
 kubectl get pods | awk '{if ($3 ~ /Evicted/) system ("kubectl delete pods " $1)}'
 
 # volume
 kubectl apply -f volume.yaml
 kubectl get pv,pvc
+
+# delete
+# podを指定すると再生成してしまうためdeploymentを削除する
+kubectl delete deployment master

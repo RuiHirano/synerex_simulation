@@ -1,0 +1,1052 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: vis-monitor
+spec:
+  selector:
+    app: worker1
+  ports:
+    - name: http
+      port: 80
+      targetPort: 9500
+  type: NodePort
+
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: worker1
+spec:
+  selector:
+    app: worker1
+  ports:
+    - name: synerex
+      port: 700
+      targetPort: 10000
+    - name: nodeid
+      port: 600
+      targetPort: 9000
+
+---
+apiVersion: apps/v1
+kind: ReplicaSet
+metadata:
+  name: worker1
+  labels:
+    app: worker1
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: worker1
+  template:
+    metadata:
+      labels:
+        app: worker1
+    spec:
+      containers:
+      - name: nodeid-server
+        image: synerex-simulation/nodeid-server:latest 
+        imagePullPolicy: Never
+        env: 
+        - name: NODEID_SERVER
+          value: :9000
+        ports:
+        - containerPort: 9000
+      - name: synerex-server
+        image: synerex-simulation/synerex-server:latest 
+        imagePullPolicy: Never
+        env: 
+        - name: NODEID_SERVER
+          value: :9000
+        - name: SYNEREX_SERVER
+          value: :10000
+        ports:
+        - containerPort: 10000
+      - name: worker-provider
+        image: synerex-simulation/worker-provider:latest 
+        imagePullPolicy: Never
+        env: 
+        - name: NODEID_SERVER
+          value: :9000
+        - name: SYNEREX_SERVER
+          value: :10000
+        - name: MASTER_SYNEREX_SERVER
+          value: master:700
+        - name: MASTER_NODEID_SERVER
+          value: master:600
+        - name: PORT
+          value: '9980'
+        ports:
+        - containerPort: 9980
+      - name: agent-provider
+        image: synerex-simulation/agent-provider:latest 
+        imagePullPolicy: Never
+        env: 
+        - name: NODEID_SERVER
+          value: :9000
+        - name: SYNEREX_SERVER
+          value: :10000
+      - name: visualization-provider
+        image: synerex-simulation/visualization-provider:latest 
+        imagePullPolicy: Never
+        env: 
+        - name: NODEID_SERVER
+          value: :9000
+        - name: SYNEREX_SERVER
+          value: :10000
+        - name: VIS_ADDRESS
+          value: ':9500'
+      
+---
+################################################################
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: vis-monitor2
+spec:
+  selector:
+    app: worker2
+  ports:
+    - name: http
+      port: 80
+      targetPort: 9500
+  type: NodePort
+  
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: worker2
+spec:
+  selector:
+    app: worker2
+  ports:
+    - name: synerex
+      port: 700
+      targetPort: 10000
+    - name: nodeid
+      port: 600
+      targetPort: 9000
+  
+---
+apiVersion: apps/v1
+kind: ReplicaSet
+metadata:
+  name: worker2
+  labels:
+    app: worker2
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: worker2
+  template:
+    metadata:
+      labels:
+        app: worker2
+    spec:
+      containers:
+      - name: nodeid-server
+        image: synerex-simulation/nodeid-server:latest 
+        imagePullPolicy: Never
+        env: 
+        - name: NODEID_SERVER
+          value: :9000
+        ports:
+        - containerPort: 9000
+      - name: synerex-server
+        image: synerex-simulation/synerex-server:latest 
+        imagePullPolicy: Never
+        env: 
+        - name: NODEID_SERVER
+          value: :9000
+        - name: SYNEREX_SERVER
+          value: :10000
+        ports:
+        - containerPort: 10000
+      - name: worker-provider
+        image: synerex-simulation/worker-provider:latest 
+        imagePullPolicy: Never
+        env: 
+        - name: NODEID_SERVER
+          value: :9000
+        - name: SYNEREX_SERVER
+          value: :10000
+        - name: MASTER_SYNEREX_SERVER
+          value: master:700
+        - name: MASTER_NODEID_SERVER
+          value: master:600
+        - name: PORT
+          value: '9980'
+        ports:
+        - containerPort: 9980
+      - name: agent-provider
+        image: synerex-simulation/agent-provider:latest 
+        imagePullPolicy: Never
+        env: 
+        - name: NODEID_SERVER
+          value: :9000
+        - name: SYNEREX_SERVER
+          value: :10000
+      - name: visualization-provider
+        image: synerex-simulation/visualization-provider:latest 
+        imagePullPolicy: Never
+        env: 
+        - name: NODEID_SERVER
+          value: :9000
+        - name: SYNEREX_SERVER
+          value: :10000
+        - name: VIS_ADDRESS
+          value: ':9500'
+
+---
+
+################################################################
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: vis-monitor3
+spec:
+  selector:
+    app: worker3
+  ports:
+    - name: http
+      port: 80
+      targetPort: 9500
+  type: NodePort
+  
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: worker3
+spec:
+  selector:
+    app: worker3
+  ports:
+    - name: synerex
+      port: 700
+      targetPort: 10000
+    - name: nodeid
+      port: 600
+      targetPort: 9000
+  
+---
+apiVersion: apps/v1
+kind: ReplicaSet
+metadata:
+  name: worker3
+  labels:
+    app: worker3
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: worker3
+  template:
+    metadata:
+      labels:
+        app: worker3
+    spec:
+      containers:
+      - name: nodeid-server
+        image: synerex-simulation/nodeid-server:latest 
+        imagePullPolicy: Never
+        env: 
+        - name: NODEID_SERVER
+          value: :9000
+        ports:
+        - containerPort: 9000
+      - name: synerex-server
+        image: synerex-simulation/synerex-server:latest 
+        imagePullPolicy: Never
+        env: 
+        - name: NODEID_SERVER
+          value: :9000
+        - name: SYNEREX_SERVER
+          value: :10000
+        ports:
+        - containerPort: 10000
+      - name: worker-provider
+        image: synerex-simulation/worker-provider:latest 
+        imagePullPolicy: Never
+        env: 
+        - name: NODEID_SERVER
+          value: :9000
+        - name: SYNEREX_SERVER
+          value: :10000
+        - name: MASTER_SYNEREX_SERVER
+          value: master:700
+        - name: MASTER_NODEID_SERVER
+          value: master:600
+        - name: PORT
+          value: '9980'
+        ports:
+        - containerPort: 9980
+      - name: agent-provider
+        image: synerex-simulation/agent-provider:latest 
+        imagePullPolicy: Never
+        env: 
+        - name: NODEID_SERVER
+          value: :9000
+        - name: SYNEREX_SERVER
+          value: :10000
+      - name: visualization-provider
+        image: synerex-simulation/visualization-provider:latest 
+        imagePullPolicy: Never
+        env: 
+        - name: NODEID_SERVER
+          value: :9000
+        - name: SYNEREX_SERVER
+          value: :10000
+        - name: VIS_ADDRESS
+          value: ':9500'
+
+---
+  ################################################################
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: vis-monitor4
+spec:
+  selector:
+    app: worker4
+  ports:
+    - name: http
+      port: 80
+      targetPort: 9500
+  type: NodePort
+  
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: worker4
+spec:
+  selector:
+    app: worker4
+  ports:
+    - name: synerex
+      port: 700
+      targetPort: 10000
+    - name: nodeid
+      port: 600
+      targetPort: 9000
+  
+---
+apiVersion: apps/v1
+kind: ReplicaSet
+metadata:
+  name: worker4
+  labels:
+    app: worker4
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: worker4
+  template:
+    metadata:
+      labels:
+        app: worker4
+    spec:
+      containers:
+      - name: nodeid-server
+        image: synerex-simulation/nodeid-server:latest 
+        imagePullPolicy: Never
+        env: 
+        - name: NODEID_SERVER
+          value: :9000
+        ports:
+        - containerPort: 9000
+      - name: synerex-server
+        image: synerex-simulation/synerex-server:latest 
+        imagePullPolicy: Never
+        env: 
+        - name: NODEID_SERVER
+          value: :9000
+        - name: SYNEREX_SERVER
+          value: :10000
+        ports:
+        - containerPort: 10000
+      - name: worker-provider
+        image: synerex-simulation/worker-provider:latest 
+        imagePullPolicy: Never
+        env: 
+        - name: NODEID_SERVER
+          value: :9000
+        - name: SYNEREX_SERVER
+          value: :10000
+        - name: MASTER_SYNEREX_SERVER
+          value: master:700
+        - name: MASTER_NODEID_SERVER
+          value: master:600
+        - name: PORT
+          value: '9980'
+        ports:
+        - containerPort: 9980
+      - name: agent-provider
+        image: synerex-simulation/agent-provider:latest 
+        imagePullPolicy: Never
+        env: 
+        - name: NODEID_SERVER
+          value: :9000
+        - name: SYNEREX_SERVER
+          value: :10000
+      - name: visualization-provider
+        image: synerex-simulation/visualization-provider:latest 
+        imagePullPolicy: Never
+        env: 
+        - name: NODEID_SERVER
+          value: :9000
+        - name: SYNEREX_SERVER
+          value: :10000
+        - name: VIS_ADDRESS
+          value: ':9500'
+
+---
+################################################################
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: vis-monitor5
+spec:
+  selector:
+    app: worker5
+  ports:
+    - name: http
+      port: 80
+      targetPort: 9500
+  type: NodePort
+  
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: worker5
+spec:
+  selector:
+    app: worker5
+  ports:
+    - name: synerex
+      port: 700
+      targetPort: 10000
+    - name: nodeid
+      port: 600
+      targetPort: 9000
+  
+---
+apiVersion: apps/v1
+kind: ReplicaSet
+metadata:
+  name: worker5
+  labels:
+    app: worker5
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: worker5
+  template:
+    metadata:
+      labels:
+        app: worker5
+    spec:
+      containers:
+      - name: nodeid-server
+        image: synerex-simulation/nodeid-server:latest 
+        imagePullPolicy: Never
+        env: 
+        - name: NODEID_SERVER
+          value: :9000
+        ports:
+        - containerPort: 9000
+      - name: synerex-server
+        image: synerex-simulation/synerex-server:latest 
+        imagePullPolicy: Never
+        env: 
+        - name: NODEID_SERVER
+          value: :9000
+        - name: SYNEREX_SERVER
+          value: :10000
+        ports:
+        - containerPort: 10000
+      - name: worker-provider
+        image: synerex-simulation/worker-provider:latest 
+        imagePullPolicy: Never
+        env: 
+        - name: NODEID_SERVER
+          value: :9000
+        - name: SYNEREX_SERVER
+          value: :10000
+        - name: MASTER_SYNEREX_SERVER
+          value: master:700
+        - name: MASTER_NODEID_SERVER
+          value: master:600
+        - name: PORT
+          value: '9980'
+        ports:
+        - containerPort: 9980
+      - name: agent-provider
+        image: synerex-simulation/agent-provider:latest 
+        imagePullPolicy: Never
+        env: 
+        - name: NODEID_SERVER
+          value: :9000
+        - name: SYNEREX_SERVER
+          value: :10000
+      - name: visualization-provider
+        image: synerex-simulation/visualization-provider:latest 
+        imagePullPolicy: Never
+        env: 
+        - name: NODEID_SERVER
+          value: :9000
+        - name: SYNEREX_SERVER
+          value: :10000
+        - name: VIS_ADDRESS
+          value: ':9500'
+
+---
+  ################################################################
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: vis-monitor6
+spec:
+  selector:
+    app: worker6
+  ports:
+    - name: http
+      port: 80
+      targetPort: 9500
+  type: NodePort
+  
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: worker6
+spec:
+  selector:
+    app: worker6
+  ports:
+    - name: synerex
+      port: 700
+      targetPort: 10000
+    - name: nodeid
+      port: 600
+      targetPort: 9000
+  
+---
+apiVersion: apps/v1
+kind: ReplicaSet
+metadata:
+  name: worker6
+  labels:
+    app: worker6
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: worker6
+  template:
+    metadata:
+      labels:
+        app: worker6
+    spec:
+      containers:
+      - name: nodeid-server
+        image: synerex-simulation/nodeid-server:latest 
+        imagePullPolicy: Never
+        env: 
+        - name: NODEID_SERVER
+          value: :9000
+        ports:
+        - containerPort: 9000
+      - name: synerex-server
+        image: synerex-simulation/synerex-server:latest 
+        imagePullPolicy: Never
+        env: 
+        - name: NODEID_SERVER
+          value: :9000
+        - name: SYNEREX_SERVER
+          value: :10000
+        ports:
+        - containerPort: 10000
+      - name: worker-provider
+        image: synerex-simulation/worker-provider:latest 
+        imagePullPolicy: Never
+        env: 
+        - name: NODEID_SERVER
+          value: :9000
+        - name: SYNEREX_SERVER
+          value: :10000
+        - name: MASTER_SYNEREX_SERVER
+          value: master:700
+        - name: MASTER_NODEID_SERVER
+          value: master:600
+        - name: PORT
+          value: '9980'
+        ports:
+        - containerPort: 9980
+      - name: agent-provider
+        image: synerex-simulation/agent-provider:latest 
+        imagePullPolicy: Never
+        env: 
+        - name: NODEID_SERVER
+          value: :9000
+        - name: SYNEREX_SERVER
+          value: :10000
+      - name: visualization-provider
+        image: synerex-simulation/visualization-provider:latest 
+        imagePullPolicy: Never
+        env: 
+        - name: NODEID_SERVER
+          value: :9000
+        - name: SYNEREX_SERVER
+          value: :10000
+        - name: VIS_ADDRESS
+          value: ':9500'
+
+---
+
+################################################################
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: vis-monitor7
+spec:
+  selector:
+    app: worker7
+  ports:
+    - name: http
+      port: 80
+      targetPort: 9500
+  type: NodePort
+  
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: worker7
+spec:
+  selector:
+    app: worker7
+  ports:
+    - name: synerex
+      port: 700
+      targetPort: 10000
+    - name: nodeid
+      port: 600
+      targetPort: 9000
+  
+---
+apiVersion: apps/v1
+kind: ReplicaSet
+metadata:
+  name: worker7
+  labels:
+    app: worker7
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: worker7
+  template:
+    metadata:
+      labels:
+        app: worker7
+    spec:
+      containers:
+      - name: nodeid-server
+        image: synerex-simulation/nodeid-server:latest 
+        imagePullPolicy: Never
+        env: 
+        - name: NODEID_SERVER
+          value: :9000
+        ports:
+        - containerPort: 9000
+      - name: synerex-server
+        image: synerex-simulation/synerex-server:latest 
+        imagePullPolicy: Never
+        env: 
+        - name: NODEID_SERVER
+          value: :9000
+        - name: SYNEREX_SERVER
+          value: :10000
+        ports:
+        - containerPort: 10000
+      - name: worker-provider
+        image: synerex-simulation/worker-provider:latest 
+        imagePullPolicy: Never
+        env: 
+        - name: NODEID_SERVER
+          value: :9000
+        - name: SYNEREX_SERVER
+          value: :10000
+        - name: MASTER_SYNEREX_SERVER
+          value: master:700
+        - name: MASTER_NODEID_SERVER
+          value: master:600
+        - name: PORT
+          value: '9980'
+        ports:
+        - containerPort: 9980
+      - name: agent-provider
+        image: synerex-simulation/agent-provider:latest 
+        imagePullPolicy: Never
+        env: 
+        - name: NODEID_SERVER
+          value: :9000
+        - name: SYNEREX_SERVER
+          value: :10000
+      - name: visualization-provider
+        image: synerex-simulation/visualization-provider:latest 
+        imagePullPolicy: Never
+        env: 
+        - name: NODEID_SERVER
+          value: :9000
+        - name: SYNEREX_SERVER
+          value: :10000
+        - name: VIS_ADDRESS
+          value: ':9500'
+
+---
+
+################################################################
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: vis-monitor8
+spec:
+  selector:
+    app: worker8
+  ports:
+    - name: http
+      port: 80
+      targetPort: 9500
+  type: NodePort
+  
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: worker8
+spec:
+  selector:
+    app: worker8
+  ports:
+    - name: synerex
+      port: 700
+      targetPort: 10000
+    - name: nodeid
+      port: 600
+      targetPort: 9000
+  
+---
+apiVersion: apps/v1
+kind: ReplicaSet
+metadata:
+  name: worker8
+  labels:
+    app: worker8
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: worker8
+  template:
+    metadata:
+      labels:
+        app: worker8
+    spec:
+      containers:
+      - name: nodeid-server
+        image: synerex-simulation/nodeid-server:latest 
+        imagePullPolicy: Never
+        env: 
+        - name: NODEID_SERVER
+          value: :9000
+        ports:
+        - containerPort: 9000
+      - name: synerex-server
+        image: synerex-simulation/synerex-server:latest 
+        imagePullPolicy: Never
+        env: 
+        - name: NODEID_SERVER
+          value: :9000
+        - name: SYNEREX_SERVER
+          value: :10000
+        ports:
+        - containerPort: 10000
+      - name: worker-provider
+        image: synerex-simulation/worker-provider:latest 
+        imagePullPolicy: Never
+        env: 
+        - name: NODEID_SERVER
+          value: :9000
+        - name: SYNEREX_SERVER
+          value: :10000
+        - name: MASTER_SYNEREX_SERVER
+          value: master:700
+        - name: MASTER_NODEID_SERVER
+          value: master:600
+        - name: PORT
+          value: '9980'
+        ports:
+        - containerPort: 9980
+      - name: agent-provider
+        image: synerex-simulation/agent-provider:latest 
+        imagePullPolicy: Never
+        env: 
+        - name: NODEID_SERVER
+          value: :9000
+        - name: SYNEREX_SERVER
+          value: :10000
+      - name: visualization-provider
+        image: synerex-simulation/visualization-provider:latest 
+        imagePullPolicy: Never
+        env: 
+        - name: NODEID_SERVER
+          value: :9000
+        - name: SYNEREX_SERVER
+          value: :10000
+        - name: VIS_ADDRESS
+          value: ':9500'
+
+---
+
+################################################################
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: vis-monitor9
+spec:
+  selector:
+    app: worker9
+  ports:
+    - name: http
+      port: 80
+      targetPort: 9500
+  type: NodePort
+  
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: worker9
+spec:
+  selector:
+    app: worker9
+  ports:
+    - name: synerex
+      port: 700
+      targetPort: 10000
+    - name: nodeid
+      port: 600
+      targetPort: 9000
+  
+---
+apiVersion: apps/v1
+kind: ReplicaSet
+metadata:
+  name: worker9
+  labels:
+    app: worker9
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: worker9
+  template:
+    metadata:
+      labels:
+        app: worker9
+    spec:
+      containers:
+      - name: nodeid-server
+        image: synerex-simulation/nodeid-server:latest 
+        imagePullPolicy: Never
+        env: 
+        - name: NODEID_SERVER
+          value: :9000
+        ports:
+        - containerPort: 9000
+      - name: synerex-server
+        image: synerex-simulation/synerex-server:latest 
+        imagePullPolicy: Never
+        env: 
+        - name: NODEID_SERVER
+          value: :9000
+        - name: SYNEREX_SERVER
+          value: :10000
+        ports:
+        - containerPort: 10000
+      - name: worker-provider
+        image: synerex-simulation/worker-provider:latest 
+        imagePullPolicy: Never
+        env: 
+        - name: NODEID_SERVER
+          value: :9000
+        - name: SYNEREX_SERVER
+          value: :10000
+        - name: MASTER_SYNEREX_SERVER
+          value: master:700
+        - name: MASTER_NODEID_SERVER
+          value: master:600
+        - name: PORT
+          value: '9980'
+        ports:
+        - containerPort: 9980
+      - name: agent-provider
+        image: synerex-simulation/agent-provider:latest 
+        imagePullPolicy: Never
+        env: 
+        - name: NODEID_SERVER
+          value: :9000
+        - name: SYNEREX_SERVER
+          value: :10000
+      - name: visualization-provider
+        image: synerex-simulation/visualization-provider:latest 
+        imagePullPolicy: Never
+        env: 
+        - name: NODEID_SERVER
+          value: :9000
+        - name: SYNEREX_SERVER
+          value: :10000
+        - name: VIS_ADDRESS
+          value: ':9500'
+
+---
+
+################################################################
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: vis-monitor10
+spec:
+  selector:
+    app: worker10
+  ports:
+    - name: http
+      port: 80
+      targetPort: 9500
+  type: NodePort
+  
+---
+
+apiVersion: v1
+kind: Service
+metadata:
+  name: worker10
+spec:
+  selector:
+    app: worker10
+  ports:
+    - name: synerex
+      port: 700
+      targetPort: 10000
+    - name: nodeid
+      port: 600
+      targetPort: 9000
+  
+---
+apiVersion: apps/v1
+kind: ReplicaSet
+metadata:
+  name: worker10
+  labels:
+    app: worker10
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: worker10
+  template:
+    metadata:
+      labels:
+        app: worker10
+    spec:
+      containers:
+      - name: nodeid-server
+        image: synerex-simulation/nodeid-server:latest 
+        imagePullPolicy: Never
+        env: 
+        - name: NODEID_SERVER
+          value: :9000
+        ports:
+        - containerPort: 9000
+      - name: synerex-server
+        image: synerex-simulation/synerex-server:latest 
+        imagePullPolicy: Never
+        env: 
+        - name: NODEID_SERVER
+          value: :9000
+        - name: SYNEREX_SERVER
+          value: :10000
+        ports:
+        - containerPort: 10000
+      - name: worker-provider
+        image: synerex-simulation/worker-provider:latest 
+        imagePullPolicy: Never
+        env: 
+        - name: NODEID_SERVER
+          value: :9000
+        - name: SYNEREX_SERVER
+          value: :10000
+        - name: MASTER_SYNEREX_SERVER
+          value: master:700
+        - name: MASTER_NODEID_SERVER
+          value: master:600
+        - name: PORT
+          value: '9980'
+        ports:
+        - containerPort: 9980
+      - name: agent-provider
+        image: synerex-simulation/agent-provider:latest 
+        imagePullPolicy: Never
+        env: 
+        - name: NODEID_SERVER
+          value: :9000
+        - name: SYNEREX_SERVER
+          value: :10000
+      - name: visualization-provider
+        image: synerex-simulation/visualization-provider:latest 
+        imagePullPolicy: Never
+        env: 
+        - name: NODEID_SERVER
+          value: :9000
+        - name: SYNEREX_SERVER
+          value: :10000
+        - name: VIS_ADDRESS
+          value: ':9500'
+
+---

@@ -26,6 +26,8 @@ message SimDemand {
 			StopClockRequest stop_clock_request = 11;
 			ForwardClockRequest forward_clock_request = 12;
 			GetAgentRequest get_agent_request = 13;
+			CreatePodRequest create_pod_request = 14;
+            DeletePodRequest delete_pod_request = 15;
         }
     }
 
@@ -51,6 +53,8 @@ message SimDemand {
 			StopClockResponse stop_clock_response = 12;
 			ForwardClockResponse forward_clock_response = 13;
 			GetAgentResponse get_agent_response = 14;
+			CreatePodResponse create_pod_response = 15;
+            DeletePodResponse delete_pod_response = 16;
         }
 }
 
@@ -69,6 +73,8 @@ enum DemandType {
 	START_CLOCK_REQUEST = 5;
 	STOP_CLOCK_REQUEST = 6;
 	FORWARD_CLOCK_REQUEST = 7;
+	CREATE_POD_REQUEST = 8;
+    DELETE_POD_REQUEST = 9;
 }
 
 enum SupplyType {
@@ -80,6 +86,8 @@ enum SupplyType {
 	START_CLOCK_RESPONSE = 5;
 	STOP_CLOCK_RESPONSE = 6;
 	FORWARD_CLOCK_RESPONSE = 7;
+	CREATE_POD_RESPONSE = 8;
+    DELETE_POD_RESPONSE = 9;
 }
 
 
@@ -139,6 +147,25 @@ message StopClockRequest {
 message StopClockResponse {
 }
 
+message CreatePodRequest {
+    PodInfo pod_info = 1;
+}
+
+message CreatePodResponse {
+}
+
+message DeletePodRequest {
+    PodInfo pod_info = 1;
+}
+
+message DeletePodResponse {
+}
+
+
+message PodInfo {
+	uint64 id = 1;
+	string name = 2;
+}
 
 
 message Provider {

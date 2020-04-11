@@ -26,7 +26,7 @@ spec:
         - name: WORKER_SYNEREX_SERVER2
           value: worker2:700
         - name: WORKER_NODEID_SERVER2
-          value: worker:600
+          value: worker2:600
         ports:
         - containerPort: 9980
 

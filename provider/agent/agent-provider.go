@@ -66,13 +66,34 @@ func init() {
 ///////////////////////////////////////////////////////////
 
 type Message struct {
-	ready  chan struct{}
-	agents []*api.Agent
+	ready     chan struct{}
+	agents    []*api.Agent
+	senderIds []uint64
 }
 
 func NewMessage() *Message {
-	return &Message{ready: make(chan struct{}), agents: make([]*api.Agent, 0)}
+	return &Message{ready: make(chan struct{}), agents: make([]*api.Agent, 0), senderIds: []uint64{}}
 }
+
+func (m *Message) AddSenderId(senderId uint64) {
+	m.senderIds = append(m.senderIds, senderId)
+}
+
+func (m *Message) FinishSend(targets []uint64) bool {
+	for _, tgt := range targets {
+		isExist := false
+		for _, sid := range m.senderIds {
+			if tgt == sid {
+				isExist = true
+			}
+		}
+		if isExist == false {
+			return false
+		}
+	}
+	return true
+}
+
 func (m *Message) Set(a []*api.Agent) {
 	m.agents = a
 	close(m.ready)
@@ -154,16 +175,9 @@ func forwardClock() {
 	// Agentsをセットする
 	sim.SetAgents(nextAgents)
 
-	//
-	//logger.Debug("5: workerを通してvisに送信") // request to providers
-	//senderId := myProvider.Id
-	//targets := providerManager.GetProviderIds()
-	//targets := []uint64{}
-	//simapi.SetAgentRequest(senderId, targets, nextAgents)
-
 	// [5. Forward Clock]クロックを進める
 	logger.Debug("6: クロックを進める")
-	agentsMessage = NewMessage()
+	//agentsMessage = NewMessage()
 	//sim.ForwardClock()
 
 	logger.Info("Finish: Clock Forwarded. AgentNum:  %v", len(nextAgents))
@@ -233,6 +247,13 @@ func demandCallback(clt *api.SMServiceClient, dm *api.Demand) {
 		} else if simutil.Contains(visIds, senderId) {
 			// Visプロバイダの場合
 			agents = agentsMessage.Get()
+		}
+
+		// 全てのプロバイダにmessageを送信し終えたらMessageを初期化する
+		agentsMessage.AddSenderId(senderId)
+		if agentsMessage.FinishSend(append(neighborAreaIds, visIds...)) {
+			logger.Debug("init Message")
+			agentsMessage = NewMessage()
 		}
 
 		// response
