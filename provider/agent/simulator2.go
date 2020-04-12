@@ -60,11 +60,11 @@ func (sim *Simulator2) ForwardStep() []*api.Agent {
 
 	nextAgents := sim.GetAgents()
 	// Agent計算
-	//rvo2route := algo.NewRVO2Route2(sim.Agents)
-	//nextAgents = rvo2route.CalcNextAgents()
+	rvo2route := algo.NewRVO2Route2(sim.Agents)
+	nextAgents = rvo2route.CalcNextAgents()
 
-	simpleroute := algo.NewSimpleRoute2(sim.Agents)
-	nextAgents = simpleroute.CalcNextAgents()
+	//simpleroute := algo.NewSimpleRoute2(sim.Agents)
+	//nextAgents = simpleroute.CalcNextAgents()
 
 	return nextAgents
 }

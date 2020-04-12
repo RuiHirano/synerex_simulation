@@ -6,11 +6,12 @@ import (
 	"flag"
 	"fmt"
 	"log"
-	"math/rand"
+
+	//"math/rand"
 	"os"
 	"sync"
 
-	"time"
+	//"time"
 
 	//"runtime"
 	//"encoding/json"
@@ -280,7 +281,7 @@ func supplyCallback(clt *api.SMServiceClient, sp *api.Supply) {
 ///////////////////////////
 /////    test      ////////
 ///////////////////////////
-var mockAgents []*api.Agent
+/*var mockAgents []*api.Agent
 
 func init() {
 	mockAgents = []*api.Agent{}
@@ -321,7 +322,7 @@ func forward() {
 		fmt.Printf("send agents")
 		forwardClock()
 	}
-}
+}*/
 
 func main() {
 	logger.Info("StartUp Provider")

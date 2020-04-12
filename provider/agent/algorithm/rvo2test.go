@@ -82,7 +82,6 @@ func (rvo2route *RVO2Route2) DecideNextTransit(nextTransit *api.Coord, transitPo
 
 // SetupScenario: Scenarioを設定する関数
 func (rvo2route *RVO2Route2) SetupScenario() {
-
 	// Set Agent
 	for _, agentInfo := range rvo2route.Agents {
 
@@ -100,29 +99,6 @@ func (rvo2route *RVO2Route2) SetupScenario() {
 		sim.SetAgentPrefVelocity(id, goalVector)
 		//sim.SetAgentMaxSpeed(id, float64(api.MaxSpeed))
 	}
-
-	// Set Obstacle
-	/*for _, feature := range fcs.Features {
-		multiPosition := feature.Geometry.(orb.MultiLineString)[0]
-		//fmt.Printf("geometry: ", multiPosition)
-		rvoObstacle := []*rvo.Vector2{}
-
-		for _, positionArray := range multiPosition {
-			position := &rvo.Vector2{
-				X: positionArray[0],
-				Y: positionArray[1],
-			}
-
-			rvoObstacle = append(rvoObstacle, position)
-		}
-
-		sim.AddObstacle(rvoObstacle)
-	}*/
-
-	sim.ProcessObstacles()
-
-	//fmt.Printf("Simulation has %v agents and %v obstacle vertices in it.\n", sim.GetNumAgents(), sim.GetNumObstacleVertices())
-	//fmt.Printf("Running Simulation..\n\n")
 }
 
 func (rvo2route *RVO2Route2) CalcNextAgents() []*api.Agent {
@@ -135,8 +111,8 @@ func (rvo2route *RVO2Route2) CalcNextAgents() []*api.Agent {
 	maxneighbors := 10      // 周り何体を計算対象とするか
 	timeHorizon := 1.0
 	timeHorizonObst := 1.0
-	radius := 0.00001   // エージェントの半径
-	maxSpeed := 0.00004 // エージェントの最大スピード
+	radius := 0.00001  // エージェントの半径
+	maxSpeed := 0.0004 // エージェントの最大スピード
 	sim = rvo.NewRVOSimulator(timeStep, neighborDist, maxneighbors, timeHorizon, timeHorizonObst, radius, maxSpeed, &rvo.Vector2{X: 0, Y: 0})
 
 	// scenario設定
@@ -158,14 +134,18 @@ func (rvo2route *RVO2Route2) CalcNextAgents() []*api.Agent {
 		}
 
 		// 現在の位置とゴールとの距離と角度を求める (度, m))
-		direction, distance := rvo2route.CalcDirectionAndDistance(nextCoord, agentInfo.Route.NextTransit)
+		//direction, distance := rvo2route.CalcDirectionAndDistance(nextCoord, agentInfo.Route.NextTransit)
 		// 次の経由地nextTransitを求める
-		nextTransit := rvo2route.DecideNextTransit(agentInfo.Route.NextTransit, agentInfo.Route.TransitPoints, distance, destination)
+		//nextTransit := rvo2route.DecideNextTransit(agentInfo.Route.NextTransit, agentInfo.Route.TransitPoints, distance, destination)
+		nextTransit := agentInfo.Route.NextTransit
+		goalVector := sim.GetAgentGoalVector(int(rvoId))
+		direction := math.Atan2(goalVector.Y, goalVector.X)
+		speed := agentInfo.Route.Speed
 
 		nextRoute := &api.Route{
 			Position:      nextCoord,
 			Direction:     direction,
-			Speed:         distance,
+			Speed:         speed,
 			Destination:   destination,
 			Departure:     agentInfo.Route.Departure,
 			TransitPoints: agentInfo.Route.TransitPoints,
