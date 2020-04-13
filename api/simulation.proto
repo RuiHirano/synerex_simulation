@@ -226,5 +226,7 @@ message Coord {
 message Area {
     uint64 id = 1;
     string name = 2;
-    repeated Coord coords = 3;
+    repeated Coord duplicate_area = 3;
+    repeated Coord control_area = 4;
+    repeated uint64 neighbor_area_ids = 5;
 }
