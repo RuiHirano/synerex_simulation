@@ -36,6 +36,8 @@ var (
 	logger        *simutil.Logger
 	mu            sync.Mutex
 	agentsMessage *Message
+	myArea        *api.Area
+	agentType     api.AgentType
 )
 
 /*func flagToProviderInfo(pJson string) *api.Provider {
@@ -60,6 +62,24 @@ func init() {
 	if nodeIdAddr == "" {
 		nodeIdAddr = "127.0.0.1:9000"
 	}
+
+	myArea = &api.Area{
+		Id:   0,
+		Name: "Nagoya",
+		DuplicateArea: []*api.Coord{
+			{Latitude: 35.156431, Longitude: 136.97285},
+			{Latitude: 35.156431, Longitude: 136.981308},
+			{Latitude: 35.153578, Longitude: 136.981308},
+			{Latitude: 35.153578, Longitude: 136.97285},
+		},
+		ControlArea: []*api.Coord{
+			{Latitude: 35.156431, Longitude: 136.97285},
+			{Latitude: 35.156431, Longitude: 136.981308},
+			{Latitude: 35.153578, Longitude: 136.981308},
+			{Latitude: 35.153578, Longitude: 136.97285},
+		},
+	}
+	agentType = api.AgentType_PEDESTRIAN
 }
 
 ////////////////////////////////////////////////////////////
@@ -145,34 +165,40 @@ func forwardClock() {
 
 	logger.Debug("1: 同エリアエージェント取得")
 	targets := pm.GetProviderIds([]simutil.IDType{
-		simutil.IDType_AGENT,
+		simutil.IDType_SAME,
 	})
 	senderId := myProvider.Id
 	msgId := simapi.GetAgentRequest(senderId, targets)
 	logger.Debug("1: targets %v\n", targets)
-	waiter.WaitSp(msgId, targets)
-	//targets := []uint64{}
-	//_, sameAreaAgents := simapi.GetAgentRequest(senderId, targets)
+	sps := waiter.WaitSp(msgId, targets)
+	sameAgents := []*api.Agent{}
+	for _, sp := range sps {
+		agents := sp.GetSimSupply().GetGetAgentResponse().GetAgents()
+		sameAgents = append(sameAgents, agents...)
+	}
 
 	// [2. Calculation]次の時間のエージェントを計算する
 	logger.Debug("2: エージェント計算を行う")
-	nextAgents := sim.ForwardStep()
-	agentsMessage.Set(nextAgents)
+	nextControlAgents := sim.ForwardStep(sameAgents) // agents in control area
+	agentsMessage.Set(nextControlAgents)
 
 	logger.Debug("3: 隣接エージェントを取得")
 	targets = pm.GetProviderIds([]simutil.IDType{
-		simutil.IDType_AGENT,
+		simutil.IDType_NEIGHBOR,
 		simutil.IDType_GATEWAY,
 	})
 	senderId = myProvider.Id
 	msgId = simapi.GetAgentRequest(senderId, targets)
-	waiter.WaitSp(msgId, targets)
-	// [3. Get Neighbor Area Agents]隣接エリアのエージェントの情報を取得
-	//_, neighborAreaAgents := simapi.GetAgentRequest(senderId, targets)
+	sps = waiter.WaitSp(msgId, targets)
+	neighborAgents := []*api.Agent{}
+	for _, sp := range sps {
+		agents := sp.GetSimSupply().GetGetAgentResponse().GetAgents()
+		neighborAgents = append(neighborAgents, agents...)
+	}
 
 	logger.Debug("4: エージェントを更新")
 	// [4. Update Agents]重複エリアのエージェントを更新する
-	//nextDuplicateAgents := sim.UpdateDuplicateAgents(nextControlAgents, neighborAreaAgents)
+	nextAgents := sim.UpdateDuplicateAgents(nextControlAgents, neighborAgents)
 	// Agentsをセットする
 	sim.SetAgents(nextAgents)
 
@@ -228,10 +254,10 @@ func demandCallback(clt *api.SMServiceClient, dm *api.Demand) {
 		logger.Debug("get agent request")
 		senderId := dm.GetSimDemand().GetSenderId()
 		sameAreaIds := pm.GetProviderIds([]simutil.IDType{
-			simutil.IDType_AGENT,
+			simutil.IDType_SAME,
 		})
 		neighborAreaIds := pm.GetProviderIds([]simutil.IDType{
-			simutil.IDType_AGENT,
+			simutil.IDType_NEIGHBOR,
 			simutil.IDType_GATEWAY,
 		})
 		visIds := pm.GetProviderIds([]simutil.IDType{
@@ -268,10 +294,7 @@ func demandCallback(clt *api.SMServiceClient, dm *api.Demand) {
 
 // callback for each Supply
 func supplyCallback(clt *api.SMServiceClient, sp *api.Supply) {
-	// 自分宛かどうか
 	switch sp.GetSimSupply().GetType() {
-	//case api.SupplyType_GET_AGENT_RESPONSE:
-	//	fmt.Printf("get agents response")
 	case api.SupplyType_REGIST_PROVIDER_RESPONSE:
 		workerProvider = sp.GetSimSupply().GetRegistProviderResponse().GetProvider()
 		fmt.Printf("resist provider request")
@@ -333,6 +356,12 @@ func main() {
 		Id:   uint64(uid.ID()),
 		Name: "AgentProvider",
 		Type: api.ProviderType_AGENT,
+		Data: &api.Provider_AgentStatus{
+			AgentStatus: &api.AgentStatus{
+				Area:      myArea,
+				AgentType: api.AgentType_PEDESTRIAN,
+			},
+		},
 	}
 	pm = simutil.NewProviderManager(myProvider)
 
@@ -357,7 +386,7 @@ func main() {
 	//areaInfo := myProvider.GetAgentStatus().GetArea()
 	//agentType := api.AgentType_PEDESTRIAN
 	//sim = NewSimulator(clockInfo, areaInfo, agentType)
-	sim = NewSimulator2()
+	sim = NewSimulator2(myArea, api.AgentType_PEDESTRIAN)
 
 	// WorkerAPI作成
 	simapi = api.NewSimAPI()

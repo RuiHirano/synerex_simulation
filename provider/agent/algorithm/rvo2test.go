@@ -24,12 +24,14 @@ var (
 
 type RVO2Route2 struct {
 	Agents []*api.Agent
+	Area   *api.Area
 }
 
-func NewRVO2Route2(agents []*api.Agent) *RVO2Route2 {
+func NewRVO2Route2(agents []*api.Agent, area *api.Area) *RVO2Route2 {
 
 	r := &RVO2Route2{
 		Agents: agents,
+		Area:   area,
 	}
 	return r
 }
@@ -103,7 +105,6 @@ func (rvo2route *RVO2Route2) SetupScenario() {
 
 func (rvo2route *RVO2Route2) CalcNextAgents() []*api.Agent {
 
-	nextControlAgents := make([]*api.Agent, 0)
 	currentAgents := rvo2route.Agents
 
 	timeStep := 0.1
@@ -122,46 +123,83 @@ func (rvo2route *RVO2Route2) CalcNextAgents() []*api.Agent {
 	sim.DoStep()
 
 	// 管理エリアのエージェントのみを抽出
+	nextControlAgents := make([]*api.Agent, 0)
 	for rvoId, agentInfo := range currentAgents {
-		destination := agentInfo.Route.Destination
+		// 管理エリア内のエージェントのみ抽出
+		position := agentInfo.Route.Position
+		if IsAgentInArea(position, rvo2route.Area.ControlArea) {
+			destination := agentInfo.Route.Destination
 
-		// rvoの位置情報を緯度経度に変換する
-		rvoAgentPosition := sim.GetAgentPosition(int(rvoId))
+			// rvoの位置情報を緯度経度に変換する
+			rvoAgentPosition := sim.GetAgentPosition(int(rvoId))
 
-		nextCoord := &api.Coord{
-			Latitude:  rvoAgentPosition.Y,
-			Longitude: rvoAgentPosition.X,
+			nextCoord := &api.Coord{
+				Latitude:  rvoAgentPosition.Y,
+				Longitude: rvoAgentPosition.X,
+			}
+
+			// 現在の位置とゴールとの距離と角度を求める (度, m))
+			//direction, distance := rvo2route.CalcDirectionAndDistance(nextCoord, agentInfo.Route.NextTransit)
+			// 次の経由地nextTransitを求める
+			//nextTransit := rvo2route.DecideNextTransit(agentInfo.Route.NextTransit, agentInfo.Route.TransitPoints, distance, destination)
+			nextTransit := agentInfo.Route.NextTransit
+			goalVector := sim.GetAgentGoalVector(int(rvoId))
+			direction := math.Atan2(goalVector.Y, goalVector.X)
+			speed := agentInfo.Route.Speed
+
+			nextRoute := &api.Route{
+				Position:      nextCoord,
+				Direction:     direction,
+				Speed:         speed,
+				Destination:   destination,
+				Departure:     agentInfo.Route.Departure,
+				TransitPoints: agentInfo.Route.TransitPoints,
+				NextTransit:   nextTransit,
+				TotalDistance: agentInfo.Route.TotalDistance,
+				RequiredTime:  agentInfo.Route.RequiredTime,
+			}
+
+			nextControlAgent := &api.Agent{
+				Id:    agentInfo.Id,
+				Type:  agentInfo.Type,
+				Route: nextRoute,
+			}
+
+			nextControlAgents = append(nextControlAgents, nextControlAgent)
 		}
-
-		// 現在の位置とゴールとの距離と角度を求める (度, m))
-		//direction, distance := rvo2route.CalcDirectionAndDistance(nextCoord, agentInfo.Route.NextTransit)
-		// 次の経由地nextTransitを求める
-		//nextTransit := rvo2route.DecideNextTransit(agentInfo.Route.NextTransit, agentInfo.Route.TransitPoints, distance, destination)
-		nextTransit := agentInfo.Route.NextTransit
-		goalVector := sim.GetAgentGoalVector(int(rvoId))
-		direction := math.Atan2(goalVector.Y, goalVector.X)
-		speed := agentInfo.Route.Speed
-
-		nextRoute := &api.Route{
-			Position:      nextCoord,
-			Direction:     direction,
-			Speed:         speed,
-			Destination:   destination,
-			Departure:     agentInfo.Route.Departure,
-			TransitPoints: agentInfo.Route.TransitPoints,
-			NextTransit:   nextTransit,
-			TotalDistance: agentInfo.Route.TotalDistance,
-			RequiredTime:  agentInfo.Route.RequiredTime,
-		}
-
-		nextControlAgent := &api.Agent{
-			Id:    agentInfo.Id,
-			Type:  agentInfo.Type,
-			Route: nextRoute,
-		}
-
-		nextControlAgents = append(nextControlAgents, nextControlAgent)
 	}
 
 	return nextControlAgents
+}
+
+// エージェントがエリアの中にいるかどうか
+func IsAgentInArea(position *api.Coord, areaCoords []*api.Coord) bool {
+	lat := position.Latitude
+	lon := position.Longitude
+	maxLat, maxLon, minLat, minLon := GetCoordRange(areaCoords)
+	if minLat < lat && lat < maxLat && minLon < lon && lon < maxLon {
+		return true
+	} else {
+		return false
+	}
+}
+
+func GetCoordRange(coords []*api.Coord) (float64, float64, float64, float64) {
+	maxLon, maxLat := math.Inf(-1), math.Inf(-1)
+	minLon, minLat := math.Inf(0), math.Inf(0)
+	for _, coord := range coords {
+		if coord.Latitude > maxLat {
+			maxLat = coord.Latitude
+		}
+		if coord.Longitude > maxLon {
+			maxLon = coord.Longitude
+		}
+		if coord.Latitude < minLat {
+			minLat = coord.Latitude
+		}
+		if coord.Longitude < minLon {
+			minLon = coord.Longitude
+		}
+	}
+	return maxLat, maxLon, minLat, minLon
 }

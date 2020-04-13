@@ -195,12 +195,12 @@ func setAgents(agentNum uint64) (bool, error) {
 	for i := 0; i < int(agentNum); i++ {
 		uid, _ := uuid.NewRandom()
 		departure := &api.Coord{
-			Longitude: 136.87285 + rand.Float64()*0.01,
-			Latitude:  35.17333 + rand.Float64()*0.01,
+			Longitude: 136.975685 + rand.Float64()*0.001,
+			Latitude:  35.154533 + rand.Float64()*0.001,
 		}
 		destination := &api.Coord{
-			Longitude: 136.92285 + rand.Float64()*0.01,
-			Latitude:  35.19333 + rand.Float64()*0.01,
+			Longitude: 136.90525 + rand.Float64()*0.01,
+			Latitude:  35.164533 + rand.Float64()*0.01,
 		}
 		transitPoints := []*api.Coord{destination}
 		agents = append(agents, &api.Agent{

@@ -10,6 +10,7 @@ import (
 	"sync"
 
 	//"time"
+	"encoding/json"
 
 	"github.com/google/uuid"
 	api "github.com/synerex/synerex_alpha/api"
@@ -59,6 +60,15 @@ func init() {
 	masterNodeIdAddr = os.Getenv("MASTER_NODEID_SERVER")
 	if masterNodeIdAddr == "" {
 		masterNodeIdAddr = "127.0.0.1:9000"
+	}
+	areaJson := os.Getenv("AREA")
+	areaJson = "[{\"latitude\": 3, \"longitude\": 4},{\"latitude\": 3, \"longitude\": 4},{\"latitude\": 3, \"longitude\": 4},{\"latitude\": 3, \"longitude\": 4}]"
+	bytes := []byte(areaJson)
+	var coords []*api.Coord
+	json.Unmarshal(bytes, &coords)
+	fmt.Printf("coords: %v\n", coords)
+	if areaJson == "" {
+		areaJson = "127.0.0.1:9000"
 	}
 
 	//providerManager = NewManager()

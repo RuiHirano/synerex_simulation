@@ -1,7 +1,8 @@
 package simutil
 
 import (
-	"log"
+	//"log"
+	"math"
 	"sync"
 
 	"github.com/synerex/synerex_alpha/api"
@@ -91,10 +92,7 @@ func (pm *ProviderManager) GetProviderIds(IdTypeList []IDType) []uint64 {
 
 func (pm *ProviderManager) CreateProvidersMap() {
 	providersMap := make(map[IDType][]*api.Provider)
-	//sameProviders := make([]*api.Provider, 0)
-	//neighborProviders := make([]*api.Provider, 0)
-	//agentProviders := make([]*api.Provider, 0)
-	log.Printf("providers: %v", pm.Providers)
+
 	for _, p := range pm.Providers {
 		if p.GetId() != pm.MyProvider.GetId() { // 自分は含まない
 			switch p.GetType() {
@@ -109,32 +107,32 @@ func (pm *ProviderManager) CreateProvidersMap() {
 			case api.ProviderType_AGENT:
 				providersMap[IDType_AGENT] = append(providersMap[IDType_AGENT], p)
 				// AgentProviderでなければ必要ない
-				/*if pm.MyProvider.GetType() == api.ProviderType_AGENT {
+				if pm.MyProvider.GetType() == api.ProviderType_AGENT {
+					myArea := pm.MyProvider.GetAgentStatus().GetArea()
+					agentStatus := pm.MyProvider.GetAgentStatus()
+					tgtArea := p.GetAgentStatus().GetArea()
 					//log.Printf("IsNeighbor %v", pm.IsNeighborArea(p))
-					if pm.IsNeighborArea(p) && p.GetAgentStatus().GetAgentType() == pm.MyProvider.GetAgentStatus().GetAgentType() {
+					if IsNeighborArea(myArea, tgtArea) && p.GetAgentStatus().GetAgentType() == agentStatus.GetAgentType() {
 						// 隣接エリアかつAgentTypeが等しい場合
-						neighborProviders = append(neighborProviders, p)
+						//neighborProviders = append(neighborProviders, p)
+						providersMap[IDType_NEIGHBOR] = append(providersMap[IDType_NEIGHBOR], p)
 
-					} else if pm.IsSameArea(p) && p.GetAgentStatus().GetAgentType() != pm.MyProvider.GetAgentStatus().GetAgentType() {
+					} else if IsSameArea(myArea, tgtArea) && p.GetAgentStatus().GetAgentType() != agentStatus.GetAgentType() {
 						// 同じエリアかつAgentTypeが等しくない場合
-						sameProviders = append(sameProviders, p)
+						//sameProviders = append(sameProviders, p)
+						providersMap[IDType_SAME] = append(providersMap[IDType_SAME], p)
 					}
-				}*/
+				}
 
 			}
 		}
 	}
-	//providersMap[IDType_NEIGHBOR] = neighborProviders
-	//providersMap[IDType_SAME] = sameProviders
-	//providersMap[IDType_AGENT] = agentProviders
 	pm.ProvidersMap = providersMap
 
 }
 
-/*func (pm *ProviderManager) IsSameArea(p *provider.Provider) bool {
-	myAreaID := pm.MyProvider.GetAgentStatus().GetArea().GetId()
-	opAreaID := p.GetAgentStatus().GetArea().GetId()
-	if myAreaID == opAreaID {
+func IsSameArea(area1 *api.Area, area2 *api.Area) bool {
+	if area1.GetId() == area2.GetId() {
 		// エリアIDが等しければtrue
 		return true
 	}
@@ -142,13 +140,12 @@ func (pm *ProviderManager) CreateProvidersMap() {
 }
 
 // FIX
-func (pm *ProviderManager) IsNeighborArea(p *provider.Provider) bool {
-	myControlArea := pm.MyProvider.GetAgentStatus().GetArea().GetControlArea()
-	tControlArea := p.GetAgentStatus().GetArea().GetControlArea()
+func IsNeighborArea(area1 *api.Area, area2 *api.Area) bool {
+	myControlArea := area1.GetControlArea()
+	tControlArea := area2.GetControlArea()
 	maxLat, maxLon, minLat, minLon := GetCoordRange(myControlArea)
 	tMaxLat, tMaxLon, tMinLat, tMinLon := GetCoordRange(tControlArea)
-	//log.Printf("latlon %v, %v, %v, %v", maxLat, maxLon, minLat, minLon)
-	//log.Printf("latlon %v, %v, %v, %v", tMaxLat, tMaxLon, tMinLat, tMinLon)
+
 	if maxLat == tMinLat && (minLon <= tMaxLon && tMaxLon <= maxLon || minLon <= tMinLon && tMinLon <= maxLon) {
 		return true
 	}
@@ -163,4 +160,23 @@ func (pm *ProviderManager) IsNeighborArea(p *provider.Provider) bool {
 	}
 	return false
 }
-*/
+
+func GetCoordRange(coords []*api.Coord) (float64, float64, float64, float64) {
+	maxLon, maxLat := math.Inf(-1), math.Inf(-1)
+	minLon, minLat := math.Inf(0), math.Inf(0)
+	for _, coord := range coords {
+		if coord.Latitude > maxLat {
+			maxLat = coord.Latitude
+		}
+		if coord.Longitude > maxLon {
+			maxLon = coord.Longitude
+		}
+		if coord.Latitude < minLat {
+			minLat = coord.Latitude
+		}
+		if coord.Longitude < minLon {
+			minLon = coord.Longitude
+		}
+	}
+	return maxLat, maxLon, minLat, minLon
+}
