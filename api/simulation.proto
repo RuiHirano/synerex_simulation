@@ -174,7 +174,26 @@ message Provider {
     ProviderType type = 3;
 	string address = 5;
     ClientIds client_ids = 6;
+    oneof data {
+		AgentStatus agent_status = 7;
+		VisualizationStatus visualization_status = 8;
+		ClockStatus clock_status = 9;
+	}
 }
+
+message AgentStatus {
+	Area area = 1;
+    AgentType agent_type = 2;
+	uint64 agent_num = 3;
+}
+
+message VisualizationStatus {
+	Area area = 1;
+}
+
+message ClockStatus {
+}
+
 
 message ClientIds {
     uint64 clock_service = 1;
