@@ -11,7 +11,7 @@ import (
 
 	//"strings"
 	"sync"
-	//"time"
+	"time"
 
 	"github.com/google/uuid"
 	//"github.com/golang/protobuf/jsonpb"
@@ -28,6 +28,7 @@ var (
 	//pm1                *simutil.ProviderManager
 	//pm2                *simutil.ProviderManager
 	apm        *AgentProviderManager
+	waiter     *api.Waiter
 	mu         sync.Mutex
 	myProvider *api.Provider
 	worker1api *api.SimAPI
@@ -45,6 +46,7 @@ var (
 func init() {
 	//flag.Parse()
 	logger = simutil.NewLogger()
+	waiter = api.NewWaiter()
 	apm = NewAgentProviderManager()
 	//myProvider = flagToProviderInfo(*providerJson)
 	//scenarioProvider = flagToProviderInfo(*scenarioProviderJson)
@@ -75,6 +77,39 @@ func init() {
 ///////////////////////////////////////////////////////////
 
 type AgentProviderManager struct {
+	Provider1 *api.Provider
+	Provider2 *api.Provider
+}
+
+func NewAgentProviderManager() *AgentProviderManager {
+	apm := &AgentProviderManager{
+		Provider1: nil,
+		Provider2: nil,
+	}
+	return apm
+}
+
+func (apm *AgentProviderManager) SetProvider1(ps []*api.Provider) {
+	mu.Lock()
+	for _, p := range ps {
+		if p.GetType() == api.ProviderType_AGENT {
+			apm.Provider1 = p
+		}
+	}
+	mu.Unlock()
+}
+
+func (apm *AgentProviderManager) SetProvider2(ps []*api.Provider) {
+	mu.Lock()
+	for _, p := range ps {
+		if p.GetType() == api.ProviderType_AGENT {
+			apm.Provider2 = p
+		}
+	}
+	mu.Unlock()
+}
+
+/*type AgentProviderManager struct {
 	Providers1  []*api.Provider
 	Providers2  []*api.Provider
 	NeighborMap map[uint64][]*api.Provider // 隣接してるProviderマップ
@@ -93,14 +128,23 @@ func NewAgentProviderManager() *AgentProviderManager {
 
 func (apm *AgentProviderManager) SetProviders1(ps []*api.Provider) {
 	mu.Lock()
-	apm.Providers1 = ps
+	for _, p := range ps {
+		if p.GetProviderType() == api.ProviderType_AGENT {
+			apm.Providers1 = append(apm.Providers1, p)
+		}
+	}
 	apm.CreateProvidersMap()
 	mu.Unlock()
 }
 
 func (apm *AgentProviderManager) SetProviders2(ps []*api.Provider) {
 	mu.Lock()
-	apm.Providers2 = ps
+	apm.Providers2 = []*api.Provider{}
+	for _, p := range ps {
+		if p.GetProviderType() == api.ProviderType_AGENT {
+			apm.Providers2 = append(apm.Providers2, p)
+		}
+	}
 	apm.CreateProvidersMap()
 	mu.Unlock()
 }
@@ -126,7 +170,7 @@ func (apm *AgentProviderManager) CreateProvidersMap() {
 		}
 	}
 	apm.NeighborMap = neighborMap
-}
+}*/
 
 /*func isNeighborArea(p1 *api.Provider, p2 *api.Provider) bool {
 	myControlArea := pm.MyProvider.GetAgentStatus().GetArea().GetControlArea()
@@ -156,6 +200,10 @@ func (apm *AgentProviderManager) CreateProvidersMap() {
 func supplyCallback1(clt *api.SMServiceClient, sp *api.Supply) {
 	switch sp.GetSimSupply().GetType() {
 	case api.SupplyType_GET_AGENT_RESPONSE:
+		//fmt.Printf("Get Sp from Worker1%v\n", sp)
+
+		time.Sleep(10 * time.Millisecond)
+		waiter.SendSpToWait(sp)
 		/*msgId2 := sp.GetSimSupply().GetMsgId()
 		// send to worker1
 		msgId1 := apm.MsgIdMap[msgId2]
@@ -176,12 +224,28 @@ func demandCallback1(clt *api.SMServiceClient, dm *api.Demand) {
 	case api.DemandType_GET_AGENT_REQUEST:
 		// 隣接エリアがない場合はそのまま返す
 
-		targets := []uint64{dm.GetSimDemand().GetSenderId()}
+		/*targets := []uint64{dm.GetSimDemand().GetSenderId()}
 		senderId := myProvider.Id
 		msgId := dm.GetSimDemand().GetMsgId()
 		agents := []*api.Agent{}
 		worker1api.GetAgentResponse(senderId, targets, msgId, agents)
-		logger.Debug("Finish: Get Agent Request Worker1 ")
+		logger.Debug("Finish: Get Agent Request Worker1 %v %v\n", targets, msgId)*/
+		agents := []*api.Agent{}
+		senderId := myProvider.Id
+		// worker2のagent-providerから取得
+		targets2 := []uint64{apm.Provider2.GetId()}
+		msgId2 := worker2api.GetAgentRequest(senderId, targets2)
+		//logger.Debug("Get Agent Request to Worker2 %v %v %v\n", targets2, msgId2, dm)
+		sps := waiter.WaitSp(msgId2, targets2)
+		for _, sp := range sps {
+			ags := sp.GetSimSupply().GetGetAgentResponse().GetAgents()
+			agents = append(agents, ags...)
+		}
+
+		targets := []uint64{dm.GetSimDemand().GetSenderId()}
+		msgId := dm.GetSimDemand().GetMsgId()
+		worker1api.GetAgentResponse(senderId, targets, msgId, agents)
+		logger.Debug("Finish: Get Agent Response to Worker1 %v %v %v\n", targets, msgId)
 
 		/*pid := dm.GetSimDemand().GetSenderId()
 		if len(apm.ProvidersMap[pid]) == 0{
@@ -203,7 +267,8 @@ func demandCallback1(clt *api.SMServiceClient, dm *api.Demand) {
 
 	case api.DemandType_UPDATE_PROVIDERS_REQUEST:
 		ps1 := dm.GetSimDemand().GetUpdateProvidersRequest().GetProviders()
-		apm.SetProviders1(ps1)
+		//apm.SetProviders1(ps1)
+		apm.SetProvider1(ps1)
 		//pm.SetProviders(providers)
 
 		// response
@@ -223,7 +288,9 @@ func demandCallback1(clt *api.SMServiceClient, dm *api.Demand) {
 func supplyCallback2(clt *api.SMServiceClient, sp *api.Supply) {
 	switch sp.GetSimSupply().GetType() {
 	case api.SupplyType_GET_AGENT_RESPONSE:
-
+		//fmt.Printf("Get Sp from Worker2%v\n", sp)
+		time.Sleep(10 * time.Millisecond)
+		waiter.SendSpToWait(sp)
 		// send to worker1 agent-provider
 
 	case api.SupplyType_REGIST_PROVIDER_RESPONSE:
@@ -237,19 +304,30 @@ func demandCallback2(clt *api.SMServiceClient, dm *api.Demand) {
 	switch dm.GetSimDemand().GetType() {
 	case api.DemandType_GET_AGENT_REQUEST:
 		// 隣接エリアがない場合はそのまま返す
-		targets := []uint64{dm.GetSimDemand().GetSenderId()}
-		senderId := myProvider.Id
-		msgId := dm.GetSimDemand().GetMsgId()
 		agents := []*api.Agent{}
+		senderId := myProvider.Id
+		// worker2のagent-providerから取得
+		targets1 := []uint64{apm.Provider1.GetId()}
+		msgId1 := worker1api.GetAgentRequest(senderId, targets1)
+		//logger.Debug("Get Agent Request to Worker1 %v %v %v\n", targets1, msgId1, dm)
+		sps := waiter.WaitSp(msgId1, targets1)
+		for _, sp := range sps {
+			ags := sp.GetSimSupply().GetGetAgentResponse().GetAgents()
+			agents = append(agents, ags...)
+		}
+
+		targets := []uint64{dm.GetSimDemand().GetSenderId()}
+		msgId := dm.GetSimDemand().GetMsgId()
 		worker2api.GetAgentResponse(senderId, targets, msgId, agents)
-		logger.Debug("Finish: Get Agent Request Worker2 ")
+		logger.Debug("Finish: Get Agent Request Worker2 %v %v\n", targets, msgId)
 		//隣接エリアが存在していたらそのAgentProviderへ送る
 
 		// ない場合はそのまま返す
 
 	case api.DemandType_UPDATE_PROVIDERS_REQUEST:
 		ps2 := dm.GetSimDemand().GetUpdateProvidersRequest().GetProviders()
-		apm.SetProviders2(ps2)
+		//apm.SetProviders2(ps2)
+		apm.SetProvider2(ps2)
 		//pm.SetProviders(providers)
 
 		// response

@@ -11,10 +11,10 @@ import (
 	"os"
 	"sync"
 
-	//"time"
+	"time"
 
 	//"runtime"
-	//"encoding/json"
+	"encoding/json"
 
 	"github.com/google/uuid"
 	api "github.com/synerex/synerex_alpha/api"
@@ -63,7 +63,14 @@ func init() {
 		nodeIdAddr = "127.0.0.1:9000"
 	}
 
-	myArea = &api.Area{
+	areaJson := os.Getenv("AREA")
+	//areaJson := "{\"id\":0, \"name\":\"Nagoya\", \"duplicate_area\": [{\"latitude\":100, \"longitude\":100},{\"latitude\":100, \"longitude\":100},{\"latitude\":100, \"longitude\":100},{\"latitude\":100, \"longitude\":100}], \"control_area\": [{\"latitude\":100, \"longitude\":100},{\"latitude\":100, \"longitude\":100},{\"latitude\":100, \"longitude\":100},{\"latitude\":100, \"longitude\":100}]}"
+	bytes := []byte(areaJson)
+	//var area *api.Area
+	json.Unmarshal(bytes, &myArea)
+	fmt.Printf("myArea: %v\n", myArea)
+
+	/*myArea = &api.Area{
 		Id:   0,
 		Name: "Nagoya",
 		DuplicateArea: []*api.Coord{
@@ -78,7 +85,7 @@ func init() {
 			{Latitude: 35.153578, Longitude: 136.981308},
 			{Latitude: 35.153578, Longitude: 136.97285},
 		},
-	}
+	}*/
 	agentType = api.AgentType_PEDESTRIAN
 }
 
@@ -167,14 +174,16 @@ func forwardClock() {
 	targets := pm.GetProviderIds([]simutil.IDType{
 		simutil.IDType_SAME,
 	})
-	senderId := myProvider.Id
-	msgId := simapi.GetAgentRequest(senderId, targets)
-	logger.Debug("1: targets %v\n", targets)
-	sps := waiter.WaitSp(msgId, targets)
 	sameAgents := []*api.Agent{}
-	for _, sp := range sps {
-		agents := sp.GetSimSupply().GetGetAgentResponse().GetAgents()
-		sameAgents = append(sameAgents, agents...)
+	if len(targets) != 0 {
+		senderId := myProvider.Id
+		msgId := simapi.GetAgentRequest(senderId, targets)
+		logger.Debug("1: targets %v\n", targets, msgId)
+		sps := waiter.WaitSp(msgId, targets)
+		for _, sp := range sps {
+			agents := sp.GetSimSupply().GetGetAgentResponse().GetAgents()
+			sameAgents = append(sameAgents, agents...)
+		}
 	}
 
 	// [2. Calculation]次の時間のエージェントを計算する
@@ -187,13 +196,17 @@ func forwardClock() {
 		simutil.IDType_NEIGHBOR,
 		simutil.IDType_GATEWAY,
 	})
-	senderId = myProvider.Id
-	msgId = simapi.GetAgentRequest(senderId, targets)
-	sps = waiter.WaitSp(msgId, targets)
+
 	neighborAgents := []*api.Agent{}
-	for _, sp := range sps {
-		agents := sp.GetSimSupply().GetGetAgentResponse().GetAgents()
-		neighborAgents = append(neighborAgents, agents...)
+	if len(targets) != 0 {
+		senderId := myProvider.Id
+		msgId := simapi.GetAgentRequest(senderId, targets)
+		logger.Debug("3: targets %v\n", targets, msgId)
+		sps := waiter.WaitSp(msgId, targets)
+		for _, sp := range sps {
+			agents := sp.GetSimSupply().GetGetAgentResponse().GetAgents()
+			neighborAgents = append(neighborAgents, agents...)
+		}
 	}
 
 	logger.Debug("4: エージェントを更新")
@@ -251,7 +264,7 @@ func demandCallback(clt *api.SMServiceClient, dm *api.Demand) {
 		logger.Info("Finish: Forward Clock")
 
 	case api.DemandType_GET_AGENT_REQUEST:
-		logger.Debug("get agent request")
+		//logger.Debug("get agent request %v\n", dm)
 		senderId := dm.GetSimDemand().GetSenderId()
 		sameAreaIds := pm.GetProviderIds([]simutil.IDType{
 			simutil.IDType_SAME,
@@ -296,8 +309,12 @@ func demandCallback(clt *api.SMServiceClient, dm *api.Demand) {
 func supplyCallback(clt *api.SMServiceClient, sp *api.Supply) {
 	switch sp.GetSimSupply().GetType() {
 	case api.SupplyType_REGIST_PROVIDER_RESPONSE:
+		logger.Debug("resist provider response")
 		workerProvider = sp.GetSimSupply().GetRegistProviderResponse().GetProvider()
-		fmt.Printf("resist provider request")
+	case api.SupplyType_GET_AGENT_RESPONSE:
+		time.Sleep(10 * time.Millisecond)
+		//logger.Debug("get agent response \n", sp)
+		waiter.SendSpToWait(sp)
 	}
 }
 

@@ -78,6 +78,8 @@ spec:
           value: master:600
         - name: PORT
           value: '9980'
+        - name: AREA
+          value: "[{\"latitude\": 3, \"longitude\": 4},{\"latitude\": 3, \"longitude\": 4},{\"latitude\": 3, \"longitude\": 4},{\"latitude\": 3, \"longitude\": 4}]"
         ports:
         - containerPort: 9980
       - name: agent-provider
@@ -88,6 +90,8 @@ spec:
           value: :9000
         - name: SYNEREX_SERVER
           value: :10000
+        - name: AREA
+          value: "{\"id\":0, \"name\":\"Nagoya\", \"duplicate_area\": [{\"latitude\":35.156431, \"longitude\":136.97285},{\"latitude\":35.156431, \"longitude\":136.981308},{\"latitude\":35.153578, \"longitude\":136.981308},{\"latitude\":35.153578, \"longitude\":136.97285}], \"control_area\": [{\"latitude\":35.156431, \"longitude\":136.97285},{\"latitude\":35.156431, \"longitude\":136.981308},{\"latitude\":35.153578, \"longitude\":136.981308},{\"latitude\":35.153578, \"longitude\":136.97285}]}"
       - name: visualization-provider
         image: synerex-simulation/visualization-provider:latest 
         imagePullPolicy: Never
