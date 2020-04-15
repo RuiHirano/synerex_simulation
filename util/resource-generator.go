@@ -5,6 +5,7 @@ import (
 	"log"
 	"math"
 	"os"
+	"strconv"
 
 	"github.com/go-yaml/yaml"
 )
@@ -70,6 +71,7 @@ type Label struct {
 }
 
 type Area struct {
+	Id        int
 	Control   []Coord
 	Duplicate []Coord
 }
@@ -87,13 +89,15 @@ type Option struct {
 }
 
 // vis-monitor
-func NewVisMonitorService() Resource {
+func NewVisMonitorService(area Area) Resource {
+	name := "worker" + strconv.Itoa(area.Id)
+	monitorName := "vis-monitor" + strconv.Itoa(area.Id)
 	service := Resource{
 		ApiVersion: "v1",
 		Kind:       "Service",
-		Metadata:   Metadata{Name: "vis-monitor"},
+		Metadata:   Metadata{Name: monitorName},
 		Spec: Spec{
-			Selector: Selector{App: "worker"},
+			Selector: Selector{App: name},
 			Ports: []Port{
 				{
 					Name:       "http",
@@ -108,13 +112,14 @@ func NewVisMonitorService() Resource {
 }
 
 // worker
-func NewWorkerService() Resource {
+func NewWorkerService(area Area) Resource {
+	name := "worker" + strconv.Itoa(area.Id)
 	service := Resource{
 		ApiVersion: "v1",
 		Kind:       "Service",
-		Metadata:   Metadata{Name: "worker"},
+		Metadata:   Metadata{Name: name},
 		Spec: Spec{
-			Selector: Selector{App: "worker"},
+			Selector: Selector{App: name},
 			Ports: []Port{
 				{
 					Name:       "synerex",
@@ -132,19 +137,20 @@ func NewWorkerService() Resource {
 	return service
 }
 
-func NewWorker() Resource {
+func NewWorker(area Area) Resource {
+	name := "worker" + strconv.Itoa(area.Id)
 	worker := Resource{
 		ApiVersion: "apps/v1",
 		Kind:       "ReplicaSet",
 		Metadata: Metadata{
-			Name:   "worker",
-			Labels: []Label{{App: "worker"}},
+			Name:   name,
+			Labels: []Label{{App: name}},
 		},
 		Spec: Spec{
 			Replicas: 1,
-			Selector: Selector{MatchLabels: []Label{{App: "worker"}}},
+			Selector: Selector{MatchLabels: []Label{{App: name}}},
 			Templete: Templete{
-				Metadata: Metadata{Labels: []Label{{App: "worker"}}},
+				Metadata: Metadata{Labels: []Label{{App: name}}},
 				Spec: TempleteSpec{
 					Containers: []Container{
 						{
@@ -218,7 +224,7 @@ func NewWorker() Resource {
 								},
 								{
 									Name:  "AREA",
-									Value: "{\"id\":0, \"name\":\"Nagoya\", \"duplicate_area\": [{\"latitude\":35.15515326666666, \"longitude\":136.97152533333332},{\"latitude\":35.15097806666667, \"longitude\":136.97152533333332},{\"latitude\":35.15097806666667, \"longitude\":136.9788893333333},{\"latitude\":35.15515326666666, \"longitude\":136.9788893333333}], \"control_area\": [{\"latitude\":35.15480533333333, \"longitude\":136.972139},{\"latitude\":35.151326, \"longitude\":136.972139},{\"latitude\":35.151326, \"longitude\":136.97827566666666},{\"latitude\":35.15480533333333, \"longitude\":136.97827566666666}]}",
+									Value: convertAreaToJson(area),
 								},
 							},
 						},
@@ -408,9 +414,74 @@ func NewSimulator() Resource {
 }
 
 // gateway
-func NewGateway() Resource {
-	master := Resource{}
-	return master
+func NewGateway(neiPair []int) Resource {
+	worker1Name := "worker" + strconv.Itoa(neiPair[0])
+	worker2Name := "worker" + strconv.Itoa(neiPair[1])
+	gateway := Resource{
+		ApiVersion: "apps/v1",
+		Kind:       "ReplicaSet",
+		Metadata: Metadata{
+			Name:   "gateway",
+			Labels: []Label{{App: "gateway"}},
+		},
+		Spec: Spec{
+			Replicas: 1,
+			Selector: Selector{MatchLabels: []Label{{App: "gateway"}}},
+			Templete: Templete{
+				Metadata: Metadata{Labels: []Label{{App: "gateway"}}},
+				Spec: TempleteSpec{
+					Containers: []Container{
+						{
+							Name:            "gateway-provider",
+							Image:           "synerex-simulation/gateway-provider:latest",
+							ImagePullPolicy: "Never",
+							Env: []Env{
+								{
+									Name:  "WORKER_SYNEREX_SERVER1",
+									Value: worker1Name + ":700",
+								},
+								{
+									Name:  "WORKER_NODEID_SERVER1",
+									Value: worker1Name + ":600",
+								},
+								{
+									Name:  "WORKER_SYNEREX_SERVER2",
+									Value: worker2Name + ":700",
+								},
+								{
+									Name:  "WORKER_NODEID_SERVER2",
+									Value: worker2Name + ":600",
+								},
+							},
+							Ports: []Port{{ContainerPort: 9980}},
+						},
+					},
+				},
+			},
+		},
+	}
+	return gateway
+}
+
+func convertAreaToJson(area Area) string {
+	id := area.Id
+	duplicateText := `[`
+	controlText := `[`
+	for _, ctl := range area.Control {
+		ctlText := fmt.Sprintf(`{\"latitude\":%v, \"longitude\":%v},`, ctl.Latitude, ctl.Longitude)
+		//fmt.Printf("ctl %v\n", ctlText)
+		controlText += ctlText
+	}
+	for _, dpl := range area.Duplicate {
+		dplText := fmt.Sprintf(`{\"latitude\":%v, \"longitude\":%v},`, dpl.Latitude, dpl.Longitude)
+		//fmt.Printf("dpl %v\n", dplText)
+		duplicateText += dplText
+	}
+
+	duplicateText += `]`
+	controlText += `]`
+	result := fmt.Sprintf(`"{\"id\":%d, \"name\":\"Unknown\", \"duplicate_area\": %s, \"control_area\": %s}"`, id, duplicateText, controlText)
+	return result
 }
 
 func main() {
@@ -418,17 +489,17 @@ func main() {
 	option := Option{
 		FileName: "test.yaml",
 		AreaCoords: []Coord{
-			{Longitude: 136.972139, Latitude: 35.161764},
-			{Longitude: 136.972139, Latitude: 35.151326},
-			{Longitude: 136.990549, Latitude: 35.151326},
-			{Longitude: 136.990549, Latitude: 35.161764},
+			{Longitude: 136.971626, Latitude: 35.161499},
+			{Longitude: 136.971626, Latitude: 35.152210},
+			{Longitude: 136.989379, Latitude: 35.152210},
+			{Longitude: 136.989379, Latitude: 35.161499},
 		},
-		DevideSquareNum: 3,
+		DevideSquareNum: 2,
 		DuplicateRate:   0.1,
 	}
 
 	rsrcs := createData(option)
-	fmt.Printf("rsrcs: %v\n", rsrcs)
+	//fmt.Printf("rsrcs: %v\n", rsrcs)
 
 	// write yaml
 	fileName := option.FileName
@@ -443,13 +514,24 @@ func main() {
 
 func createData(option Option) []Resource {
 	rsrcs := []Resource{
-		NewSimulator(),
 		NewSimulatorService(),
-		NewMaster(),
+		NewSimulator(),
 		NewMasterService(),
+		NewMaster(),
 	}
-	areas := AreaDivider(option.AreaCoords, option.DevideSquareNum, option.DuplicateRate)
-	fmt.Printf("areas: %v\n", areas)
+	areas, neighbors := AreaDivider(option.AreaCoords, option.DevideSquareNum, option.DuplicateRate)
+	//fmt.Printf("areas: %v\n", areas)
+
+	for _, area := range areas {
+		rsrcs = append(rsrcs, NewVisMonitorService(area))
+		rsrcs = append(rsrcs, NewWorkerService(area))
+		rsrcs = append(rsrcs, NewWorker(area))
+	}
+
+	for _, neiPair := range neighbors {
+		rsrcs = append(rsrcs, NewGateway(neiPair))
+	}
+
 	return rsrcs
 }
 
@@ -472,17 +554,22 @@ func WriteOnFile(fileName string, data interface{}) error {
 	return nil
 }
 
-func AreaDivider(areaCoords []Coord, divideSquareNum int, duplicateRate float64) []Area {
-	var areas []Area
+func AreaDivider(areaCoords []Coord, divideSquareNum int, duplicateRate float64) ([]Area, [][]int) {
+
+	neighbors := [][]int{}
+	areas := []Area{}
+
 	maxLat, maxLon, minLat, minLon := GetCoordRange(areaCoords)
 	for i := 0; i < divideSquareNum; i++ { // 横方向
 		leftlon := (maxLon-minLon)*float64(i)/float64(divideSquareNum) + minLon
 		rightlon := (maxLon-minLon)*(float64(i)+1)/float64(divideSquareNum) + minLon
 
 		for k := 0; k < divideSquareNum; k++ { // 縦方向
-			bottomlat := (maxLat-minLat)*float64(i)/float64(divideSquareNum) + minLat
-			toplat := (maxLat-minLat)*(float64(i)+1)/float64(divideSquareNum) + minLat
+			bottomlat := (maxLat-minLat)*float64(k)/float64(divideSquareNum) + minLat
+			toplat := (maxLat-minLat)*(float64(k)+1)/float64(divideSquareNum) + minLat
+			id, _ := strconv.Atoi(strconv.Itoa(i+1) + strconv.Itoa(k+1))
 			area := Area{
+				Id: id,
 				Control: []Coord{
 					{Longitude: leftlon, Latitude: toplat},
 					{Longitude: leftlon, Latitude: bottomlat},
@@ -497,10 +584,24 @@ func AreaDivider(areaCoords []Coord, divideSquareNum int, duplicateRate float64)
 				},
 			}
 			areas = append(areas, area)
+
+			// add neighbors
+			if i+1+1 <= divideSquareNum {
+				id2, _ := strconv.Atoi(strconv.Itoa(i+1+1) + strconv.Itoa(k+1))
+				neighbors = append(neighbors, []int{id, id2})
+			}
+			if k+1+1 <= divideSquareNum {
+				id3, _ := strconv.Atoi(strconv.Itoa(i+1) + strconv.Itoa(k+1+1))
+				neighbors = append(neighbors, []int{id, id3})
+			}
+
 		}
 	}
+	for _, nei := range neighbors {
+		fmt.Printf("neighbor: %v\n", nei)
+	}
 
-	return areas
+	return areas, neighbors
 
 }
 
