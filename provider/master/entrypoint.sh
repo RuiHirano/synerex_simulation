@@ -1,7 +1,7 @@
 #!/bin/sh
 
 echo 'waiting to start server'
-sleep 1s
+sleep 3s
 echo 'start master-provider'
 
 ./master-provider
