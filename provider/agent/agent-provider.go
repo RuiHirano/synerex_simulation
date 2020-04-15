@@ -220,7 +220,7 @@ func forwardClock() {
 	//agentsMessage = NewMessage()
 	//sim.ForwardClock()
 
-	logger.Info("Finish: Clock Forwarded. AgentNum:  %v", len(nextAgents))
+	logger.Info("Finish: Clock Forwarded. AgentNum:  %v", len(nextControlAgents))
 }
 
 // callback for each Supply

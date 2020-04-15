@@ -89,7 +89,7 @@ spec:
         - name: SYNEREX_SERVER
           value: :10000
         - name: AREA
-          value: "{\"id\":0, \"name\":\"Nagoya\", \"duplicate_area\": [{\"latitude\":35.156431, \"longitude\":136.97285},{\"latitude\":35.156431, \"longitude\":136.981308},{\"latitude\":35.153578, \"longitude\":136.981308},{\"latitude\":35.153578, \"longitude\":136.97285}], \"control_area\": [{\"latitude\":35.156431, \"longitude\":136.97285},{\"latitude\":35.156431, \"longitude\":136.981308},{\"latitude\":35.153578, \"longitude\":136.981308},{\"latitude\":35.153578, \"longitude\":136.97285}]}"
+          value: "{\"id\":0, \"name\":\"Nagoya\", \"duplicate_area\": [{\"latitude\":35.161581, \"longitude\":136.969544},{\"latitude\":35.151073, \"longitude\":136.969544},{\"latitude\":35.151073, \"longitude\":136.981754},{\"latitude\":35.161581, \"longitude\":136.981754}], \"control_area\": [{\"latitude\":35.160581, \"longitude\":136.970544},{\"latitude\":35.152173, \"longitude\":136.970544},{\"latitude\":35.152173, \"longitude\":136.98000},{\"latitude\":35.160581, \"longitude\":136.98000}]}"
       - name: visualization-provider
         image: synerex-simulation/visualization-provider:latest 
         imagePullPolicy: Never
@@ -194,7 +194,7 @@ spec:
         - name: SYNEREX_SERVER
           value: :10000
         - name: AREA
-          value: "{\"id\":0, \"name\":\"Nagoya\", \"duplicate_area\": [{\"latitude\":35.156431, \"longitude\":136.97285},{\"latitude\":35.156431, \"longitude\":136.981308},{\"latitude\":35.153578, \"longitude\":136.981308},{\"latitude\":35.153578, \"longitude\":136.97285}], \"control_area\": [{\"latitude\":35.156431, \"longitude\":136.97285},{\"latitude\":35.156431, \"longitude\":136.981308},{\"latitude\":35.153578, \"longitude\":136.981308},{\"latitude\":35.153578, \"longitude\":136.97285}]}"
+          value: "{\"id\":0, \"name\":\"Nagoya\", \"duplicate_area\": [{\"latitude\":35.161581, \"longitude\":136.979000},{\"latitude\":35.151073, \"longitude\":136.979000},{\"latitude\":35.151073, \"longitude\":136.990754},{\"latitude\":35.161581, \"longitude\":136.990754}], \"control_area\": [{\"latitude\":35.160581, \"longitude\":136.980000},{\"latitude\":35.152173, \"longitude\":136.980000},{\"latitude\":35.152173, \"longitude\":136.989754},{\"latitude\":35.160581, \"longitude\":136.989754}]}"
       - name: visualization-provider
         image: synerex-simulation/visualization-provider:latest 
         imagePullPolicy: Never
