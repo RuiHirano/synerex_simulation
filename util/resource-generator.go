@@ -19,18 +19,18 @@ type Resource struct {
 
 type Spec struct {
 	Replicas int      `yaml:"replicas,omitempty"`
-	Templete Templete `yaml:"templete,omitempty"`
+	Template Template `yaml:"template,omitempty"`
 	Selector Selector `yaml:"selector,omitempty"`
 	Ports    []Port   `yaml:"ports,omitempty"`
 	Type     string   `yaml:"type,omitempty"`
 }
 
-type Templete struct {
+type Template struct {
 	Metadata Metadata     `yaml:"metadata,omitempty"`
-	Spec     TempleteSpec `yaml:"spec,omitempty"`
+	Spec     TemplateSpec `yaml:"spec,omitempty"`
 }
 
-type TempleteSpec struct {
+type TemplateSpec struct {
 	Containers []Container `yaml:"containers,omitempty"`
 }
 
@@ -50,8 +50,8 @@ type Env struct {
 }
 
 type Selector struct {
-	App         string  `yaml:"app,omitempty"`
-	MatchLabels []Label `yaml:"matchLabels,omitempty"`
+	App         string `yaml:"app,omitempty"`
+	MatchLabels Label  `yaml:"matchLabels,omitempty"`
 }
 
 type Port struct {
@@ -62,8 +62,8 @@ type Port struct {
 }
 
 type Metadata struct {
-	Name   string  `yaml:"name,omitempty"`
-	Labels []Label `yaml:"labels,omitempty"`
+	Name   string `yaml:"name,omitempty"`
+	Labels Label  `yaml:"labels,omitempty"`
 }
 
 type Label struct {
@@ -144,14 +144,14 @@ func NewWorker(area Area) Resource {
 		Kind:       "ReplicaSet",
 		Metadata: Metadata{
 			Name:   name,
-			Labels: []Label{{App: name}},
+			Labels: Label{App: name},
 		},
 		Spec: Spec{
 			Replicas: 1,
-			Selector: Selector{MatchLabels: []Label{{App: name}}},
-			Templete: Templete{
-				Metadata: Metadata{Labels: []Label{{App: name}}},
-				Spec: TempleteSpec{
+			Selector: Selector{MatchLabels: Label{App: name}},
+			Template: Template{
+				Metadata: Metadata{Labels: Label{App: name}},
+				Spec: TemplateSpec{
 					Containers: []Container{
 						{
 							Name:            "nodeid-server",
@@ -291,14 +291,14 @@ func NewMaster() Resource {
 		Kind:       "ReplicaSet",
 		Metadata: Metadata{
 			Name:   "master",
-			Labels: []Label{{App: "master"}},
+			Labels: Label{App: "master"},
 		},
 		Spec: Spec{
 			Replicas: 1,
-			Selector: Selector{MatchLabels: []Label{{App: "master"}}},
-			Templete: Templete{
-				Metadata: Metadata{Labels: []Label{{App: "master"}}},
-				Spec: TempleteSpec{
+			Selector: Selector{MatchLabels: Label{App: "master"}},
+			Template: Template{
+				Metadata: Metadata{Labels: Label{App: "master"}},
+				Spec: TemplateSpec{
 					Containers: []Container{
 						{
 							Name:            "nodeid-server",
@@ -382,14 +382,14 @@ func NewSimulator() Resource {
 		Kind:       "ReplicaSet",
 		Metadata: Metadata{
 			Name:   "simulator",
-			Labels: []Label{{App: "simulator"}},
+			Labels: Label{App: "simulator"},
 		},
 		Spec: Spec{
 			Replicas: 1,
-			Selector: Selector{MatchLabels: []Label{{App: "simulator"}}},
-			Templete: Templete{
-				Metadata: Metadata{Labels: []Label{{App: "simulator"}}},
-				Spec: TempleteSpec{
+			Selector: Selector{MatchLabels: Label{App: "simulator"}},
+			Template: Template{
+				Metadata: Metadata{Labels: Label{App: "simulator"}},
+				Spec: TemplateSpec{
 					Containers: []Container{
 						{
 							Name:            "simulator",
@@ -417,19 +417,20 @@ func NewSimulator() Resource {
 func NewGateway(neiPair []int) Resource {
 	worker1Name := "worker" + strconv.Itoa(neiPair[0])
 	worker2Name := "worker" + strconv.Itoa(neiPair[1])
+	gatewayName := "gateway" + strconv.Itoa(neiPair[0]) + strconv.Itoa(neiPair[1])
 	gateway := Resource{
 		ApiVersion: "apps/v1",
 		Kind:       "ReplicaSet",
 		Metadata: Metadata{
-			Name:   "gateway",
-			Labels: []Label{{App: "gateway"}},
+			Name:   gatewayName,
+			Labels: Label{App: gatewayName},
 		},
 		Spec: Spec{
 			Replicas: 1,
-			Selector: Selector{MatchLabels: []Label{{App: "gateway"}}},
-			Templete: Templete{
-				Metadata: Metadata{Labels: []Label{{App: "gateway"}}},
-				Spec: TempleteSpec{
+			Selector: Selector{MatchLabels: Label{App: gatewayName}},
+			Template: Template{
+				Metadata: Metadata{Labels: Label{App: gatewayName}},
+				Spec: TemplateSpec{
 					Containers: []Container{
 						{
 							Name:            "gateway-provider",
@@ -467,20 +468,30 @@ func convertAreaToJson(area Area) string {
 	id := area.Id
 	duplicateText := `[`
 	controlText := `[`
-	for _, ctl := range area.Control {
-		ctlText := fmt.Sprintf(`{\"latitude\":%v, \"longitude\":%v},`, ctl.Latitude, ctl.Longitude)
+	for i, ctl := range area.Control {
+		ctlText := fmt.Sprintf(`{"latitude":%v, "longitude":%v}`, ctl.Latitude, ctl.Longitude)
 		//fmt.Printf("ctl %v\n", ctlText)
-		controlText += ctlText
+		if i == len(area.Control)-1 { // 最後は,をつけない
+			controlText += ctlText
+		} else {
+			controlText += ctlText + ","
+		}
 	}
-	for _, dpl := range area.Duplicate {
-		dplText := fmt.Sprintf(`{\"latitude\":%v, \"longitude\":%v},`, dpl.Latitude, dpl.Longitude)
+	for i, dpl := range area.Duplicate {
+		dplText := fmt.Sprintf(`{"latitude":%v, "longitude":%v}`, dpl.Latitude, dpl.Longitude)
 		//fmt.Printf("dpl %v\n", dplText)
-		duplicateText += dplText
+		if i == len(area.Duplicate)-1 { // 最後は,をつけない
+			duplicateText += dplText
+		} else {
+			duplicateText += dplText + ","
+		}
 	}
 
 	duplicateText += `]`
 	controlText += `]`
-	result := fmt.Sprintf(`"{\"id\":%d, \"name\":\"Unknown\", \"duplicate_area\": %s, \"control_area\": %s}"`, id, duplicateText, controlText)
+	result := fmt.Sprintf(`{"id":%d, "name":"Unknown", "duplicate_area": %s, "control_area": %s}`, id, duplicateText, controlText)
+	//result = fmt.Sprintf("%s", result)
+	//fmt.Printf("areaJson: %s\n", result)
 	return result
 }
 
