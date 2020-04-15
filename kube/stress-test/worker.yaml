@@ -1,7 +1,7 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: vis-monitor
+  name: vis-monitor1
 spec:
   selector:
     app: worker1
@@ -88,6 +88,8 @@ spec:
           value: :9000
         - name: SYNEREX_SERVER
           value: :10000
+        - name: AREA
+          value: "{\"id\":0, \"name\":\"Nagoya\", \"duplicate_area\": [{\"latitude\":35.15515326666666, \"longitude\":136.97152533333332},{\"latitude\":35.15097806666667, \"longitude\":136.97152533333332},{\"latitude\":35.15097806666667, \"longitude\":136.9788893333333},{\"latitude\":35.15515326666666, \"longitude\":136.9788893333333}], \"control_area\": [{\"latitude\":35.15480533333333, \"longitude\":136.972139},{\"latitude\":35.151326, \"longitude\":136.972139},{\"latitude\":35.151326, \"longitude\":136.97827566666666},{\"latitude\":35.15480533333333, \"longitude\":136.97827566666666}]}"
       - name: visualization-provider
         image: synerex-simulation/visualization-provider:latest 
         imagePullPolicy: Never
@@ -98,9 +100,7 @@ spec:
           value: :10000
         - name: VIS_ADDRESS
           value: ':9500'
-      
----
-################################################################
+###########################################  
 ---
 
 apiVersion: v1
@@ -193,6 +193,8 @@ spec:
           value: :9000
         - name: SYNEREX_SERVER
           value: :10000
+        - name: AREA
+          value: "{\"id\":1, \"name\":\"Nagoya\", \"duplicate_area\": [{\"latitude\":35.15515326666666, \"longitude\":136.97152533333332},{\"latitude\":35.15097806666667, \"longitude\":136.97152533333332},{\"latitude\":35.15097806666667, \"longitude\":136.9788893333333},{\"latitude\":35.15515326666666, \"longitude\":136.9788893333333}], \"control_area\": [{\"latitude\":35.15480533333333, \"longitude\":136.972139},{\"latitude\":35.151326, \"longitude\":136.972139},{\"latitude\":35.151326, \"longitude\":136.97827566666666},{\"latitude\":35.15480533333333, \"longitude\":136.97827566666666}]}"
       - name: visualization-provider
         image: synerex-simulation/visualization-provider:latest 
         imagePullPolicy: Never
@@ -204,9 +206,7 @@ spec:
         - name: VIS_ADDRESS
           value: ':9500'
 
----
-
-################################################################
+###########################################################
 ---
 
 apiVersion: v1
@@ -299,6 +299,8 @@ spec:
           value: :9000
         - name: SYNEREX_SERVER
           value: :10000
+        - name: AREA
+          value: "{\"id\":2, \"name\":\"Nagoya\", \"duplicate_area\": [{\"latitude\":35.15515326666666, \"longitude\":136.97152533333332},{\"latitude\":35.15097806666667, \"longitude\":136.97152533333332},{\"latitude\":35.15097806666667, \"longitude\":136.9788893333333},{\"latitude\":35.15515326666666, \"longitude\":136.9788893333333}], \"control_area\": [{\"latitude\":35.15480533333333, \"longitude\":136.972139},{\"latitude\":35.151326, \"longitude\":136.972139},{\"latitude\":35.151326, \"longitude\":136.97827566666666},{\"latitude\":35.15480533333333, \"longitude\":136.97827566666666}]}"
       - name: visualization-provider
         image: synerex-simulation/visualization-provider:latest 
         imagePullPolicy: Never
@@ -309,9 +311,7 @@ spec:
           value: :10000
         - name: VIS_ADDRESS
           value: ':9500'
-
----
-  ################################################################
+####################################################
 ---
 
 apiVersion: v1
@@ -404,6 +404,8 @@ spec:
           value: :9000
         - name: SYNEREX_SERVER
           value: :10000
+        - name: AREA
+          value: "{\"id\":3, \"name\":\"Nagoya\", \"duplicate_area\": [{\"latitude\":35.158632600000004, \"longitude\":136.977662},{\"latitude\":35.1544574, \"longitude\":136.977662},{\"latitude\":35.1544574, \"longitude\":136.985026},{\"latitude\":35.158632600000004, \"longitude\":136.985026}], \"control_area\": [{\"latitude\":35.15828466666667, \"longitude\":136.97827566666666},{\"latitude\":35.15480533333333, \"longitude\":136.97827566666666},{\"latitude\":35.15480533333333, \"longitude\":136.98441233333332},{\"latitude\":35.15828466666667, \"longitude\":136.98441233333332}]}"
       - name: visualization-provider
         image: synerex-simulation/visualization-provider:latest 
         imagePullPolicy: Never
@@ -414,9 +416,7 @@ spec:
           value: :10000
         - name: VIS_ADDRESS
           value: ':9500'
-
----
-################################################################
+##############################################
 ---
 
 apiVersion: v1
@@ -509,6 +509,8 @@ spec:
           value: :9000
         - name: SYNEREX_SERVER
           value: :10000
+        - name: AREA
+          value: "{\"id\":4, \"name\":\"Nagoya\", \"duplicate_area\": [{\"latitude\":35.158632600000004, \"longitude\":136.977662},{\"latitude\":35.1544574, \"longitude\":136.977662},{\"latitude\":35.1544574, \"longitude\":136.985026},{\"latitude\":35.158632600000004, \"longitude\":136.985026}], \"control_area\": [{\"latitude\":35.15828466666667, \"longitude\":136.97827566666666},{\"latitude\":35.15480533333333, \"longitude\":136.97827566666666},{\"latitude\":35.15480533333333, \"longitude\":136.98441233333332},{\"latitude\":35.15828466666667, \"longitude\":136.98441233333332}]}"
       - name: visualization-provider
         image: synerex-simulation/visualization-provider:latest 
         imagePullPolicy: Never
@@ -520,7 +522,6 @@ spec:
         - name: VIS_ADDRESS
           value: ':9500'
 
----
   ################################################################
 ---
 
@@ -614,6 +615,8 @@ spec:
           value: :9000
         - name: SYNEREX_SERVER
           value: :10000
+        - name: AREA
+          value: "{\"id\":5, \"name\":\"Nagoya\", \"duplicate_area\": [{\"latitude\":35.158632600000004, \"longitude\":136.977662},{\"latitude\":35.1544574, \"longitude\":136.977662},{\"latitude\":35.1544574, \"longitude\":136.985026},{\"latitude\":35.158632600000004, \"longitude\":136.985026}], \"control_area\": [{\"latitude\":35.15828466666667, \"longitude\":136.97827566666666},{\"latitude\":35.15480533333333, \"longitude\":136.97827566666666},{\"latitude\":35.15480533333333, \"longitude\":136.98441233333332},{\"latitude\":35.15828466666667, \"longitude\":136.98441233333332}]}"
       - name: visualization-provider
         image: synerex-simulation/visualization-provider:latest 
         imagePullPolicy: Never
@@ -624,8 +627,6 @@ spec:
           value: :10000
         - name: VIS_ADDRESS
           value: ':9500'
-
----
 
 ################################################################
 ---
@@ -720,6 +721,8 @@ spec:
           value: :9000
         - name: SYNEREX_SERVER
           value: :10000
+        - name: AREA
+          value: "{\"id\":6, \"name\":\"Nagoya\", \"duplicate_area\": [{\"latitude\":35.16211193333333, \"longitude\":136.98379866666664},{\"latitude\":35.15793673333334, \"longitude\":136.98379866666664},{\"latitude\":35.15793673333334, \"longitude\":136.99116266666664},{\"latitude\":35.16211193333333, \"longitude\":136.99116266666664}], \"control_area\": [{\"latitude\":35.161764, \"longitude\":136.98441233333332},{\"latitude\":35.15828466666667, \"longitude\":136.98441233333332},{\"latitude\":35.15828466666667, \"longitude\":136.990549},{\"latitude\":35.161764, \"longitude\":136.990549}]}"
       - name: visualization-provider
         image: synerex-simulation/visualization-provider:latest 
         imagePullPolicy: Never
@@ -730,8 +733,6 @@ spec:
           value: :10000
         - name: VIS_ADDRESS
           value: ':9500'
-
----
 
 ################################################################
 ---
@@ -826,6 +827,8 @@ spec:
           value: :9000
         - name: SYNEREX_SERVER
           value: :10000
+        - name: AREA
+          value: "{\"id\":7, \"name\":\"Nagoya\", \"duplicate_area\": [{\"latitude\":35.16211193333333, \"longitude\":136.98379866666664},{\"latitude\":35.15793673333334, \"longitude\":136.98379866666664},{\"latitude\":35.15793673333334, \"longitude\":136.99116266666664},{\"latitude\":35.16211193333333, \"longitude\":136.99116266666664}], \"control_area\": [{\"latitude\":35.161764, \"longitude\":136.98441233333332},{\"latitude\":35.15828466666667, \"longitude\":136.98441233333332},{\"latitude\":35.15828466666667, \"longitude\":136.990549},{\"latitude\":35.161764, \"longitude\":136.990549}]}"
       - name: visualization-provider
         image: synerex-simulation/visualization-provider:latest 
         imagePullPolicy: Never
@@ -837,7 +840,6 @@ spec:
         - name: VIS_ADDRESS
           value: ':9500'
 
----
 
 ################################################################
 ---
@@ -932,6 +934,8 @@ spec:
           value: :9000
         - name: SYNEREX_SERVER
           value: :10000
+        - name: AREA
+          value: "{\"id\":8, \"name\":\"Nagoya\", \"duplicate_area\": [{\"latitude\":35.16211193333333, \"longitude\":136.98379866666664},{\"latitude\":35.15793673333334, \"longitude\":136.98379866666664},{\"latitude\":35.15793673333334, \"longitude\":136.99116266666664},{\"latitude\":35.16211193333333, \"longitude\":136.99116266666664}], \"control_area\": [{\"latitude\":35.161764, \"longitude\":136.98441233333332},{\"latitude\":35.15828466666667, \"longitude\":136.98441233333332},{\"latitude\":35.15828466666667, \"longitude\":136.990549},{\"latitude\":35.161764, \"longitude\":136.990549}]}"
       - name: visualization-provider
         image: synerex-simulation/visualization-provider:latest 
         imagePullPolicy: Never
@@ -943,110 +947,3 @@ spec:
         - name: VIS_ADDRESS
           value: ':9500'
 
----
-
-################################################################
----
-
-apiVersion: v1
-kind: Service
-metadata:
-  name: vis-monitor10
-spec:
-  selector:
-    app: worker10
-  ports:
-    - name: http
-      port: 80
-      targetPort: 9500
-  type: NodePort
-  
----
-
-apiVersion: v1
-kind: Service
-metadata:
-  name: worker10
-spec:
-  selector:
-    app: worker10
-  ports:
-    - name: synerex
-      port: 700
-      targetPort: 10000
-    - name: nodeid
-      port: 600
-      targetPort: 9000
-  
----
-apiVersion: apps/v1
-kind: ReplicaSet
-metadata:
-  name: worker10
-  labels:
-    app: worker10
-spec:
-  replicas: 1
-  selector:
-    matchLabels:
-      app: worker10
-  template:
-    metadata:
-      labels:
-        app: worker10
-    spec:
-      containers:
-      - name: nodeid-server
-        image: synerex-simulation/nodeid-server:latest 
-        imagePullPolicy: Never
-        env: 
-        - name: NODEID_SERVER
-          value: :9000
-        ports:
-        - containerPort: 9000
-      - name: synerex-server
-        image: synerex-simulation/synerex-server:latest 
-        imagePullPolicy: Never
-        env: 
-        - name: NODEID_SERVER
-          value: :9000
-        - name: SYNEREX_SERVER
-          value: :10000
-        ports:
-        - containerPort: 10000
-      - name: worker-provider
-        image: synerex-simulation/worker-provider:latest 
-        imagePullPolicy: Never
-        env: 
-        - name: NODEID_SERVER
-          value: :9000
-        - name: SYNEREX_SERVER
-          value: :10000
-        - name: MASTER_SYNEREX_SERVER
-          value: master:700
-        - name: MASTER_NODEID_SERVER
-          value: master:600
-        - name: PORT
-          value: '9980'
-        ports:
-        - containerPort: 9980
-      - name: agent-provider
-        image: synerex-simulation/agent-provider:latest 
-        imagePullPolicy: Never
-        env: 
-        - name: NODEID_SERVER
-          value: :9000
-        - name: SYNEREX_SERVER
-          value: :10000
-      - name: visualization-provider
-        image: synerex-simulation/visualization-provider:latest 
-        imagePullPolicy: Never
-        env: 
-        - name: NODEID_SERVER
-          value: :9000
-        - name: SYNEREX_SERVER
-          value: :10000
-        - name: VIS_ADDRESS
-          value: ':9500'
-
----

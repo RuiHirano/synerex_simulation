@@ -1,18 +1,20 @@
+
+################################################################
 apiVersion: apps/v1
 kind: ReplicaSet
 metadata:
-  name: gateway
+  name: gateway1
   labels:
-    app: gateway
+    app: gateway1
 spec:
   replicas: 1
   selector:
     matchLabels:
-      app: gateway
+      app: gateway1
   template:
     metadata:
       labels:
-        app: gateway
+        app: gateway1
     spec:
       containers:
       - name: gateway-provider
@@ -20,9 +22,9 @@ spec:
         imagePullPolicy: Never
         env: 
         - name: WORKER_SYNEREX_SERVER1
-          value: worker:700
+          value: worker1:700
         - name: WORKER_NODEID_SERVER1
-          value: worker:600
+          value: worker1:600
         - name: WORKER_SYNEREX_SERVER2
           value: worker2:700
         - name: WORKER_NODEID_SERVER2
@@ -30,3 +32,240 @@ spec:
         ports:
         - containerPort: 9980
 
+---
+################################################################
+apiVersion: apps/v1
+kind: ReplicaSet
+metadata:
+  name: gateway2
+  labels:
+    app: gateway2
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: gateway2
+  template:
+    metadata:
+      labels:
+        app: gateway2
+    spec:
+      containers:
+      - name: gateway-provider
+        image: synerex-simulation/gateway-provider:latest 
+        imagePullPolicy: Never
+        env: 
+        - name: WORKER_SYNEREX_SERVER1
+          value: worker2:700
+        - name: WORKER_NODEID_SERVER1
+          value: worker2:600
+        - name: WORKER_SYNEREX_SERVER2
+          value: worker3:700
+        - name: WORKER_NODEID_SERVER2
+          value: worker3:600
+        ports:
+        - containerPort: 9980
+
+---
+################################################################
+apiVersion: apps/v1
+kind: ReplicaSet
+metadata:
+  name: gateway3
+  labels:
+    app: gateway3
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: gateway3
+  template:
+    metadata:
+      labels:
+        app: gateway3
+    spec:
+      containers:
+      - name: gateway-provider
+        image: synerex-simulation/gateway-provider:latest 
+        imagePullPolicy: Never
+        env: 
+        - name: WORKER_SYNEREX_SERVER1
+          value: worker3:700
+        - name: WORKER_NODEID_SERVER1
+          value: worker3:600
+        - name: WORKER_SYNEREX_SERVER2
+          value: worker4:700
+        - name: WORKER_NODEID_SERVER2
+          value: worker4:600
+        ports:
+        - containerPort: 9980
+
+---
+################################################################
+apiVersion: apps/v1
+kind: ReplicaSet
+metadata:
+  name: gateway4
+  labels:
+    app: gateway4
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: gateway4
+  template:
+    metadata:
+      labels:
+        app: gateway4
+    spec:
+      containers:
+      - name: gateway-provider
+        image: synerex-simulation/gateway-provider:latest 
+        imagePullPolicy: Never
+        env: 
+        - name: WORKER_SYNEREX_SERVER1
+          value: worker4:700
+        - name: WORKER_NODEID_SERVER1
+          value: worker4:600
+        - name: WORKER_SYNEREX_SERVER2
+          value: worker5:700
+        - name: WORKER_NODEID_SERVER2
+          value: worker5:600
+        ports:
+        - containerPort: 9980
+
+---
+################################################################
+apiVersion: apps/v1
+kind: ReplicaSet
+metadata:
+  name: gateway5
+  labels:
+    app: gateway5
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: gateway5
+  template:
+    metadata:
+      labels:
+        app: gateway5
+    spec:
+      containers:
+      - name: gateway-provider
+        image: synerex-simulation/gateway-provider:latest 
+        imagePullPolicy: Never
+        env: 
+        - name: WORKER_SYNEREX_SERVER1
+          value: worker5:700
+        - name: WORKER_NODEID_SERVER1
+          value: worker5:600
+        - name: WORKER_SYNEREX_SERVER2
+          value: worker6:700
+        - name: WORKER_NODEID_SERVER2
+          value: worker6:600
+        ports:
+        - containerPort: 9980
+
+---
+################################################################
+apiVersion: apps/v1
+kind: ReplicaSet
+metadata:
+  name: gateway6
+  labels:
+    app: gateway6
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: gateway6
+  template:
+    metadata:
+      labels:
+        app: gateway6
+    spec:
+      containers:
+      - name: gateway-provider
+        image: synerex-simulation/gateway-provider:latest 
+        imagePullPolicy: Never
+        env: 
+        - name: WORKER_SYNEREX_SERVER1
+          value: worker6:700
+        - name: WORKER_NODEID_SERVER1
+          value: worker6:600
+        - name: WORKER_SYNEREX_SERVER2
+          value: worker7:700
+        - name: WORKER_NODEID_SERVER2
+          value: worker7:600
+        ports:
+        - containerPort: 9980
+
+---
+  ################################################################
+apiVersion: apps/v1
+kind: ReplicaSet
+metadata:
+  name: gateway7
+  labels:
+    app: gateway7
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: gateway7
+  template:
+    metadata:
+      labels:
+        app: gateway7
+    spec:
+      containers:
+      - name: gateway-provider
+        image: synerex-simulation/gateway-provider:latest 
+        imagePullPolicy: Never
+        env: 
+        - name: WORKER_SYNEREX_SERVER1
+          value: worker7:700
+        - name: WORKER_NODEID_SERVER1
+          value: worker7:600
+        - name: WORKER_SYNEREX_SERVER2
+          value: worker8:700
+        - name: WORKER_NODEID_SERVER2
+          value: worker8:600
+        ports:
+        - containerPort: 9980
+
+---
+  ################################################################
+apiVersion: apps/v1
+kind: ReplicaSet
+metadata:
+  name: gateway8
+  labels:
+    app: gateway8
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: gateway8
+  template:
+    metadata:
+      labels:
+        app: gateway8
+    spec:
+      containers:
+      - name: gateway-provider
+        image: synerex-simulation/gateway-provider:latest 
+        imagePullPolicy: Never
+        env: 
+        - name: WORKER_SYNEREX_SERVER1
+          value: worker8:700
+        - name: WORKER_NODEID_SERVER1
+          value: worker8:600
+        - name: WORKER_SYNEREX_SERVER2
+          value: worker9:700
+        - name: WORKER_NODEID_SERVER2
+          value: worker9:600
+        ports:
+        - containerPort: 9980
