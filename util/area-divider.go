@@ -22,7 +22,7 @@ func main() {
 		{Longitude: 136.990549, Latitude: 35.151326},
 		{Longitude: 136.990549, Latitude: 35.161764},
 	}
-	devideSquereNum := uint64(2) //2 * 2 = 4 area
+	devideSquereNum := uint64(3) //2 * 2 = 4 area
 	duplicateRate := 0.1         // 10%
 	AreaDivider(areaCoords, devideSquereNum, duplicateRate)
 
@@ -57,16 +57,16 @@ func AreaDivider(areaCoords []*Coord, divideSquareNum uint64, duplicateRate floa
 	}
 
 	for i, area := range areas {
-		fmt.Printf("--------- area %d ---------\n", i)
+		fmt.Printf("\n--------- area %d ---------\n", i)
 		duplicateText := `[`
 		controlText := `[`
 		for _, ctl := range area.Control {
-			ctlText := fmt.Sprintf(`{\"latitude\":%v, \"longitude\":%v}`, ctl.Latitude, ctl.Longitude)
+			ctlText := fmt.Sprintf(`{\"latitude\":%v, \"longitude\":%v},`, ctl.Latitude, ctl.Longitude)
 			//fmt.Printf("ctl %v\n", ctlText)
 			controlText += ctlText
 		}
 		for _, dpl := range area.Duplicate {
-			dplText := fmt.Sprintf(`{\"latitude\":%v, \"longitude\":%v}`, dpl.Latitude, dpl.Longitude)
+			dplText := fmt.Sprintf(`{\"latitude\":%v, \"longitude\":%v},`, dpl.Latitude, dpl.Longitude)
 			//fmt.Printf("dpl %v\n", dplText)
 			duplicateText += dplText
 		}
