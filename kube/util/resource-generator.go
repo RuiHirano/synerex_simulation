@@ -498,15 +498,15 @@ func convertAreaToJson(area Area) string {
 func main() {
 
 	option := Option{
-		FileName: "higashiyama-9.yaml",
+		FileName: "higashiyama-4.yaml",
 		AreaCoords: []Coord{
 			{Longitude: 136.971626, Latitude: 35.161499},
 			{Longitude: 136.971626, Latitude: 35.152210},
 			{Longitude: 136.989379, Latitude: 35.152210},
 			{Longitude: 136.989379, Latitude: 35.161499},
 		},
-		DevideSquareNum: 3,
-		DuplicateRate:   0.1,
+		DevideSquareNum: 2,   // 2*2 = 4 areas
+		DuplicateRate:   0.1, // 10% of each area
 	}
 
 	rsrcs := createData(option)
