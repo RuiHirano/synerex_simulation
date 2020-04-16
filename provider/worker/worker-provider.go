@@ -9,8 +9,8 @@ import (
 	"os"
 	"sync"
 
-	//"time"
 	"encoding/json"
+	"time"
 
 	"github.com/google/uuid"
 	api "github.com/synerex/synerex_alpha/api"
@@ -283,9 +283,18 @@ func main() {
 
 	// For Master
 	// Connect to Node Server
-	api.RegisterNodeName(masterNodeIdAddr, "WorkerProvider", false)
-	go api.HandleSigInt()
-	api.RegisterDeferFunction(api.UnRegisterNode)
+	for {
+		err := api.RegisterNodeName(masterNodeIdAddr, "WorkerProvider", false)
+		if err == nil {
+			logger.Info("connected NodeID server!")
+			go api.HandleSigInt()
+			api.RegisterDeferFunction(api.UnRegisterNode)
+			break
+		} else {
+			logger.Warn("NodeID Error... reconnecting...")
+			time.Sleep(2 * time.Second)
+		}
+	}
 
 	// Connect to Synerex Server
 	var opts []grpc.DialOption
@@ -310,9 +319,18 @@ func main() {
 
 	// For Worker
 	// Connect to Node Server
-	api.RegisterNodeName(workerNodeIdAddr, "WorkerProvider", false)
-	go api.HandleSigInt()
-	api.RegisterDeferFunction(api.UnRegisterNode)
+	for {
+		err := api.RegisterNodeName(workerNodeIdAddr, "WorkerProvider", false)
+		if err == nil {
+			logger.Info("connected NodeID server!")
+			go api.HandleSigInt()
+			api.RegisterDeferFunction(api.UnRegisterNode)
+			break
+		} else {
+			logger.Warn("NodeID Error... reconnecting...")
+			time.Sleep(2 * time.Second)
+		}
+	}
 
 	// Connect to Synerex Server
 	var wopts []grpc.DialOption

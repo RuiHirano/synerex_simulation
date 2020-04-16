@@ -355,9 +355,18 @@ func main() {
 	go startSimulatorServer()
 
 	// Connect to Node Server
-	api.RegisterNodeName(nodeIdAddr, "MasterProvider", false)
-	go api.HandleSigInt()
-	api.RegisterDeferFunction(api.UnRegisterNode)
+	for {
+		err := api.RegisterNodeName(nodeIdAddr, "MasterProvider", false)
+		if err == nil {
+			logger.Info("connected NodeID server!")
+			go api.HandleSigInt()
+			api.RegisterDeferFunction(api.UnRegisterNode)
+			break
+		} else {
+			logger.Warn("NodeID Error... reconnecting...")
+			time.Sleep(2 * time.Second)
+		}
+	}
 
 	// Connect to Synerex Server
 	var opts []grpc.DialOption
@@ -375,7 +384,7 @@ func main() {
 	simapi = api.NewSimAPI()
 	simapi.RegistClients(client, myProvider.Id, argJson) // channelごとのClientを作成
 	simapi.SubscribeAll(demandCallback, supplyCallback)  // ChannelにSubscribe*/
-	logger.Info("Connected Synerex Server!\n")
+	//logger.Info("Connected Synerex Server!\n")
 
 	wg := sync.WaitGroup{}
 	wg.Add(1)

@@ -314,8 +314,10 @@ func (clt *SMServiceClient) SubscribeSupply(ctx context.Context, spcb func(*SMSe
 	//log.Printf("Test3 %v", ch)
 	//wg.Done()
 	if err != nil {
-		log.Printf("%v SubscribeSupply Error %v", clt, err)
+		log.Printf("SubscribeSupply Error...\n")
 		return err
+	} else {
+		log.Print("Connect Synerex Server!\n")
 	}
 	for {
 		var sp *Supply
@@ -325,7 +327,7 @@ func (clt *SMServiceClient) SubscribeSupply(ctx context.Context, spcb func(*SMSe
 			if err == io.EOF {
 				log.Print("End Supply subscribe OK")
 			} else {
-				log.Printf("%v SMServiceClient SubscribeSupply error [%v]", clt, err)
+				log.Printf("SMServiceClient SubscribeSupply error\n")
 			}
 			break
 		}
@@ -343,8 +345,10 @@ func (clt *SMServiceClient) SubscribeDemand(ctx context.Context, dmcb func(*SMSe
 	//log.Printf("Test3 %v", ch)
 	//wg.Done()
 	if err != nil {
-		log.Printf("%v SubscribeDemand Error %v", clt, err)
+		log.Printf("SubscribeDemand Error...\n")
 		return err // sender should handle error...
+	} else {
+		log.Print("Connect Synerex Server!\n")
 	}
 	for {
 		var dm *Demand
@@ -354,7 +358,7 @@ func (clt *SMServiceClient) SubscribeDemand(ctx context.Context, dmcb func(*SMSe
 			if err == io.EOF {
 				log.Print("End Demand subscribe OK")
 			} else {
-				log.Printf("%v SMServiceClient SubscribeDemand error [%v]", clt, err)
+				log.Printf("SMServiceClient SubscribeDemand error\n")
 			}
 			break
 		}

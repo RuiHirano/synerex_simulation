@@ -383,9 +383,18 @@ func main() {
 	pm = simutil.NewProviderManager(myProvider)
 
 	// Connect to Node Server
-	api.RegisterNodeName(nodeIdAddr, myProvider.GetName(), false)
-	go api.HandleSigInt()
-	api.RegisterDeferFunction(api.UnRegisterNode)
+	for {
+		err := api.RegisterNodeName(nodeIdAddr, myProvider.GetName(), false)
+		if err == nil {
+			logger.Info("connected NodeID server!")
+			go api.HandleSigInt()
+			api.RegisterDeferFunction(api.UnRegisterNode)
+			break
+		} else {
+			logger.Warn("NodeID Error... reconnecting...")
+			time.Sleep(2 * time.Second)
+		}
+	}
 
 	// Connect to Synerex Server
 	var opts []grpc.DialOption

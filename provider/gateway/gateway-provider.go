@@ -63,12 +63,12 @@ func init() {
 
 	workerNodeIdAddr1 = os.Getenv("WORKER_NODEID_SERVER1")
 	if workerNodeIdAddr1 == "" {
-		workerNodeIdAddr1 = "127.0.0.1:10000"
+		workerNodeIdAddr1 = "127.0.0.1:9000"
 	}
 
 	workerNodeIdAddr2 = os.Getenv("WORKER_NODEID_SERVER2")
 	if workerNodeIdAddr2 == "" {
-		workerNodeIdAddr2 = "127.0.0.1:10000"
+		workerNodeIdAddr2 = "127.0.0.1:9000"
 	}
 }
 
@@ -358,9 +358,18 @@ func main() {
 	////////////////////////////////////////////////
 
 	// Connect to Worker1 Node Server
-	api.RegisterNodeName(workerNodeIdAddr1, "GatewayProvider", false)
-	go api.HandleSigInt()
-	api.RegisterDeferFunction(api.UnRegisterNode)
+	for {
+		err := api.RegisterNodeName(workerNodeIdAddr1, "GatewayProvider", false)
+		if err == nil {
+			logger.Info("connected NodeID server!")
+			go api.HandleSigInt()
+			api.RegisterDeferFunction(api.UnRegisterNode)
+			break
+		} else {
+			logger.Warn("NodeID Error... reconnecting...")
+			time.Sleep(2 * time.Second)
+		}
+	}
 
 	// Connect to Worker1 Synerex Server
 	var opts []grpc.DialOption
@@ -388,9 +397,18 @@ func main() {
 	////////////////////////////////////////////////
 
 	// Connect to Worker2 Node Server
-	api.RegisterNodeName(workerNodeIdAddr2, "GatewayProvider", false)
-	go api.HandleSigInt()
-	api.RegisterDeferFunction(api.UnRegisterNode)
+	for {
+		err := api.RegisterNodeName(workerNodeIdAddr2, "GatewayProvider", false)
+		if err == nil {
+			logger.Info("connected NodeID server!")
+			go api.HandleSigInt()
+			api.RegisterDeferFunction(api.UnRegisterNode)
+			break
+		} else {
+			logger.Warn("NodeID Error... reconnecting...")
+			time.Sleep(2 * time.Second)
+		}
+	}
 
 	// Connect to Worker2 Synerex Server
 	var opts2 []grpc.DialOption

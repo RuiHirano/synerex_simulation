@@ -21,6 +21,7 @@ import (
 
 	"github.com/sirupsen/logrus"
 	"github.com/synerex/synerex_alpha/api"
+	"github.com/synerex/synerex_alpha/provider/simutil"
 	"google.golang.org/grpc"
 )
 
@@ -29,6 +30,7 @@ const MessageChannelBufferSize = 20
 var (
 	synerexAddr string
 	nodeIdAddr  string
+	logger      *simutil.Logger
 )
 
 type synerexServerInfo struct {
@@ -52,6 +54,8 @@ func init() {
 	if nodeIdAddr == "" {
 		nodeIdAddr = "127.0.0.1:9000"
 	}
+
+	logger = simutil.NewLogger()
 
 }
 
@@ -785,7 +789,18 @@ func prepareGrpcServer(s *synerexServerInfo, opts ...grpc.ServerOption) *grpc.Se
 
 func main() {
 	flag.Parse()
-	api.RegisterNodeName(nodeIdAddr, "SynerexServer", true)
+	for {
+		err := api.RegisterNodeName(nodeIdAddr, "SynerexServer", true)
+		if err == nil {
+			logger.Info("connected NodeID server!")
+			go api.HandleSigInt()
+			api.RegisterDeferFunction(api.UnRegisterNode)
+			break
+		} else {
+			logger.Warn("NodeID Error... reconnecting...")
+			time.Sleep(2 * time.Second)
+		}
+	}
 
 	lis, err := net.Listen("tcp", synerexAddr)
 	defer lis.Close()

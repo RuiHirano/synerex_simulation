@@ -6,13 +6,10 @@ require (
 	cloud.google.com/go/pubsub v1.1.0 // indirect
 	cloud.google.com/go/storage v1.4.0 // indirect
 	dmitri.shuralyov.com/gpu/mtl v0.0.0-20191203043605-d42048ed14fd // indirect
-	github.com/bwmarrin/snowflake v0.3.0 // indirect
 	github.com/creack/pty v1.1.9 // indirect
-	github.com/envoyproxy/go-control-plane v0.9.1 // indirect
 	github.com/golang/groupcache v0.0.0-20191027212112-611e8accdfc9 // indirect
 	github.com/google/go-cmp v0.3.1 // indirect
 	github.com/google/pprof v0.0.0-20191205061153-f9b734f9ee64 // indirect
-	github.com/google/uuid v1.1.1 // indirect
 	github.com/hashicorp/golang-lru v0.5.3 // indirect
 	github.com/jstemmer/go-junit-report v0.9.1 // indirect
 	github.com/kr/pty v1.1.8 // indirect
@@ -21,7 +18,7 @@ require (
 	github.com/sirupsen/logrus v1.2.0
 	github.com/stretchr/objx v0.2.0 // indirect
 	github.com/synerex/synerex_alpha/api v0.0.0
-	github.com/synerex/synerex_alpha/nodeapi v0.0.0-20190904050037-afd3805ee7cc // indirect
+	github.com/synerex/synerex_alpha/provider/simutil v0.0.0-00010101000000-000000000000 // indirect
 	go.opencensus.io v0.22.2 // indirect
 	golang.org/x/crypto v0.0.0-20191206172530-e9b2fee46413 // indirect
 	golang.org/x/exp v0.0.0-20191129062945-2f5052295587 // indirect
@@ -37,11 +34,13 @@ require (
 	golang.org/x/xerrors v0.0.0-20191204190536-9bdfabe68543 // indirect
 	google.golang.org/appengine v1.6.5 // indirect
 	google.golang.org/genproto v0.0.0-20200205142000-a86caf926a67 // indirect
-	google.golang.org/grpc v1.27.1
+	google.golang.org/grpc v1.28.0
 	gopkg.in/check.v1 v1.0.0-20190902080502-41f04d3bba15 // indirect
 	gopkg.in/yaml.v2 v2.2.7 // indirect
 )
 
 replace github.com/synerex/synerex_alpha/api => ../api
+
+replace github.com/synerex/synerex_alpha/provider/simutil => ../provider/simutil
 
 go 1.13

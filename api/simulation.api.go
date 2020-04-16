@@ -71,7 +71,6 @@ func (s *SimAPI) SubscribeAll(demandCallback func(*SMServiceClient, *Demand), su
 
 	go subscribeSupply(s.MyClients.AgentClient, supplyCallback)
 
-	time.Sleep(1 * time.Second)
 	return nil
 }
 
@@ -81,7 +80,7 @@ func subscribeSupply(client *SMServiceClient, supplyCallback func(*SMServiceClie
 	client.SubscribeSupply(ctx, supplyCallback)
 	// comes here if channel closed
 	log.Printf("SMarket Server Closed? Reconnect...")
-	time.Sleep(1 * time.Second)
+	time.Sleep(2 * time.Second)
 	subscribeSupply(client, supplyCallback)
 
 }
@@ -92,7 +91,9 @@ func subscribeDemand(client *SMServiceClient, demandCallback func(*SMServiceClie
 	ctx := context.Background() // should check proper context
 	client.SubscribeDemand(ctx, demandCallback)
 	// comes here if channel closed
-	log.Printf("SMarket Server Closed?")
+	log.Printf("SMarket Server Closed? Reconnect...")
+	time.Sleep(2 * time.Second)
+	subscribeDemand(client, demandCallback)
 }
 
 func sendDemand(sclient *SMServiceClient, simDemand *SimDemand) uint64 {
