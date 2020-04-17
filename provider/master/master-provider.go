@@ -146,13 +146,13 @@ func supplyCallback(clt *api.SMServiceClient, sp *api.Supply) {
 	// check if supply is match with my demand.
 	switch sp.GetSimSupply().GetType() {
 	case api.SupplyType_SET_CLOCK_RESPONSE:
-		logger.Info("get sp: %v\n", sp)
+		//logger.Info("get sp: %v\n", sp)
 		waiter.SendSpToWait(sp)
 	case api.SupplyType_SET_AGENT_RESPONSE:
-		logger.Info("get sp: %v\n", sp)
+		//logger.Info("get sp: %v\n", sp)
 		waiter.SendSpToWait(sp)
 	case api.SupplyType_FORWARD_CLOCK_RESPONSE:
-		logger.Info("get sp: %v\n", sp)
+		//logger.Info("get sp: %v\n", sp)
 		waiter.SendSpToWait(sp)
 	}
 }

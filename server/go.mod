@@ -18,7 +18,7 @@ require (
 	github.com/sirupsen/logrus v1.2.0
 	github.com/stretchr/objx v0.2.0 // indirect
 	github.com/synerex/synerex_alpha/api v0.0.0
-	github.com/synerex/synerex_alpha/provider/simutil v0.0.0-00010101000000-000000000000 // indirect
+	github.com/synerex/synerex_alpha/provider/simutil v0.0.0-00010101000000-000000000000
 	go.opencensus.io v0.22.2 // indirect
 	golang.org/x/crypto v0.0.0-20191206172530-e9b2fee46413 // indirect
 	golang.org/x/exp v0.0.0-20191129062945-2f5052295587 // indirect

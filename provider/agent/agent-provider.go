@@ -206,7 +206,6 @@ func demandCallback(clt *api.SMServiceClient, dm *api.Demand) {
 		logger.Info("Finish: Set Agents Add %v\n", len(agents))
 
 	case api.DemandType_FORWARD_CLOCK_REQUEST:
-		logger.Info("forward Clock")
 		// クロックを進める要求
 		forwardClock()
 
@@ -216,6 +215,16 @@ func demandCallback(clt *api.SMServiceClient, dm *api.Demand) {
 		msgId := dm.GetSimDemand().GetMsgId()
 		simapi.ForwardClockResponse(senderId, targets, msgId)
 		logger.Info("Finish: Forward Clock")
+
+	case api.DemandType_FORWARD_CLOCK_INIT_REQUEST:
+		agentsMessage = NewMessage()
+
+		// response
+		senderId := myProvider.Id
+		targets := []uint64{dm.GetSimDemand().GetSenderId()}
+		msgId := dm.GetSimDemand().GetMsgId()
+		simapi.ForwardClockInitResponse(senderId, targets, msgId)
+		logger.Info("Finish: Forward Clock Init")
 
 	case api.DemandType_GET_AGENT_REQUEST:
 		//logger.Debug("get agent request %v\n", dm)
@@ -244,14 +253,14 @@ func demandCallback(clt *api.SMServiceClient, dm *api.Demand) {
 		}
 
 		// 全てのプロバイダにmessageを送信し終えたらMessageを初期化する
-		agentsMessage.AddSenderId(senderId)
+		/*agentsMessage.AddSenderId(senderId)
 		logger.Debug("mesIds: %v\n", append(neighborAreaIds, visIds...))
 		if agentsMessage.FinishSend(append(neighborAreaIds, visIds...)) {
 			logger.Debug("init Message")
 			mu.Lock()
 			agentsMessage = NewMessage()
 			mu.Unlock()
-		}
+		}*/
 
 		// response
 		pId := myProvider.Id

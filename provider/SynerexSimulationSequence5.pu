@@ -101,17 +101,36 @@ note over MasterProvider: サイクル開始
 MasterProvider->MasterSynerex: ForwardClockRequest
 MasterSynerex->WorkerProvider: ForwardClockRequest
 
+note over WorkerProvider: 同期開始(初期化)
+WorkerProvider->WorkerSynerex: ForwardClockRequest
+WorkerSynerex->Ped: ForwardClockRequest
+WorkerSynerex->Car: ForwardClockRequest
+WorkerSynerex->Vis: ForwardClockRequest
+note over Ped: なんらかの初期化処理
+note over Car: なんらかの初期化処理
+Ped->WorkerSynerex: ForwardClockResponse
+Car->WorkerSynerex: ForwardClockResponse
+Vis->WorkerSynerex: ForwardClockResponse
+WorkerSynerex->WorkerProvider: ForwardClockResponse
+WorkerSynerex->WorkerProvider: ForwardClockResponse
+WorkerSynerex->WorkerProvider: ForwardClockResponse
+note over WorkerProvider: 同期終了
+
 note over WorkerProvider: 同期開始
 WorkerProvider->WorkerSynerex: ForwardClockRequest
 WorkerSynerex->Ped: ForwardClockRequest
 WorkerSynerex->Car: ForwardClockRequest
+WorkerSynerex->Vis: ForwardClockRequest
 note over Ped: サイクルを進める
 note over Car: サイクルを進める
 Ped->WorkerSynerex: ForwardClockResponse
 Car->WorkerSynerex: ForwardClockResponse
+Vis->WorkerSynerex: ForwardClockResponse
+WorkerSynerex->WorkerProvider: ForwardClockResponse
 WorkerSynerex->WorkerProvider: ForwardClockResponse
 WorkerSynerex->WorkerProvider: ForwardClockResponse
 note over WorkerProvider: 同期終了
+
 
 WorkerProvider->MasterSynerex: ForwardClockResponse
 MasterSynerex->MasterProvider: ForwardClockResponse

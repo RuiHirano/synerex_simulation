@@ -390,6 +390,42 @@ func (s *SimAPI) ForwardClockResponse(senderId uint64, targets []uint64, msgId u
 	return msgId
 }
 
+func (s *SimAPI) ForwardClockInitRequest(senderId uint64, targets []uint64) uint64 {
+	forwardClockInitRequest := &ForwardClockInitRequest{}
+
+	uid, _ := uuid.NewRandom()
+	msgId := uint64(uid.ID())
+	simDemand := &SimDemand{
+		MsgId:    msgId,
+		SenderId: senderId,
+		Type:     DemandType_FORWARD_CLOCK_INIT_REQUEST,
+		Data:     &SimDemand_ForwardClockInitRequest{forwardClockInitRequest},
+		Targets:  targets,
+	}
+
+	sendSyncDemand(s.MyClients.ClockClient, simDemand)
+
+	return msgId
+}
+
+// Agentを取得するSupply
+func (s *SimAPI) ForwardClockInitResponse(senderId uint64, targets []uint64, msgId uint64) uint64 {
+	forwardClockInitResponse := &ForwardClockInitResponse{}
+
+	simSupply := &SimSupply{
+		MsgId:    msgId,
+		SenderId: senderId,
+		Type:     SupplyType_FORWARD_CLOCK_INIT_RESPONSE,
+		Status:   StatusType_OK,
+		Data:     &SimSupply_ForwardClockInitResponse{forwardClockInitResponse},
+		Targets:  targets,
+	}
+
+	sendSyncSupply(s.MyClients.ClockClient, simSupply)
+
+	return msgId
+}
+
 func (s *SimAPI) StartClockRequest(senderId uint64, targets []uint64) uint64 {
 	startClockRequest := &StartClockRequest{}
 

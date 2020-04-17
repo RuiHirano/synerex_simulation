@@ -130,7 +130,13 @@ func masterDemandCallback(clt *api.SMServiceClient, dm *api.Demand) {
 			simutil.IDType_AGENT,
 			simutil.IDType_VISUALIZATION,
 		})
-		msgId := workerapi.ForwardClockRequest(senderId, targets)
+
+		// init
+		msgId := workerapi.ForwardClockInitRequest(senderId, targets)
+		waiter.WaitSp(msgId, targets, 1000)
+
+		// forward
+		msgId = workerapi.ForwardClockRequest(senderId, targets)
 		waiter.WaitSp(msgId, targets, 1000)
 
 		// response to master
@@ -165,16 +171,19 @@ func workerSupplyCallback(clt *api.SMServiceClient, sp *api.Supply) {
 	// check if supply is match with my demand.
 	switch sp.GetSimSupply().GetType() {
 	case api.SupplyType_UPDATE_PROVIDERS_RESPONSE:
-		logger.Info("get sp: %v\n", sp)
+		//logger.Info("get sp: %v\n", sp)
 		waiter.SendSpToWait(sp)
 	case api.SupplyType_SET_CLOCK_RESPONSE:
-		logger.Info("get sp: %v\n", sp)
+		//logger.Info("get sp: %v\n", sp)
 		waiter.SendSpToWait(sp)
 	case api.SupplyType_SET_AGENT_RESPONSE:
-		logger.Info("get sp: %v\n", sp)
+		//logger.Info("get sp: %v\n", sp)
 		waiter.SendSpToWait(sp)
 	case api.SupplyType_FORWARD_CLOCK_RESPONSE:
-		logger.Info("get sp: %v\n", sp)
+		//logger.Info("get sp: %v\n", sp)
+		waiter.SendSpToWait(sp)
+	case api.SupplyType_FORWARD_CLOCK_INIT_RESPONSE:
+		//logger.Info("get sp: %v\n", sp)
 		waiter.SendSpToWait(sp)
 	}
 }

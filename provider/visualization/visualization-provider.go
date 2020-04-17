@@ -230,6 +230,14 @@ func demandCallback(clt *api.SMServiceClient, dm *api.Demand) {
 		msgId := dm.GetSimDemand().GetMsgId()
 		simapi.SetAgentResponse(senderId, targets, msgId)
 		logger.Info("Finish: Set Agents Add ")*/
+	case api.DemandType_FORWARD_CLOCK_INIT_REQUEST:
+
+		// response
+		senderId := myProvider.Id
+		targets := []uint64{dm.GetSimDemand().GetSenderId()}
+		msgId := dm.GetSimDemand().GetMsgId()
+		simapi.ForwardClockInitResponse(senderId, targets, msgId)
+		logger.Info("Finish: Forward Clock Init")
 	}
 
 }
