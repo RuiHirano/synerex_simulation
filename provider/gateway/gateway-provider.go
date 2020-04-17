@@ -236,7 +236,7 @@ func demandCallback1(clt *api.SMServiceClient, dm *api.Demand) {
 		targets2 := []uint64{apm.Provider2.GetId()}
 		msgId2 := worker2api.GetAgentRequest(senderId, targets2)
 		//logger.Debug("Get Agent Request to Worker2 %v %v %v\n", targets2, msgId2, dm)
-		sps := waiter.WaitSp(msgId2, targets2)
+		sps, _ := waiter.WaitSp(msgId2, targets2, 1000)
 		for _, sp := range sps {
 			ags := sp.GetSimSupply().GetGetAgentResponse().GetAgents()
 			agents = append(agents, ags...)
@@ -310,7 +310,7 @@ func demandCallback2(clt *api.SMServiceClient, dm *api.Demand) {
 		targets1 := []uint64{apm.Provider1.GetId()}
 		msgId1 := worker1api.GetAgentRequest(senderId, targets1)
 		//logger.Debug("Get Agent Request to Worker1 %v %v %v\n", targets1, msgId1, dm)
-		sps := waiter.WaitSp(msgId1, targets1)
+		sps, _ := waiter.WaitSp(msgId1, targets1, 1000)
 		for _, sp := range sps {
 			ags := sp.GetSimSupply().GetGetAgentResponse().GetAgents()
 			agents = append(agents, ags...)

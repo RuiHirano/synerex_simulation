@@ -227,7 +227,7 @@ func setAgents(agentNum uint64) (bool, error) {
 		simutil.IDType_WORKER,
 	})
 	msgId := simapi.SetAgentRequest(senderId, targets, agents)
-	waiter.WaitSp(msgId, targets)
+	waiter.WaitSp(msgId, targets, 1000)
 
 	logger.Info("Finish Setting Agents \n Add: %v", len(agents))
 	return true, nil
@@ -243,7 +243,7 @@ func startClock() {
 		simutil.IDType_WORKER,
 	})
 	msgId := simapi.ForwardClockRequest(senderId, targets)
-	waiter.WaitSp(msgId, targets)
+	waiter.WaitSp(msgId, targets, 1000)
 
 	// calc next time
 	masterClock++

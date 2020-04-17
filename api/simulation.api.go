@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"sync"
 	"time"
@@ -562,9 +563,9 @@ func NewWaiter() *Waiter {
 	return w
 }
 
-func (w *Waiter) WaitSp(msgId uint64, targets []uint64) []*Supply {
+func (w *Waiter) WaitSp(msgId uint64, targets []uint64, timeout uint64) ([]*Supply, error) {
 	if len(targets) == 0 {
-		return []*Supply{}
+		return []*Supply{}, nil
 	}
 	mu.Lock()
 	CHANNEL_BUFFER_SIZE := 10
@@ -573,6 +574,7 @@ func (w *Waiter) WaitSp(msgId uint64, targets []uint64) []*Supply {
 	w.SpMap[msgId] = make([]*Supply, 0)
 	mu.Unlock()
 
+	var err error
 	wg := sync.WaitGroup{}
 	wg.Add(1)
 	go func() {
@@ -593,15 +595,16 @@ func (w *Waiter) WaitSp(msgId uint64, targets []uint64) []*Supply {
 					}
 				}
 				mu.Unlock()
-			case <-time.After(1000 * time.Millisecond):
+			case <-time.After(time.Duration(timeout) * time.Millisecond):
 				log.Printf("Sync Error... \n")
+				err = fmt.Errorf("Timeout Error")
 				wg.Done()
 				return
 			}
 		}
 	}()
 	wg.Wait()
-	return w.SpMap[msgId]
+	return w.SpMap[msgId], err
 }
 
 func (w *Waiter) SendSpToWait(sp *Supply) {

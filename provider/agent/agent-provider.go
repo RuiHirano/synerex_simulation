@@ -64,28 +64,11 @@ func init() {
 	}
 
 	areaJson := os.Getenv("AREA")
-	//areaJson := "{\"id\":0, \"name\":\"Nagoya\", \"duplicate_area\": [{\"latitude\":100, \"longitude\":100},{\"latitude\":100, \"longitude\":100},{\"latitude\":100, \"longitude\":100},{\"latitude\":100, \"longitude\":100}], \"control_area\": [{\"latitude\":100, \"longitude\":100},{\"latitude\":100, \"longitude\":100},{\"latitude\":100, \"longitude\":100},{\"latitude\":100, \"longitude\":100}]}"
 	bytes := []byte(areaJson)
 	//var area *api.Area
 	json.Unmarshal(bytes, &myArea)
 	fmt.Printf("myArea: %v\n", myArea)
 
-	/*myArea = &api.Area{
-		Id:   0,
-		Name: "Nagoya",
-		DuplicateArea: []*api.Coord{
-			{Latitude: 35.156431, Longitude: 136.97285},
-			{Latitude: 35.156431, Longitude: 136.981308},
-			{Latitude: 35.153578, Longitude: 136.981308},
-			{Latitude: 35.153578, Longitude: 136.97285},
-		},
-		ControlArea: []*api.Coord{
-			{Latitude: 35.156431, Longitude: 136.97285},
-			{Latitude: 35.156431, Longitude: 136.981308},
-			{Latitude: 35.153578, Longitude: 136.981308},
-			{Latitude: 35.153578, Longitude: 136.97285},
-		},
-	}*/
 	agentType = api.AgentType_PEDESTRIAN
 }
 
@@ -137,36 +120,6 @@ func (m *Message) Get() []*api.Agent {
 	return m.agents
 }
 
-// callbackForwardClock: Agentを計算し、クロックを進める要求
-/*func forwardClock(dm *api.Demand) {
-	senderId := myProvider.Id
-
-	logger.Debug("1: 同エリアエージェント取得")
-	//targets := []uint64{}
-	//_, sameAreaAgents := simapi.GetAgentRequest(senderId, targets)
-
-	// [2. Calculation]次の時間のエージェントを計算する
-	logger.Debug("2: エージェント計算を行う")
-	nextControlAgents := sim.ForwardStep(sameAreaAgents)
-
-
-	logger.Debug("3: 隣接エージェントを取得")
-	// [3. Get Neighbor Area Agents]隣接エリアのエージェントの情報を取得
-	_, neighborAreaAgents := simapi.GetAgentRequest(senderId, targets)
-
-	logger.Debug("4: エージェントを更新")
-	// [4. Update Agents]重複エリアのエージェントを更新する
-	nextDuplicateAgents := sim.UpdateDuplicateAgents(nextControlAgents, neighborAreaAgents)
-	// Agentsをセットする
-	sim.SetAgents(nextDuplicateAgents)
-
-	// [5. Forward Clock]クロックを進める
-	logger.Debug("5: クロックを進める")
-	sim.ForwardClock()
-
-	logger.Info("Finish: Clock Forwarded. pid %v,  AgentNum:  %v", senderId, len(nextControlAgents))
-}*/
-
 func forwardClock() {
 	//senderId := myProvider.Id
 
@@ -179,7 +132,7 @@ func forwardClock() {
 		senderId := myProvider.Id
 		msgId := simapi.GetAgentRequest(senderId, targets)
 		logger.Debug("1: targets %v\n", targets, msgId)
-		sps := waiter.WaitSp(msgId, targets)
+		sps, _ := waiter.WaitSp(msgId, targets, 1000)
 		for _, sp := range sps {
 			agents := sp.GetSimSupply().GetGetAgentResponse().GetAgents()
 			sameAgents = append(sameAgents, agents...)
@@ -189,6 +142,7 @@ func forwardClock() {
 	// [2. Calculation]次の時間のエージェントを計算する
 	logger.Debug("2: エージェント計算を行う")
 	nextControlAgents := sim.ForwardStep(sameAgents) // agents in control area
+	logger.Debug("2: Set")
 	agentsMessage.Set(nextControlAgents)
 
 	logger.Debug("3: 隣接エージェントを取得")
@@ -202,7 +156,7 @@ func forwardClock() {
 		senderId := myProvider.Id
 		msgId := simapi.GetAgentRequest(senderId, targets)
 		logger.Debug("3: targets %v\n", targets, msgId)
-		sps := waiter.WaitSp(msgId, targets)
+		sps, _ := waiter.WaitSp(msgId, targets, 1000)
 		for _, sp := range sps {
 			agents := sp.GetSimSupply().GetGetAgentResponse().GetAgents()
 			neighborAgents = append(neighborAgents, agents...)
@@ -216,7 +170,7 @@ func forwardClock() {
 	sim.SetAgents(nextAgents)
 
 	// [5. Forward Clock]クロックを進める
-	logger.Debug("6: クロックを進める")
+	//logger.Debug("6: クロックを進める")
 	//agentsMessage = NewMessage()
 	//sim.ForwardClock()
 
@@ -291,9 +245,12 @@ func demandCallback(clt *api.SMServiceClient, dm *api.Demand) {
 
 		// 全てのプロバイダにmessageを送信し終えたらMessageを初期化する
 		agentsMessage.AddSenderId(senderId)
+		logger.Debug("mesIds: %v\n", append(neighborAreaIds, visIds...))
 		if agentsMessage.FinishSend(append(neighborAreaIds, visIds...)) {
 			logger.Debug("init Message")
+			mu.Lock()
 			agentsMessage = NewMessage()
+			mu.Unlock()
 		}
 
 		// response
@@ -423,6 +380,7 @@ func main() {
 	senderId := myProvider.Id
 	targets := make([]uint64, 0)
 	simapi.RegistProviderRequest(senderId, targets, myProvider)
+	//sps := waiter.WaitSp(msgId, targets, 1000)
 
 	// test
 	//forward()

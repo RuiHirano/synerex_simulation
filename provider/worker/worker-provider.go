@@ -131,7 +131,7 @@ func masterDemandCallback(clt *api.SMServiceClient, dm *api.Demand) {
 			simutil.IDType_VISUALIZATION,
 		})
 		msgId := workerapi.ForwardClockRequest(senderId, targets)
-		waiter.WaitSp(msgId, targets)
+		waiter.WaitSp(msgId, targets, 1000)
 
 		// response to master
 		targets = []uint64{dm.GetSimDemand().GetSenderId()}
@@ -146,7 +146,7 @@ func masterDemandCallback(clt *api.SMServiceClient, dm *api.Demand) {
 			simutil.IDType_AGENT,
 		})
 		msgId := workerapi.SetAgentRequest(senderId, targets, agents)
-		waiter.WaitSp(msgId, targets)
+		waiter.WaitSp(msgId, targets, 1000)
 
 		// response to master
 		targets = []uint64{dm.GetSimDemand().GetSenderId()}
@@ -205,7 +205,7 @@ func workerDemandCallback(clt *api.SMServiceClient, dm *api.Demand) {
 		providers := pm.GetProviders()
 		msgId = workerapi.UpdateProvidersRequest(senderId, targets, providers)
 		logger.Info("Wait response from &v\n", targets)
-		waiter.WaitSp(msgId, targets)
+		waiter.WaitSp(msgId, targets, 1000)
 
 	}
 }
@@ -255,7 +255,7 @@ func forwardCLock() {
 		simutil.IDType_AGENT,
 	})
 	msgId := workerapi.SetAgentRequest(senderId, targets, agents)
-	waiter.WaitSp(msgId, targets)
+	waiter.WaitSp(msgId, targets, 1000)
 	fmt.Printf("finish set agents")
 	for {
 		time.Sleep(1 * time.Second)
@@ -265,7 +265,7 @@ func forwardCLock() {
 			simutil.IDType_VISUALIZATION,
 		})
 		msgId := workerapi.ForwardClockRequest(senderId, targets)
-		waiter.WaitSp(msgId, targets)
+		waiter.WaitSp(msgId, targets, 1000)
 		fmt.Printf("finish forward clock")
 	}
 }*/

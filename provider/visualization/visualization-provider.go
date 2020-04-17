@@ -181,7 +181,7 @@ func forwardClock(dm *api.Demand) {
 	//uid, _ := uuid.NewRandom()
 	senderId := myProvider.Id
 	msgId := simapi.GetAgentRequest(senderId, targets)
-	sps := waiter.WaitSp(msgId, targets)
+	sps, _ := waiter.WaitSp(msgId, targets, 1000)
 
 	allAgents := []*api.Agent{}
 	for _, sp := range sps {
