@@ -18,20 +18,10 @@ type Resource struct {
 }
 
 type Spec struct {
-	Replicas int      `yaml:"replicas,omitempty"`
-	Template Template `yaml:"template,omitempty"`
-	Selector Selector `yaml:"selector,omitempty"`
-	Ports    []Port   `yaml:"ports,omitempty"`
-	Type     string   `yaml:"type,omitempty"`
-}
-
-type Template struct {
-	Metadata Metadata     `yaml:"metadata,omitempty"`
-	Spec     TemplateSpec `yaml:"spec,omitempty"`
-}
-
-type TemplateSpec struct {
 	Containers []Container `yaml:"containers,omitempty"`
+	Selector   Selector    `yaml:"selector,omitempty"`
+	Ports      []Port      `yaml:"ports,omitempty"`
+	Type       string      `yaml:"type,omitempty"`
 }
 
 type Container struct {
@@ -140,112 +130,105 @@ func NewWorkerService(area Area) Resource {
 func NewWorker(area Area) Resource {
 	name := "worker" + strconv.Itoa(area.Id)
 	worker := Resource{
-		ApiVersion: "apps/v1",
-		Kind:       "ReplicaSet",
+		ApiVersion: "v1",
+		Kind:       "Pod",
 		Metadata: Metadata{
 			Name:   name,
 			Labels: Label{App: name},
 		},
 		Spec: Spec{
-			Replicas: 1,
-			Selector: Selector{MatchLabels: Label{App: name}},
-			Template: Template{
-				Metadata: Metadata{Labels: Label{App: name}},
-				Spec: TemplateSpec{
-					Containers: []Container{
+			Containers: []Container{
+				{
+					Name:            "nodeid-server",
+					Image:           "synerex-simulation/nodeid-server:latest",
+					ImagePullPolicy: "Never",
+					Env: []Env{
 						{
-							Name:            "nodeid-server",
-							Image:           "synerex-simulation/nodeid-server:latest",
-							ImagePullPolicy: "Never",
-							Env: []Env{
-								{
-									Name:  "NODEID_SERVER",
-									Value: ":9000",
-								},
-							},
-							Ports: []Port{{ContainerPort: 9000}},
+							Name:  "NODEID_SERVER",
+							Value: ":9000",
+						},
+					},
+					Ports: []Port{{ContainerPort: 9000}},
+				},
+				{
+					Name:            "synerex-server",
+					Image:           "synerex-simulation/synerex-server:latest",
+					ImagePullPolicy: "Never",
+					Env: []Env{
+						{
+							Name:  "NODEID_SERVER",
+							Value: ":9000",
 						},
 						{
-							Name:            "synerex-server",
-							Image:           "synerex-simulation/synerex-server:latest",
-							ImagePullPolicy: "Never",
-							Env: []Env{
-								{
-									Name:  "NODEID_SERVER",
-									Value: ":9000",
-								},
-								{
-									Name:  "SYNEREX_SERVER",
-									Value: ":10000",
-								},
-							},
-							Ports: []Port{{ContainerPort: 10000}},
+							Name:  "SYNEREX_SERVER",
+							Value: ":10000",
+						},
+					},
+					Ports: []Port{{ContainerPort: 10000}},
+				},
+				{
+					Name:            "worker-provider",
+					Image:           "synerex-simulation/worker-provider:latest",
+					ImagePullPolicy: "Never",
+					Env: []Env{
+						{
+							Name:  "NODEID_SERVER",
+							Value: ":9000",
 						},
 						{
-							Name:            "worker-provider",
-							Image:           "synerex-simulation/worker-provider:latest",
-							ImagePullPolicy: "Never",
-							Env: []Env{
-								{
-									Name:  "NODEID_SERVER",
-									Value: ":9000",
-								},
-								{
-									Name:  "SYNEREX_SERVER",
-									Value: ":10000",
-								},
-								{
-									Name:  "MASTER_SYNEREX_SERVER",
-									Value: "master:700",
-								},
-								{
-									Name:  "MASTER_NODEID_SERVER",
-									Value: "master:600",
-								},
-								{
-									Name:  "PORT",
-									Value: "9980",
-								},
-							},
-							Ports: []Port{{ContainerPort: 9980}},
+							Name:  "SYNEREX_SERVER",
+							Value: ":10000",
 						},
 						{
-							Name:            "agent-provider",
-							Image:           "synerex-simulation/agent-provider:latest",
-							ImagePullPolicy: "Never",
-							Env: []Env{
-								{
-									Name:  "NODEID_SERVER",
-									Value: ":9000",
-								},
-								{
-									Name:  "SYNEREX_SERVER",
-									Value: ":10000",
-								},
-								{
-									Name:  "AREA",
-									Value: convertAreaToJson(area),
-								},
-							},
+							Name:  "MASTER_SYNEREX_SERVER",
+							Value: "master:700",
 						},
 						{
-							Name:            "visualization-provider",
-							Image:           "synerex-simulation/visualization-provider:latest",
-							ImagePullPolicy: "Never",
-							Env: []Env{
-								{
-									Name:  "NODEID_SERVER",
-									Value: ":9000",
-								},
-								{
-									Name:  "SYNEREX_SERVER",
-									Value: ":10000",
-								},
-								{
-									Name:  "VIS_ADDRESS",
-									Value: ":9500",
-								},
-							},
+							Name:  "MASTER_NODEID_SERVER",
+							Value: "master:600",
+						},
+						{
+							Name:  "PORT",
+							Value: "9980",
+						},
+					},
+					Ports: []Port{{ContainerPort: 9980}},
+				},
+				{
+					Name:            "agent-provider",
+					Image:           "synerex-simulation/agent-provider:latest",
+					ImagePullPolicy: "Never",
+					Env: []Env{
+						{
+							Name:  "NODEID_SERVER",
+							Value: ":9000",
+						},
+						{
+							Name:  "SYNEREX_SERVER",
+							Value: ":10000",
+						},
+						{
+							Name:  "AREA",
+							Value: convertAreaToJson(area),
+						},
+					},
+				},
+				{
+					Name:            "visualization-provider",
+					Image:           "synerex-simulation/visualization-provider:latest",
+					ImagePullPolicy: "Never",
+					Env: []Env{
+						{
+							Name:  "NODEID_SERVER",
+							Value: ":9000",
+						},
+						{
+							Name:  "SYNEREX_SERVER",
+							Value: ":10000",
+						},
+						{
+							Name:  "VIS_ADDRESS",
+							Value: ":9500",
 						},
 					},
 				},
@@ -287,68 +270,61 @@ func NewMasterService() Resource {
 
 func NewMaster() Resource {
 	master := Resource{
-		ApiVersion: "apps/v1",
-		Kind:       "ReplicaSet",
+		ApiVersion: "v1",
+		Kind:       "Pod",
 		Metadata: Metadata{
 			Name:   "master",
 			Labels: Label{App: "master"},
 		},
 		Spec: Spec{
-			Replicas: 1,
-			Selector: Selector{MatchLabels: Label{App: "master"}},
-			Template: Template{
-				Metadata: Metadata{Labels: Label{App: "master"}},
-				Spec: TemplateSpec{
-					Containers: []Container{
+			Containers: []Container{
+				{
+					Name:            "nodeid-server",
+					Image:           "synerex-simulation/nodeid-server:latest",
+					ImagePullPolicy: "Never",
+					Env: []Env{
 						{
-							Name:            "nodeid-server",
-							Image:           "synerex-simulation/nodeid-server:latest",
-							ImagePullPolicy: "Never",
-							Env: []Env{
-								{
-									Name:  "NODEID_SERVER",
-									Value: ":9000",
-								},
-							},
-							Ports: []Port{{ContainerPort: 9000}},
-						},
-						{
-							Name:            "synerex-server",
-							Image:           "synerex-simulation/synerex-server:latest",
-							ImagePullPolicy: "Never",
-							Env: []Env{
-								{
-									Name:  "NODEID_SERVER",
-									Value: ":9000",
-								},
-								{
-									Name:  "SYNEREX_SERVER",
-									Value: ":10000",
-								},
-							},
-							Ports: []Port{{ContainerPort: 10000}},
-						},
-						{
-							Name:            "master-provider",
-							Image:           "synerex-simulation/master-provider:latest",
-							ImagePullPolicy: "Never",
-							Env: []Env{
-								{
-									Name:  "NODEID_SERVER",
-									Value: ":9000",
-								},
-								{
-									Name:  "SYNEREX_SERVER",
-									Value: ":10000",
-								},
-								{
-									Name:  "PORT",
-									Value: "9990",
-								},
-							},
-							Ports: []Port{{ContainerPort: 9990}},
+							Name:  "NODEID_SERVER",
+							Value: ":9000",
 						},
 					},
+					Ports: []Port{{ContainerPort: 9000}},
+				},
+				{
+					Name:            "synerex-server",
+					Image:           "synerex-simulation/synerex-server:latest",
+					ImagePullPolicy: "Never",
+					Env: []Env{
+						{
+							Name:  "NODEID_SERVER",
+							Value: ":9000",
+						},
+						{
+							Name:  "SYNEREX_SERVER",
+							Value: ":10000",
+						},
+					},
+					Ports: []Port{{ContainerPort: 10000}},
+				},
+				{
+					Name:            "master-provider",
+					Image:           "synerex-simulation/master-provider:latest",
+					ImagePullPolicy: "Never",
+					Env: []Env{
+						{
+							Name:  "NODEID_SERVER",
+							Value: ":9000",
+						},
+						{
+							Name:  "SYNEREX_SERVER",
+							Value: ":10000",
+						},
+						{
+							Name:  "PORT",
+							Value: "9990",
+						},
+					},
+					Ports: []Port{{ContainerPort: 9990}},
 				},
 			},
 		},
@@ -378,34 +354,27 @@ func NewSimulatorService() Resource {
 
 func NewSimulator() Resource {
 	simulator := Resource{
-		ApiVersion: "apps/v1",
-		Kind:       "ReplicaSet",
+		ApiVersion: "v1",
+		Kind:       "Pod",
 		Metadata: Metadata{
 			Name:   "simulator",
 			Labels: Label{App: "simulator"},
 		},
 		Spec: Spec{
-			Replicas: 1,
-			Selector: Selector{MatchLabels: Label{App: "simulator"}},
-			Template: Template{
-				Metadata: Metadata{Labels: Label{App: "simulator"}},
-				Spec: TemplateSpec{
-					Containers: []Container{
+			Containers: []Container{
+				{
+					Name:            "simulator",
+					Image:           "synerex-simulation/simulator:latest",
+					ImagePullPolicy: "Never",
+					Stdin:           true,
+					Tty:             true,
+					Env: []Env{
 						{
-							Name:            "simulator",
-							Image:           "synerex-simulation/simulator:latest",
-							ImagePullPolicy: "Never",
-							Stdin:           true,
-							Tty:             true,
-							Env: []Env{
-								{
-									Name:  "MASTER_ADDRESS",
-									Value: "http://master:800",
-								},
-							},
-							Ports: []Port{{ContainerPort: 8000}},
+							Name:  "MASTER_ADDRESS",
+							Value: "http://master:800",
 						},
 					},
+					Ports: []Port{{ContainerPort: 8000}},
 				},
 			},
 		},
@@ -419,44 +388,37 @@ func NewGateway(neiPair []int) Resource {
 	worker2Name := "worker" + strconv.Itoa(neiPair[1])
 	gatewayName := "gateway" + strconv.Itoa(neiPair[0]) + strconv.Itoa(neiPair[1])
 	gateway := Resource{
-		ApiVersion: "apps/v1",
-		Kind:       "ReplicaSet",
+		ApiVersion: "v1",
+		Kind:       "Pod",
 		Metadata: Metadata{
 			Name:   gatewayName,
 			Labels: Label{App: gatewayName},
 		},
 		Spec: Spec{
-			Replicas: 1,
-			Selector: Selector{MatchLabels: Label{App: gatewayName}},
-			Template: Template{
-				Metadata: Metadata{Labels: Label{App: gatewayName}},
-				Spec: TemplateSpec{
-					Containers: []Container{
+			Containers: []Container{
+				{
+					Name:            "gateway-provider",
+					Image:           "synerex-simulation/gateway-provider:latest",
+					ImagePullPolicy: "Never",
+					Env: []Env{
 						{
-							Name:            "gateway-provider",
-							Image:           "synerex-simulation/gateway-provider:latest",
-							ImagePullPolicy: "Never",
-							Env: []Env{
-								{
-									Name:  "WORKER_SYNEREX_SERVER1",
-									Value: worker1Name + ":700",
-								},
-								{
-									Name:  "WORKER_NODEID_SERVER1",
-									Value: worker1Name + ":600",
-								},
-								{
-									Name:  "WORKER_SYNEREX_SERVER2",
-									Value: worker2Name + ":700",
-								},
-								{
-									Name:  "WORKER_NODEID_SERVER2",
-									Value: worker2Name + ":600",
-								},
-							},
-							Ports: []Port{{ContainerPort: 9980}},
+							Name:  "WORKER_SYNEREX_SERVER1",
+							Value: worker1Name + ":700",
+						},
+						{
+							Name:  "WORKER_NODEID_SERVER1",
+							Value: worker1Name + ":600",
+						},
+						{
+							Name:  "WORKER_SYNEREX_SERVER2",
+							Value: worker2Name + ":700",
+						},
+						{
+							Name:  "WORKER_NODEID_SERVER2",
+							Value: worker2Name + ":600",
 						},
 					},
+					Ports: []Port{{ContainerPort: 9980}},
 				},
 			},
 		},
@@ -498,14 +460,14 @@ func convertAreaToJson(area Area) string {
 func main() {
 
 	option := Option{
-		FileName: "higashiyama-4.yaml",
+		FileName: "higashiyama-9.yaml",
 		AreaCoords: []Coord{
 			{Longitude: 136.971626, Latitude: 35.161499},
 			{Longitude: 136.971626, Latitude: 35.152210},
 			{Longitude: 136.989379, Latitude: 35.152210},
 			{Longitude: 136.989379, Latitude: 35.161499},
 		},
-		DevideSquareNum: 2,   // 2*2 = 4 areas
+		DevideSquareNum: 3,   // 2*2 = 4 areas
 		DuplicateRate:   0.1, // 10% of each area
 	}
 
