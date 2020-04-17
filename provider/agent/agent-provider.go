@@ -189,7 +189,7 @@ func demandCallback(clt *api.SMServiceClient, dm *api.Demand) {
 		senderId := myProvider.Id
 		msgId := dm.GetSimDemand().GetMsgId()
 		simapi.UpdateProvidersResponse(senderId, targets, msgId)
-		logger.Info("Finish: Update Providers ")
+		logger.Info("Finish: Update Providers num: %v\n", len(providers))
 
 	case api.DemandType_SET_AGENT_REQUEST:
 		// Agentをセットする
@@ -377,6 +377,7 @@ func main() {
 	simapi.SubscribeAll(demandCallback, supplyCallback)  // ChannelにSubscribe
 
 	// workerへ登録
+	logger.Debug("regist to worker")
 	senderId := myProvider.Id
 	targets := make([]uint64, 0)
 	simapi.RegistProviderRequest(senderId, targets, myProvider)
