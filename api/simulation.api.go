@@ -233,6 +233,45 @@ func (s *SimAPI) GetAgentResponse(senderId uint64, targets []uint64, msgId uint6
 //////////////////////////////////////////
 
 // Providerを登録するDemand
+func (s *SimAPI) ReadyProviderRequest(senderId uint64, targets []uint64, providerInfo *Provider) uint64 {
+	readyProviderRequest := &ReadyProviderRequest{
+		Provider: providerInfo,
+	}
+
+	uid, _ := uuid.NewRandom()
+	msgId := uint64(uid.ID())
+	simDemand := &SimDemand{
+		MsgId:    msgId,
+		SenderId: senderId,
+		Type:     DemandType_READY_PROVIDER_REQUEST,
+		Data:     &SimDemand_ReadyProviderRequest{readyProviderRequest},
+		Targets:  targets,
+	}
+
+	sendSyncDemand(s.MyClients.ProviderClient, simDemand)
+
+	return msgId
+}
+
+// Providerを登録するSupply
+func (s *SimAPI) ReadyProviderResponse(senderId uint64, targets []uint64, msgId uint64) uint64 {
+	readyProviderResponse := &ReadyProviderResponse{}
+
+	simSupply := &SimSupply{
+		MsgId:    msgId,
+		SenderId: senderId,
+		Type:     SupplyType_READY_PROVIDER_RESPONSE,
+		Status:   StatusType_OK,
+		Data:     &SimSupply_ReadyProviderResponse{readyProviderResponse},
+		Targets:  targets,
+	}
+
+	sendSyncSupply(s.MyClients.ProviderClient, simSupply)
+
+	return msgId
+}
+
+// Providerを登録するDemand
 func (s *SimAPI) RegistProviderRequest(senderId uint64, targets []uint64, providerInfo *Provider) uint64 {
 	registProviderRequest := &RegistProviderRequest{
 		Provider: providerInfo,
@@ -620,7 +659,10 @@ func (w *Waiter) WaitSp(msgId uint64, targets []uint64, timeout uint64) ([]*Supp
 				mu.Lock()
 				// spのidがidListに入っているか
 				if sp.GetSimSupply().GetMsgId() == msgId {
+					//mu.Lock()
 					w.SpMap[sp.GetSimSupply().GetMsgId()] = append(w.SpMap[sp.GetSimSupply().GetMsgId()], sp)
+					//mu.Unlock()
+					//log.Printf("msgID spId %v, msgId %v targets %v\n", w.SpMap[sp.GetSimSupply().GetMsgId()], msgId, targets)
 
 					// 同期が終了したかどうか
 					if w.isFinishSpSync(msgId, targets) {
@@ -632,7 +674,19 @@ func (w *Waiter) WaitSp(msgId uint64, targets []uint64, timeout uint64) ([]*Supp
 				}
 				mu.Unlock()
 			case <-time.After(time.Duration(timeout) * time.Millisecond):
-				log.Printf("Sync Error... \n")
+				noIds := []uint64{}
+				for _, tgt := range targets {
+					isExist := false
+					for _, sp := range w.SpMap[msgId] {
+						if tgt == sp.GetSimSupply().GetSenderId() {
+							isExist = true
+						}
+					}
+					if isExist == false {
+						noIds = append(noIds, tgt)
+					}
+				}
+				log.Printf("Sync Error... ids %v, splen %v\n", noIds, len(w.SpMap[msgId]))
 				err = fmt.Errorf("Timeout Error")
 				wg.Done()
 				return
@@ -651,18 +705,20 @@ func (w *Waiter) SendSpToWait(sp *Supply) {
 }
 
 func (w *Waiter) isFinishSpSync(msgId uint64, targets []uint64) bool {
-	for _, sp := range w.SpMap[msgId] {
-		senderId := sp.GetSimSupply().GetSenderId()
-		isMatch := false
-		for _, pid := range targets {
+
+	for _, pid := range targets {
+		isExist := false
+		for _, sp := range w.SpMap[msgId] {
+			senderId := sp.GetSimSupply().GetSenderId()
 			if senderId == pid {
-				isMatch = true
+				isExist = true
 			}
 		}
-		if isMatch == false {
+		if isExist == false {
 			return false
 		}
 	}
+
 	return true
 }
 

@@ -35,3 +35,10 @@ kubectl get pv,pvc
 # delete
 # podを指定すると再生成してしまうためdeploymentを削除する
 kubectl delete deployment master
+
+# dashboard
+https://qiita.com/suwa3/items/d7d13afa681f9d199ebb
+kubectl apply -f https://raw.githubusercontent.com/kubernetes/dashboard/v2.0.0-beta8/aio/deploy/recommended.yaml
+kubectl proxy
+kubectl -n kubernetes-dashboard get secret
+kubectl -n kubernetes-dashboard describe secret kubernetes-dashboard-token-xxxxx

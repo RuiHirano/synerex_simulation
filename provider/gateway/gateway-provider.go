@@ -199,6 +199,11 @@ func (apm *AgentProviderManager) CreateProvidersMap() {
 // Supplyのコールバック関数
 func supplyCallback1(clt *api.SMServiceClient, sp *api.Supply) {
 	switch sp.GetSimSupply().GetType() {
+	case api.SupplyType_READY_PROVIDER_RESPONSE:
+		time.Sleep(10 * time.Millisecond)
+		waiter.SendSpToWait(sp)
+		fmt.Printf("ready provider response")
+
 	case api.SupplyType_GET_AGENT_RESPONSE:
 		//fmt.Printf("Get Sp from Worker1%v\n", sp)
 
@@ -221,8 +226,26 @@ func supplyCallback1(clt *api.SMServiceClient, sp *api.Supply) {
 func demandCallback1(clt *api.SMServiceClient, dm *api.Demand) {
 
 	switch dm.GetSimDemand().GetType() {
+	case api.DemandType_READY_PROVIDER_REQUEST:
+		provider := dm.GetSimDemand().GetReadyProviderRequest().GetProvider()
+		//pm.SetProviders(providers)
+
+		// workerへ登録
+		senderId := myProvider.Id
+		targets := []uint64{provider.GetId()}
+		msgId := worker1api.RegistProviderRequest(senderId, targets, myProvider)
+		waiter.WaitSp(msgId, targets, 1000)
+
+		// response
+		targets = []uint64{dm.GetSimDemand().GetSenderId()}
+		senderId = myProvider.Id
+		msgId = dm.GetSimDemand().GetMsgId()
+		worker1api.ReadyProviderResponse(senderId, targets, msgId)
+		logger.Info("Finish: Regist Provider from ready ")
+
 	case api.DemandType_GET_AGENT_REQUEST:
 		// 隣接エリアがない場合はそのまま返す
+		t1 := time.Now()
 
 		/*targets := []uint64{dm.GetSimDemand().GetSenderId()}
 		senderId := myProvider.Id
@@ -230,7 +253,7 @@ func demandCallback1(clt *api.SMServiceClient, dm *api.Demand) {
 		agents := []*api.Agent{}
 		worker1api.GetAgentResponse(senderId, targets, msgId, agents)
 		logger.Debug("Finish: Get Agent Request Worker1 %v %v\n", targets, msgId)*/
-		agents := []*api.Agent{}
+		/*agents := []*api.Agent{}
 		senderId := myProvider.Id
 		// worker2のagent-providerから取得
 		targets2 := []uint64{apm.Provider2.GetId()}
@@ -245,7 +268,7 @@ func demandCallback1(clt *api.SMServiceClient, dm *api.Demand) {
 		targets := []uint64{dm.GetSimDemand().GetSenderId()}
 		msgId := dm.GetSimDemand().GetMsgId()
 		worker1api.GetAgentResponse(senderId, targets, msgId, agents)
-		logger.Debug("Finish: Get Agent Response to Worker1 %v %v %v\n", targets, msgId)
+		logger.Debug("Finish: Get Agent Response to Worker1 %v %v %v\n", targets, msgId)*/
 
 		/*pid := dm.GetSimDemand().GetSenderId()
 		if len(apm.ProvidersMap[pid]) == 0{
@@ -264,6 +287,14 @@ func demandCallback1(clt *api.SMServiceClient, dm *api.Demand) {
 			msgId2 := worker2api.GetAgentRequest(senderId, targets)
 			apm.SetMsgIdMap(msgId1, msgId2) // msgIdを紐づける
 		}*/
+		agents := []*api.Agent{}
+		senderId := myProvider.Id
+		targets := []uint64{dm.GetSimDemand().GetSenderId()}
+		msgId := dm.GetSimDemand().GetMsgId()
+		worker1api.GetAgentResponse(senderId, targets, msgId, agents)
+		t2 := time.Now()
+		duration := t2.Sub(t1).Milliseconds()
+		logger.Info("Duration: %v", duration)
 
 	case api.DemandType_UPDATE_PROVIDERS_REQUEST:
 		ps1 := dm.GetSimDemand().GetUpdateProvidersRequest().GetProviders()
@@ -276,7 +307,7 @@ func demandCallback1(clt *api.SMServiceClient, dm *api.Demand) {
 		senderId := myProvider.Id
 		msgId := dm.GetSimDemand().GetMsgId()
 		worker1api.UpdateProvidersResponse(senderId, targets, msgId)
-		logger.Info("Finish: Update Providers ")
+		logger.Info("Finish: Update Providers1 num: %v\n", len(ps1))
 	}
 }
 
@@ -296,14 +327,38 @@ func supplyCallback2(clt *api.SMServiceClient, sp *api.Supply) {
 	case api.SupplyType_REGIST_PROVIDER_RESPONSE:
 		//masterProvider = sp.GetSimSupply().GetRegistProviderResponse().GetProvider()
 		fmt.Printf("regist provider to Worler2 Provider!\n")
+
+	case api.SupplyType_READY_PROVIDER_RESPONSE:
+		time.Sleep(10 * time.Millisecond)
+		waiter.SendSpToWait(sp)
+		fmt.Printf("ready provider response")
 	}
 }
 
 // Demandのコールバック関数
 func demandCallback2(clt *api.SMServiceClient, dm *api.Demand) {
 	switch dm.GetSimDemand().GetType() {
+	case api.DemandType_READY_PROVIDER_REQUEST:
+		provider := dm.GetSimDemand().GetReadyProviderRequest().GetProvider()
+		//pm.SetProviders(providers)
+
+		// workerへ登録
+		senderId := myProvider.Id
+		targets := []uint64{provider.GetId()}
+		msgId := worker2api.RegistProviderRequest(senderId, targets, myProvider)
+		waiter.WaitSp(msgId, targets, 1000)
+
+		// response
+		targets = []uint64{dm.GetSimDemand().GetSenderId()}
+		senderId = myProvider.Id
+		msgId = dm.GetSimDemand().GetMsgId()
+		worker2api.ReadyProviderResponse(senderId, targets, msgId)
+		logger.Info("Finish: Regist Provider from ready ")
+
 	case api.DemandType_GET_AGENT_REQUEST:
-		// 隣接エリアがない場合はそのまま返す
+
+		t1 := time.Now()
+		/*// 隣接エリアがない場合はそのまま返す
 		agents := []*api.Agent{}
 		senderId := myProvider.Id
 		// worker2のagent-providerから取得
@@ -320,8 +375,15 @@ func demandCallback2(clt *api.SMServiceClient, dm *api.Demand) {
 		msgId := dm.GetSimDemand().GetMsgId()
 		worker2api.GetAgentResponse(senderId, targets, msgId, agents)
 		logger.Debug("Finish: Get Agent Request Worker2 %v %v\n", targets, msgId)
-		//隣接エリアが存在していたらそのAgentProviderへ送る
-
+		//隣接エリアが存在していたらそのAgentProviderへ送る*/
+		agents := []*api.Agent{}
+		senderId := myProvider.Id
+		targets := []uint64{dm.GetSimDemand().GetSenderId()}
+		msgId := dm.GetSimDemand().GetMsgId()
+		worker2api.GetAgentResponse(senderId, targets, msgId, agents)
+		t2 := time.Now()
+		duration := t2.Sub(t1).Milliseconds()
+		logger.Info("Duration: %v", duration)
 		// ない場合はそのまま返す
 
 	case api.DemandType_UPDATE_PROVIDERS_REQUEST:
@@ -335,7 +397,7 @@ func demandCallback2(clt *api.SMServiceClient, dm *api.Demand) {
 		senderId := myProvider.Id
 		msgId := dm.GetSimDemand().GetMsgId()
 		worker2api.UpdateProvidersResponse(senderId, targets, msgId)
-		logger.Info("Finish: Update Providers ")
+		logger.Info("Finish: Update Providers2 num: %v\n", len(ps2))
 	}
 
 }

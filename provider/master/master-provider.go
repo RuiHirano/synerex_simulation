@@ -147,12 +147,15 @@ func supplyCallback(clt *api.SMServiceClient, sp *api.Supply) {
 	switch sp.GetSimSupply().GetType() {
 	case api.SupplyType_SET_CLOCK_RESPONSE:
 		//logger.Info("get sp: %v\n", sp)
+		time.Sleep(10 * time.Millisecond)
 		waiter.SendSpToWait(sp)
 	case api.SupplyType_SET_AGENT_RESPONSE:
 		//logger.Info("get sp: %v\n", sp)
+		time.Sleep(10 * time.Millisecond)
 		waiter.SendSpToWait(sp)
 	case api.SupplyType_FORWARD_CLOCK_RESPONSE:
 		//logger.Info("get sp: %v\n", sp)
+		time.Sleep(10 * time.Millisecond)
 		waiter.SendSpToWait(sp)
 	}
 }
@@ -235,13 +238,13 @@ func setAgents(agentNum uint64) (bool, error) {
 
 // startClock:
 func startClock() {
-
 	t1 := time.Now()
 
 	senderId := myProvider.Id
 	targets := pm.GetProviderIds([]simutil.IDType{
 		simutil.IDType_WORKER,
 	})
+	logger.Debug("Next Cycle! \n%v\n", targets)
 	msgId := simapi.ForwardClockRequest(senderId, targets)
 	waiter.WaitSp(msgId, targets, 1000)
 

@@ -174,6 +174,7 @@ func sendToHarmowareVis(agents []*api.Agent) {
 func forwardClock(dm *api.Demand) {
 	//log.Printf("\x1b[30m\x1b[47m \n Start: Clock forwarded \n Time:  %v \x1b[0m\n", sim.Clock.GlobalTime)
 	//senderId := myProvider.Id
+	t1 := time.Now()
 	// エージェントからの可視化リクエスト待ち
 	targets := pm.GetProviderIds([]simutil.IDType{
 		simutil.IDType_AGENT,
@@ -194,11 +195,32 @@ func forwardClock(dm *api.Demand) {
 	//agents := []*api.Agent{}
 	// Harmowareに送る
 	sendToHarmowareVis(allAgents)
+
+	t2 := time.Now()
+	duration := t2.Sub(t1).Milliseconds()
+	logger.Info("Duration: %v", duration)
 }
 
 // callback for each Supply
 func demandCallback(clt *api.SMServiceClient, dm *api.Demand) {
 	switch dm.GetSimDemand().GetType() {
+	case api.DemandType_READY_PROVIDER_REQUEST:
+		provider := dm.GetSimDemand().GetReadyProviderRequest().GetProvider()
+		//pm.SetProviders(providers)
+
+		// workerへ登録
+		senderId := myProvider.Id
+		targets := []uint64{provider.GetId()}
+		msgId := simapi.RegistProviderRequest(senderId, targets, myProvider)
+		waiter.WaitSp(msgId, targets, 1000)
+
+		// response
+		targets = []uint64{dm.GetSimDemand().GetSenderId()}
+		senderId = myProvider.Id
+		msgId = dm.GetSimDemand().GetMsgId()
+		simapi.ReadyProviderResponse(senderId, targets, msgId)
+		logger.Info("Finish: Regist Provider from ready ")
+
 	case api.DemandType_UPDATE_PROVIDERS_REQUEST:
 		providers := dm.GetSimDemand().GetUpdateProvidersRequest().GetProviders()
 		pm.SetProviders(providers)
@@ -208,7 +230,7 @@ func demandCallback(clt *api.SMServiceClient, dm *api.Demand) {
 		senderId := myProvider.Id
 		msgId := dm.GetSimDemand().GetMsgId()
 		simapi.UpdateProvidersResponse(senderId, targets, msgId)
-		logger.Info("Finish: Update Providers ")
+		logger.Info("Finish: Update Providers num: %v\n", len(providers))
 
 	case api.DemandType_FORWARD_CLOCK_REQUEST:
 		// クロックを進める
@@ -246,11 +268,16 @@ func demandCallback(clt *api.SMServiceClient, dm *api.Demand) {
 func supplyCallback(clt *api.SMServiceClient, sp *api.Supply) {
 	switch sp.GetSimSupply().GetType() {
 	case api.SupplyType_GET_AGENT_RESPONSE:
+		time.Sleep(10 * time.Millisecond)
 		fmt.Printf("get agents response")
 		waiter.SendSpToWait(sp)
 	case api.SupplyType_REGIST_PROVIDER_RESPONSE:
 		workerProvider = sp.GetSimSupply().GetRegistProviderResponse().GetProvider()
-		fmt.Printf("resist provider request")
+		fmt.Printf("resist provider response")
+	case api.SupplyType_READY_PROVIDER_RESPONSE:
+		time.Sleep(10 * time.Millisecond)
+		waiter.SendSpToWait(sp)
+		fmt.Printf("ready provider response")
 	}
 }
 

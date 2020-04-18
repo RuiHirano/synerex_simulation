@@ -124,6 +124,7 @@ func masterDemandCallback(clt *api.SMServiceClient, dm *api.Demand) {
 	switch dm.GetSimDemand().GetType() {
 	case api.DemandType_FORWARD_CLOCK_REQUEST:
 		fmt.Printf("get forwardClockRequest")
+		t1 := time.Now()
 
 		// request to worker providers
 		targets := pm.GetProviderIds([]simutil.IDType{
@@ -139,9 +140,13 @@ func masterDemandCallback(clt *api.SMServiceClient, dm *api.Demand) {
 		msgId = workerapi.ForwardClockRequest(senderId, targets)
 		waiter.WaitSp(msgId, targets, 1000)
 
+		t2 := time.Now()
+		duration := t2.Sub(t1).Milliseconds()
+		logger.Info("Duration: %v", duration)
 		// response to master
 		targets = []uint64{dm.GetSimDemand().GetSenderId()}
 		msgId = dm.GetSimDemand().GetMsgId()
+		logger.Debug("Response to master pid %v, msgId%v\n", myProvider.Id, msgId)
 		masterapi.ForwardClockResponse(senderId, targets, msgId)
 
 	case api.DemandType_SET_AGENT_REQUEST:
@@ -170,20 +175,29 @@ func workerSupplyCallback(clt *api.SMServiceClient, sp *api.Supply) {
 	// 自分宛かどうか
 	// check if supply is match with my demand.
 	switch sp.GetSimSupply().GetType() {
-	case api.SupplyType_UPDATE_PROVIDERS_RESPONSE:
+	case api.SupplyType_READY_PROVIDER_RESPONSE:
 		//logger.Info("get sp: %v\n", sp)
+		time.Sleep(10 * time.Millisecond)
+		waiter.SendSpToWait(sp)
+	case api.SupplyType_UPDATE_PROVIDERS_RESPONSE:
+		logger.Info("get sp: %v\n", sp)
+		time.Sleep(10 * time.Millisecond)
 		waiter.SendSpToWait(sp)
 	case api.SupplyType_SET_CLOCK_RESPONSE:
 		//logger.Info("get sp: %v\n", sp)
+		time.Sleep(10 * time.Millisecond)
 		waiter.SendSpToWait(sp)
 	case api.SupplyType_SET_AGENT_RESPONSE:
 		//logger.Info("get sp: %v\n", sp)
+		time.Sleep(10 * time.Millisecond)
 		waiter.SendSpToWait(sp)
 	case api.SupplyType_FORWARD_CLOCK_RESPONSE:
 		//logger.Info("get sp: %v\n", sp)
+		time.Sleep(10 * time.Millisecond)
 		waiter.SendSpToWait(sp)
 	case api.SupplyType_FORWARD_CLOCK_INIT_RESPONSE:
 		//logger.Info("get sp: %v\n", sp)
+		time.Sleep(10 * time.Millisecond)
 		waiter.SendSpToWait(sp)
 	}
 }
@@ -213,8 +227,9 @@ func workerDemandCallback(clt *api.SMServiceClient, dm *api.Demand) {
 		})
 		providers := pm.GetProviders()
 		msgId = workerapi.UpdateProvidersRequest(senderId, targets, providers)
-		logger.Info("Wait response from &v\n", targets)
+		logger.Debug("Wait response from &v\n", targets)
 		waiter.WaitSp(msgId, targets, 1000)
+		logger.Info("Update Providers! \n")
 
 	}
 }
@@ -356,6 +371,11 @@ func main() {
 	workerapi = api.NewSimAPI()
 	workerapi.RegistClients(wclient, myProvider.Id, wargJson)          // channelごとのClientを作成
 	workerapi.SubscribeAll(workerDemandCallback, workerSupplyCallback) // ChannelにSubscribe
+
+	// ready provider request
+	senderId = myProvider.Id
+	targets = make([]uint64, 0)
+	workerapi.ReadyProviderRequest(senderId, targets, myProvider)
 
 	// test
 	//go forwardCLock()

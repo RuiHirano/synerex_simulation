@@ -492,7 +492,7 @@ func createData(option Option) []Resource {
 		NewMasterService(),
 		NewMaster(),
 	}
-	areas, neighbors := AreaDivider(option.AreaCoords, option.DevideSquareNum, option.DuplicateRate)
+	areas, _ := AreaDivider(option.AreaCoords, option.DevideSquareNum, option.DuplicateRate)
 	//fmt.Printf("areas: %v\n", areas)
 
 	for _, area := range areas {

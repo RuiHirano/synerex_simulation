@@ -29,6 +29,7 @@ message SimDemand {
 			CreatePodRequest create_pod_request = 14;
             DeletePodRequest delete_pod_request = 15;
 			ForwardClockInitRequest forward_clock_init_request = 16;
+            ReadyProviderRequest ready_provider_request = 17;
         }
     }
 
@@ -57,6 +58,7 @@ message SimDemand {
 			CreatePodResponse create_pod_response = 15;
             DeletePodResponse delete_pod_response = 16;
 			ForwardClockInitResponse forward_clock_init_response = 17;
+            ReadyProviderResponse ready_provider_response = 18;
         }
 }
 
@@ -78,6 +80,7 @@ enum DemandType {
     FORWARD_CLOCK_INIT_REQUEST = 8;
 	CREATE_POD_REQUEST = 9;
     DELETE_POD_REQUEST = 10;
+    READY_PROVIDER_REQUEST = 11;
 }
 
 enum SupplyType {
@@ -92,6 +95,7 @@ enum SupplyType {
     FORWARD_CLOCK_INIT_RESPONSE = 8;
 	CREATE_POD_RESPONSE = 9;
     DELETE_POD_RESPONSE = 10;
+    READY_PROVIDER_RESPONSE = 11;
 }
 
 
@@ -108,6 +112,13 @@ message UpdateProvidersRequest {
 }
 
 message UpdateProvidersResponse {
+}
+
+message ReadyProviderRequest {
+    Provider provider = 1;
+}
+
+message ReadyProviderResponse {
 }
 
 message SetClockRequest {
