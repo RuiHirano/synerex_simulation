@@ -624,16 +624,12 @@ func (s *SimAPI) DeletePodResponse(senderId uint64, targets []uint64, msgId uint
 type Waiter struct {
 	WaitSpChMap map[uint64]chan *Supply
 	SpMap       map[uint64][]*Supply
-	WaitDmChMap map[uint64]chan *Demand
-	DmMap       map[uint64][]*Demand
 }
 
 func NewWaiter() *Waiter {
 	w := &Waiter{
 		WaitSpChMap: make(map[uint64]chan *Supply),
 		SpMap:       make(map[uint64][]*Supply),
-		WaitDmChMap: make(map[uint64]chan *Demand),
-		DmMap:       make(map[uint64][]*Demand),
 	}
 	return w
 }
@@ -719,70 +715,5 @@ func (w *Waiter) isFinishSpSync(msgId uint64, targets []uint64) bool {
 		}
 	}
 
-	return true
-}
-
-func (w *Waiter) WaitDm(msgId uint64, targets []uint64) []*Demand {
-	if len(targets) == 0 {
-		return []*Demand{}
-	}
-	mu.Lock()
-	CHANNEL_BUFFER_SIZE := 10
-	waitCh := make(chan *Demand, CHANNEL_BUFFER_SIZE)
-	w.WaitDmChMap[msgId] = waitCh
-	w.DmMap[msgId] = make([]*Demand, 0)
-	mu.Unlock()
-
-	wg := sync.WaitGroup{}
-	wg.Add(1)
-	go func() {
-		for {
-			select {
-			case dm, _ := <-waitCh:
-				mu.Lock()
-				// dmのidがidListに入っているか
-				if dm.GetSimDemand().GetMsgId() == msgId {
-					w.DmMap[dm.GetSimDemand().GetMsgId()] = append(w.DmMap[dm.GetSimDemand().GetMsgId()], dm)
-
-					// 同期が終了したかどうか
-					if w.isFinishDmSync(msgId, targets) {
-						log.Printf("Finish Wait!")
-						mu.Unlock()
-						wg.Done()
-						return
-					}
-				}
-				mu.Unlock()
-			case <-time.After(1000 * time.Millisecond):
-				log.Printf("Sync Error... \n")
-				wg.Done()
-				return
-			}
-		}
-	}()
-	wg.Wait()
-	return w.DmMap[msgId]
-}
-
-func (w *Waiter) SendDmToWait(dm *Demand) {
-	mu.Lock()
-	waitCh := w.WaitDmChMap[dm.GetSimDemand().GetMsgId()]
-	mu.Unlock()
-	waitCh <- dm
-}
-
-func (w *Waiter) isFinishDmSync(msgId uint64, targets []uint64) bool {
-	for _, dm := range w.DmMap[msgId] {
-		senderId := dm.GetSimDemand().GetSenderId()
-		isMatch := false
-		for _, pid := range targets {
-			if senderId == pid {
-				isMatch = true
-			}
-		}
-		if isMatch == false {
-			return false
-		}
-	}
 	return true
 }
