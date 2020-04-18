@@ -147,16 +147,16 @@ func supplyCallback(clt *api.SMServiceClient, sp *api.Supply) {
 	switch sp.GetSimSupply().GetType() {
 	case api.SupplyType_SET_CLOCK_RESPONSE:
 		//logger.Info("get sp: %v\n", sp)
-		time.Sleep(10 * time.Millisecond)
-		waiter.SendSpToWait(sp)
+		//time.Sleep(10 * time.Millisecond)
+		simapi.SendSpToWait(sp)
 	case api.SupplyType_SET_AGENT_RESPONSE:
 		//logger.Info("get sp: %v\n", sp)
-		time.Sleep(10 * time.Millisecond)
-		waiter.SendSpToWait(sp)
+		//time.Sleep(10 * time.Millisecond)
+		simapi.SendSpToWait(sp)
 	case api.SupplyType_FORWARD_CLOCK_RESPONSE:
 		//logger.Info("get sp: %v\n", sp)
-		time.Sleep(10 * time.Millisecond)
-		waiter.SendSpToWait(sp)
+		//time.Sleep(10 * time.Millisecond)
+		simapi.SendSpToWait(sp)
 	}
 }
 
@@ -229,8 +229,8 @@ func setAgents(agentNum uint64) (bool, error) {
 	targets := pm.GetProviderIds([]simutil.IDType{
 		simutil.IDType_WORKER,
 	})
-	msgId := simapi.SetAgentRequest(senderId, targets, agents)
-	waiter.WaitSp(msgId, targets, 1000)
+	simapi.SetAgentRequest(senderId, targets, agents)
+	//waiter.WaitSp(msgId, targets, 1000)
 
 	logger.Info("Finish Setting Agents \n Add: %v", len(agents))
 	return true, nil
@@ -245,8 +245,8 @@ func startClock() {
 		simutil.IDType_WORKER,
 	})
 	logger.Debug("Next Cycle! \n%v\n", targets)
-	msgId := simapi.ForwardClockRequest(senderId, targets)
-	waiter.WaitSp(msgId, targets, 1000)
+	simapi.ForwardClockRequest(senderId, targets)
+	//waiter.WaitSp(msgId, targets, 1000)
 
 	// calc next time
 	masterClock++
@@ -388,6 +388,11 @@ func main() {
 	simapi.RegistClients(client, myProvider.Id, argJson) // channelごとのClientを作成
 	simapi.SubscribeAll(demandCallback, supplyCallback)  // ChannelにSubscribe*/
 	//logger.Info("Connected Synerex Server!\n")
+
+	// ready provider request
+	senderId := myProvider.Id
+	targets := make([]uint64, 0)
+	simapi.ReadyProviderRequest(senderId, targets, myProvider)
 
 	wg := sync.WaitGroup{}
 	wg.Add(1)

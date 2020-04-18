@@ -30,10 +30,13 @@ type Clients struct {
 
 type SimAPI struct {
 	MyClients *Clients
+	Waiter    *Waiter
 }
 
 func NewSimAPI() *SimAPI {
-	s := &SimAPI{}
+	s := &SimAPI{
+		Waiter: NewWaiter(),
+	}
 	return s
 }
 
@@ -122,18 +125,36 @@ func sendSupply(sclient *SMServiceClient, simSupply *SimSupply) uint64 {
 //////////////////////////
 // add new function////////
 /////////////////////////
-func sendSyncDemand(sclient *SMServiceClient, simDemand *SimDemand) uint64 {
+func (s *SimAPI) SendSyncDemand(sclient *SMServiceClient, simDemand *SimDemand) ([]*Supply, error) {
 	nm := ""
 	js := ""
 	opts := &DemandOpts{Name: nm, JSON: js, SimDemand: simDemand}
 
 	mu.Lock()
-	id := sclient.SyncDemand(opts)
+	msgId := simDemand.GetMsgId()
+	CHANNEL_BUFFER_SIZE := 10
+	waitCh := make(chan *Supply, CHANNEL_BUFFER_SIZE)
+	s.Waiter.WaitSpChMap[msgId] = waitCh
+	s.Waiter.SpMap[msgId] = make([]*Supply, 0)
 	mu.Unlock()
-	return id
+
+	mu.Lock()
+	sclient.SyncDemand(opts)
+	mu.Unlock()
+
+	// waitする
+	sps := []*Supply{}
+	var err error
+	targets := simDemand.GetTargets()
+	if len(targets) != 0 {
+		msgId := simDemand.GetMsgId()
+		sps, err = s.Waiter.WaitSp(msgId, targets, 1000)
+	}
+
+	return sps, err
 }
 
-func sendSyncSupply(sclient *SMServiceClient, simSupply *SimSupply) uint64 {
+func (s *SimAPI) SendSyncSupply(sclient *SMServiceClient, simSupply *SimSupply) uint64 {
 	nm := ""
 	js := ""
 	opts := &SupplyOpts{Name: nm, JSON: js, SimSupply: simSupply}
@@ -144,12 +165,16 @@ func sendSyncSupply(sclient *SMServiceClient, simSupply *SimSupply) uint64 {
 	return id
 }
 
+func (s *SimAPI) SendSpToWait(sp *Supply) {
+	s.Waiter.SendSpToWait(sp)
+}
+
 ///////////////////////////////////////////
 /////////////   Agent API   //////////////
 //////////////////////////////////////////
 
 // AgentをセットするDemand
-func (s *SimAPI) SetAgentRequest(senderId uint64, targets []uint64, agents []*Agent) uint64 {
+func (s *SimAPI) SetAgentRequest(senderId uint64, targets []uint64, agents []*Agent) ([]*Supply, error) {
 
 	uid, _ := uuid.NewRandom()
 	setAgentRequest := &SetAgentRequest{
@@ -165,9 +190,9 @@ func (s *SimAPI) SetAgentRequest(senderId uint64, targets []uint64, agents []*Ag
 		Targets:  targets,
 	}
 
-	sendSyncDemand(s.MyClients.AgentClient, simDemand)
+	sps, err := s.SendSyncDemand(s.MyClients.AgentClient, simDemand)
 
-	return msgId
+	return sps, err
 }
 
 // Agentのセット完了
@@ -183,13 +208,13 @@ func (s *SimAPI) SetAgentResponse(senderId uint64, targets []uint64, msgId uint6
 		Targets:  targets,
 	}
 
-	sendSyncSupply(s.MyClients.AgentClient, simSupply)
+	s.SendSyncSupply(s.MyClients.AgentClient, simSupply)
 
 	return msgId
 }
 
 // AgentをセットするDemand
-func (s *SimAPI) GetAgentRequest(senderId uint64, targets []uint64) uint64 {
+func (s *SimAPI) GetAgentRequest(senderId uint64, targets []uint64) ([]*Supply, error) {
 
 	uid, _ := uuid.NewRandom()
 	getAgentRequest := &GetAgentRequest{}
@@ -203,9 +228,9 @@ func (s *SimAPI) GetAgentRequest(senderId uint64, targets []uint64) uint64 {
 		Targets:  targets,
 	}
 
-	sendSyncDemand(s.MyClients.AgentClient, simDemand)
+	sps, err := s.SendSyncDemand(s.MyClients.AgentClient, simDemand)
 
-	return msgId
+	return sps, err
 }
 
 // Agentのセット完了
@@ -223,7 +248,7 @@ func (s *SimAPI) GetAgentResponse(senderId uint64, targets []uint64, msgId uint6
 		Targets:  targets,
 	}
 
-	sendSyncSupply(s.MyClients.AgentClient, simSupply)
+	s.SendSyncSupply(s.MyClients.AgentClient, simSupply)
 
 	return msgId
 }
@@ -233,7 +258,7 @@ func (s *SimAPI) GetAgentResponse(senderId uint64, targets []uint64, msgId uint6
 //////////////////////////////////////////
 
 // Providerを登録するDemand
-func (s *SimAPI) ReadyProviderRequest(senderId uint64, targets []uint64, providerInfo *Provider) uint64 {
+func (s *SimAPI) ReadyProviderRequest(senderId uint64, targets []uint64, providerInfo *Provider) ([]*Supply, error) {
 	readyProviderRequest := &ReadyProviderRequest{
 		Provider: providerInfo,
 	}
@@ -248,9 +273,9 @@ func (s *SimAPI) ReadyProviderRequest(senderId uint64, targets []uint64, provide
 		Targets:  targets,
 	}
 
-	sendSyncDemand(s.MyClients.ProviderClient, simDemand)
+	sps, err := s.SendSyncDemand(s.MyClients.ProviderClient, simDemand)
 
-	return msgId
+	return sps, err
 }
 
 // Providerを登録するSupply
@@ -266,13 +291,13 @@ func (s *SimAPI) ReadyProviderResponse(senderId uint64, targets []uint64, msgId 
 		Targets:  targets,
 	}
 
-	sendSyncSupply(s.MyClients.ProviderClient, simSupply)
+	s.SendSyncSupply(s.MyClients.ProviderClient, simSupply)
 
 	return msgId
 }
 
 // Providerを登録するDemand
-func (s *SimAPI) RegistProviderRequest(senderId uint64, targets []uint64, providerInfo *Provider) uint64 {
+func (s *SimAPI) RegistProviderRequest(senderId uint64, targets []uint64, providerInfo *Provider) ([]*Supply, error) {
 	registProviderRequest := &RegistProviderRequest{
 		Provider: providerInfo,
 	}
@@ -287,9 +312,9 @@ func (s *SimAPI) RegistProviderRequest(senderId uint64, targets []uint64, provid
 		Targets:  targets,
 	}
 
-	sendSyncDemand(s.MyClients.ProviderClient, simDemand)
+	sps, err := s.SendSyncDemand(s.MyClients.ProviderClient, simDemand)
 
-	return msgId
+	return sps, err
 }
 
 // Providerを登録するSupply
@@ -307,13 +332,13 @@ func (s *SimAPI) RegistProviderResponse(senderId uint64, targets []uint64, msgId
 		Targets:  targets,
 	}
 
-	sendSyncSupply(s.MyClients.ProviderClient, simSupply)
+	s.SendSyncSupply(s.MyClients.ProviderClient, simSupply)
 
 	return msgId
 }
 
 // Providerを登録するDemand
-func (s *SimAPI) UpdateProvidersRequest(senderId uint64, targets []uint64, providers []*Provider) uint64 {
+func (s *SimAPI) UpdateProvidersRequest(senderId uint64, targets []uint64, providers []*Provider) ([]*Supply, error) {
 	updateProvidersRequest := &UpdateProvidersRequest{
 		Providers: providers,
 	}
@@ -328,9 +353,9 @@ func (s *SimAPI) UpdateProvidersRequest(senderId uint64, targets []uint64, provi
 		Targets:  targets,
 	}
 
-	sendSyncDemand(s.MyClients.ProviderClient, simDemand)
+	sps, err := s.SendSyncDemand(s.MyClients.ProviderClient, simDemand)
 
-	return msgId
+	return sps, err
 }
 
 // Providerを登録するSupply
@@ -346,7 +371,7 @@ func (s *SimAPI) UpdateProvidersResponse(senderId uint64, targets []uint64, msgI
 		Targets:  targets,
 	}
 
-	sendSyncSupply(s.MyClients.ProviderClient, simSupply)
+	s.SendSyncSupply(s.MyClients.ProviderClient, simSupply)
 
 	return msgId
 }
@@ -355,7 +380,7 @@ func (s *SimAPI) UpdateProvidersResponse(senderId uint64, targets []uint64, msgI
 /////////////   Clock API   //////////////
 //////////////////////////////////////////
 
-func (s *SimAPI) SetClockRequest(senderId uint64, targets []uint64, clockInfo *Clock) uint64 {
+func (s *SimAPI) SetClockRequest(senderId uint64, targets []uint64, clockInfo *Clock) ([]*Supply, error) {
 	setClockRequest := &SetClockRequest{
 		Clock: clockInfo,
 	}
@@ -370,9 +395,9 @@ func (s *SimAPI) SetClockRequest(senderId uint64, targets []uint64, clockInfo *C
 		Targets:  targets,
 	}
 
-	sendSyncDemand(s.MyClients.ClockClient, simDemand)
+	sps, err := s.SendSyncDemand(s.MyClients.ClockClient, simDemand)
 
-	return msgId
+	return sps, err
 }
 
 // Agentを取得するSupply
@@ -388,12 +413,12 @@ func (s *SimAPI) SetClockResponse(senderId uint64, targets []uint64, msgId uint6
 		Targets:  targets,
 	}
 
-	sendSyncSupply(s.MyClients.ClockClient, simSupply)
+	s.SendSyncSupply(s.MyClients.ClockClient, simSupply)
 
 	return msgId
 }
 
-func (s *SimAPI) ForwardClockRequest(senderId uint64, targets []uint64) uint64 {
+func (s *SimAPI) ForwardClockRequest(senderId uint64, targets []uint64) ([]*Supply, error) {
 	forwardClockRequest := &ForwardClockRequest{}
 
 	uid, _ := uuid.NewRandom()
@@ -406,9 +431,9 @@ func (s *SimAPI) ForwardClockRequest(senderId uint64, targets []uint64) uint64 {
 		Targets:  targets,
 	}
 
-	sendSyncDemand(s.MyClients.ClockClient, simDemand)
+	sps, err := s.SendSyncDemand(s.MyClients.ClockClient, simDemand)
 
-	return msgId
+	return sps, err
 }
 
 // Agentを取得するSupply
@@ -424,12 +449,12 @@ func (s *SimAPI) ForwardClockResponse(senderId uint64, targets []uint64, msgId u
 		Targets:  targets,
 	}
 
-	sendSyncSupply(s.MyClients.ClockClient, simSupply)
+	s.SendSyncSupply(s.MyClients.ClockClient, simSupply)
 
 	return msgId
 }
 
-func (s *SimAPI) ForwardClockInitRequest(senderId uint64, targets []uint64) uint64 {
+func (s *SimAPI) ForwardClockInitRequest(senderId uint64, targets []uint64) ([]*Supply, error) {
 	forwardClockInitRequest := &ForwardClockInitRequest{}
 
 	uid, _ := uuid.NewRandom()
@@ -442,9 +467,9 @@ func (s *SimAPI) ForwardClockInitRequest(senderId uint64, targets []uint64) uint
 		Targets:  targets,
 	}
 
-	sendSyncDemand(s.MyClients.ClockClient, simDemand)
+	sps, err := s.SendSyncDemand(s.MyClients.ClockClient, simDemand)
 
-	return msgId
+	return sps, err
 }
 
 // Agentを取得するSupply
@@ -460,12 +485,12 @@ func (s *SimAPI) ForwardClockInitResponse(senderId uint64, targets []uint64, msg
 		Targets:  targets,
 	}
 
-	sendSyncSupply(s.MyClients.ClockClient, simSupply)
+	s.SendSyncSupply(s.MyClients.ClockClient, simSupply)
 
 	return msgId
 }
 
-func (s *SimAPI) StartClockRequest(senderId uint64, targets []uint64) uint64 {
+func (s *SimAPI) StartClockRequest(senderId uint64, targets []uint64) ([]*Supply, error) {
 	startClockRequest := &StartClockRequest{}
 
 	uid, _ := uuid.NewRandom()
@@ -478,9 +503,9 @@ func (s *SimAPI) StartClockRequest(senderId uint64, targets []uint64) uint64 {
 		Targets:  targets,
 	}
 
-	sendSyncDemand(s.MyClients.ClockClient, simDemand)
+	sps, err := s.SendSyncDemand(s.MyClients.ClockClient, simDemand)
 
-	return msgId
+	return sps, err
 }
 
 // Agentを取得するSupply
@@ -496,12 +521,12 @@ func (s *SimAPI) StartClockResponse(senderId uint64, targets []uint64, msgId uin
 		Targets:  targets,
 	}
 
-	sendSyncSupply(s.MyClients.ClockClient, simSupply)
+	s.SendSyncSupply(s.MyClients.ClockClient, simSupply)
 
 	return msgId
 }
 
-func (s *SimAPI) StopClockRequest(senderId uint64, targets []uint64) uint64 {
+func (s *SimAPI) StopClockRequest(senderId uint64, targets []uint64) ([]*Supply, error) {
 	stopClockRequest := &StopClockRequest{}
 
 	uid, _ := uuid.NewRandom()
@@ -514,9 +539,9 @@ func (s *SimAPI) StopClockRequest(senderId uint64, targets []uint64) uint64 {
 		Targets:  targets,
 	}
 
-	sendSyncDemand(s.MyClients.ClockClient, simDemand)
+	sps, err := s.SendSyncDemand(s.MyClients.ClockClient, simDemand)
 
-	return msgId
+	return sps, err
 }
 
 // Agentを取得するSupply
@@ -532,7 +557,7 @@ func (s *SimAPI) StopClockResponse(senderId uint64, targets []uint64, msgId uint
 		Targets:  targets,
 	}
 
-	sendSyncSupply(s.MyClients.ClockClient, simSupply)
+	s.SendSyncSupply(s.MyClients.ClockClient, simSupply)
 
 	return msgId
 }
@@ -542,7 +567,7 @@ func (s *SimAPI) StopClockResponse(senderId uint64, targets []uint64, msgId uint
 //////////////////////////////////////////
 
 // AgentをセットするDemand
-func (s *SimAPI) CreatePodRequest(senderId uint64, targets []uint64) uint64 {
+func (s *SimAPI) CreatePodRequest(senderId uint64, targets []uint64) ([]*Supply, error) {
 
 	uid, _ := uuid.NewRandom()
 	createPodRequest := &CreatePodRequest{}
@@ -556,9 +581,9 @@ func (s *SimAPI) CreatePodRequest(senderId uint64, targets []uint64) uint64 {
 		Targets:  targets,
 	}
 
-	sendSyncDemand(s.MyClients.AgentClient, simDemand)
+	sps, err := s.SendSyncDemand(s.MyClients.AgentClient, simDemand)
 
-	return msgId
+	return sps, err
 }
 
 // Agentのセット完了
@@ -574,13 +599,13 @@ func (s *SimAPI) CreatePodResponse(senderId uint64, targets []uint64, msgId uint
 		Targets:  targets,
 	}
 
-	sendSyncSupply(s.MyClients.AgentClient, simSupply)
+	s.SendSyncSupply(s.MyClients.AgentClient, simSupply)
 
 	return msgId
 }
 
 // AgentをセットするDemand
-func (s *SimAPI) DeletePodRequest(senderId uint64, targets []uint64) uint64 {
+func (s *SimAPI) DeletePodRequest(senderId uint64, targets []uint64) ([]*Supply, error) {
 
 	uid, _ := uuid.NewRandom()
 	deletePodRequest := &DeletePodRequest{}
@@ -594,9 +619,9 @@ func (s *SimAPI) DeletePodRequest(senderId uint64, targets []uint64) uint64 {
 		Targets:  targets,
 	}
 
-	sendSyncDemand(s.MyClients.AgentClient, simDemand)
+	sps, err := s.SendSyncDemand(s.MyClients.AgentClient, simDemand)
 
-	return msgId
+	return sps, err
 }
 
 // Agentのセット完了
@@ -612,7 +637,7 @@ func (s *SimAPI) DeletePodResponse(senderId uint64, targets []uint64, msgId uint
 		Targets:  targets,
 	}
 
-	sendSyncSupply(s.MyClients.AgentClient, simSupply)
+	s.SendSyncSupply(s.MyClients.AgentClient, simSupply)
 
 	return msgId
 }
@@ -635,15 +660,8 @@ func NewWaiter() *Waiter {
 }
 
 func (w *Waiter) WaitSp(msgId uint64, targets []uint64, timeout uint64) ([]*Supply, error) {
-	if len(targets) == 0 {
-		return []*Supply{}, nil
-	}
-	mu.Lock()
-	CHANNEL_BUFFER_SIZE := 10
-	waitCh := make(chan *Supply, CHANNEL_BUFFER_SIZE)
-	w.WaitSpChMap[msgId] = waitCh
-	w.SpMap[msgId] = make([]*Supply, 0)
-	mu.Unlock()
+
+	waitCh := w.WaitSpChMap[msgId]
 
 	var err error
 	wg := sync.WaitGroup{}
@@ -653,6 +671,7 @@ func (w *Waiter) WaitSp(msgId uint64, targets []uint64, timeout uint64) ([]*Supp
 			select {
 			case sp, _ := <-waitCh:
 				mu.Lock()
+				//log.Printf("getSP %v, %v\n", sp.GetSimSupply().GetSenderId(), sp.GetSimSupply().GetMsgId())
 				// spのidがidListに入っているか
 				if sp.GetSimSupply().GetMsgId() == msgId {
 					//mu.Lock()
@@ -682,7 +701,7 @@ func (w *Waiter) WaitSp(msgId uint64, targets []uint64, timeout uint64) ([]*Supp
 						noIds = append(noIds, tgt)
 					}
 				}
-				log.Printf("Sync Error... ids %v, splen %v\n", noIds, len(w.SpMap[msgId]))
+				log.Printf("Sync Error... noids %v, msgId %v\n", noIds, msgId)
 				err = fmt.Errorf("Timeout Error")
 				wg.Done()
 				return
@@ -694,6 +713,7 @@ func (w *Waiter) WaitSp(msgId uint64, targets []uint64, timeout uint64) ([]*Supp
 }
 
 func (w *Waiter) SendSpToWait(sp *Supply) {
+	//log.Printf("getSP2 %v, %v\n", sp.GetSimSupply().GetSenderId(), sp.GetSimSupply().GetMsgId())
 	mu.Lock()
 	waitCh := w.WaitSpChMap[sp.GetSimSupply().GetMsgId()]
 	mu.Unlock()

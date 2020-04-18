@@ -200,15 +200,15 @@ func (apm *AgentProviderManager) CreateProvidersMap() {
 func supplyCallback1(clt *api.SMServiceClient, sp *api.Supply) {
 	switch sp.GetSimSupply().GetType() {
 	case api.SupplyType_READY_PROVIDER_RESPONSE:
-		time.Sleep(10 * time.Millisecond)
-		waiter.SendSpToWait(sp)
+		//time.Sleep(10 * time.Millisecond)
+		worker1api.SendSpToWait(sp)
 		fmt.Printf("ready provider response")
 
 	case api.SupplyType_GET_AGENT_RESPONSE:
 		//fmt.Printf("Get Sp from Worker1%v\n", sp)
 
-		time.Sleep(10 * time.Millisecond)
-		waiter.SendSpToWait(sp)
+		//time.Sleep(10 * time.Millisecond)
+		worker1api.SendSpToWait(sp)
 		/*msgId2 := sp.GetSimSupply().GetMsgId()
 		// send to worker1
 		msgId1 := apm.MsgIdMap[msgId2]
@@ -233,13 +233,13 @@ func demandCallback1(clt *api.SMServiceClient, dm *api.Demand) {
 		// workerへ登録
 		senderId := myProvider.Id
 		targets := []uint64{provider.GetId()}
-		msgId := worker1api.RegistProviderRequest(senderId, targets, myProvider)
-		waiter.WaitSp(msgId, targets, 1000)
+		worker1api.RegistProviderRequest(senderId, targets, myProvider)
+		//waiter.WaitSp(msgId, targets, 1000)
 
 		// response
 		targets = []uint64{dm.GetSimDemand().GetSenderId()}
 		senderId = myProvider.Id
-		msgId = dm.GetSimDemand().GetMsgId()
+		msgId := dm.GetSimDemand().GetMsgId()
 		worker1api.ReadyProviderResponse(senderId, targets, msgId)
 		logger.Info("Finish: Regist Provider from ready ")
 
@@ -320,8 +320,8 @@ func supplyCallback2(clt *api.SMServiceClient, sp *api.Supply) {
 	switch sp.GetSimSupply().GetType() {
 	case api.SupplyType_GET_AGENT_RESPONSE:
 		//fmt.Printf("Get Sp from Worker2%v\n", sp)
-		time.Sleep(10 * time.Millisecond)
-		waiter.SendSpToWait(sp)
+		//time.Sleep(10 * time.Millisecond)
+		worker2api.SendSpToWait(sp)
 		// send to worker1 agent-provider
 
 	case api.SupplyType_REGIST_PROVIDER_RESPONSE:
@@ -329,8 +329,8 @@ func supplyCallback2(clt *api.SMServiceClient, sp *api.Supply) {
 		fmt.Printf("regist provider to Worler2 Provider!\n")
 
 	case api.SupplyType_READY_PROVIDER_RESPONSE:
-		time.Sleep(10 * time.Millisecond)
-		waiter.SendSpToWait(sp)
+		//time.Sleep(10 * time.Millisecond)
+		worker2api.SendSpToWait(sp)
 		fmt.Printf("ready provider response")
 	}
 }
@@ -345,13 +345,13 @@ func demandCallback2(clt *api.SMServiceClient, dm *api.Demand) {
 		// workerへ登録
 		senderId := myProvider.Id
 		targets := []uint64{provider.GetId()}
-		msgId := worker2api.RegistProviderRequest(senderId, targets, myProvider)
-		waiter.WaitSp(msgId, targets, 1000)
+		worker2api.RegistProviderRequest(senderId, targets, myProvider)
+		//waiter.WaitSp(msgId, targets, 1000)
 
 		// response
 		targets = []uint64{dm.GetSimDemand().GetSenderId()}
 		senderId = myProvider.Id
-		msgId = dm.GetSimDemand().GetMsgId()
+		msgId := dm.GetSimDemand().GetMsgId()
 		worker2api.ReadyProviderResponse(senderId, targets, msgId)
 		logger.Info("Finish: Regist Provider from ready ")
 

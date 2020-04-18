@@ -122,6 +122,23 @@ func masterSupplyCallback(clt *api.SMServiceClient, sp *api.Supply) {
 func masterDemandCallback(clt *api.SMServiceClient, dm *api.Demand) {
 	senderId := myProvider.Id
 	switch dm.GetSimDemand().GetType() {
+	case api.DemandType_READY_PROVIDER_REQUEST:
+		provider := dm.GetSimDemand().GetReadyProviderRequest().GetProvider()
+		//pm.SetProviders(providers)
+
+		// workerへ登録
+		senderId := myProvider.Id
+		targets := []uint64{provider.GetId()}
+		masterapi.RegistProviderRequest(senderId, targets, myProvider)
+		//waiter.WaitSp(msgId, targets, 1000)
+
+		// response
+		targets = []uint64{dm.GetSimDemand().GetSenderId()}
+		senderId = myProvider.Id
+		msgId := dm.GetSimDemand().GetMsgId()
+		masterapi.ReadyProviderResponse(senderId, targets, msgId)
+		logger.Info("Finish: Regist Provider from ready ")
+
 	case api.DemandType_FORWARD_CLOCK_REQUEST:
 		fmt.Printf("get forwardClockRequest")
 		t1 := time.Now()
@@ -133,19 +150,19 @@ func masterDemandCallback(clt *api.SMServiceClient, dm *api.Demand) {
 		})
 
 		// init
-		msgId := workerapi.ForwardClockInitRequest(senderId, targets)
-		waiter.WaitSp(msgId, targets, 1000)
+		workerapi.ForwardClockInitRequest(senderId, targets)
+		//waiter.WaitSp(msgId, targets, 1000)
 
 		// forward
-		msgId = workerapi.ForwardClockRequest(senderId, targets)
-		waiter.WaitSp(msgId, targets, 1000)
+		workerapi.ForwardClockRequest(senderId, targets)
+		//waiter.WaitSp(msgId, targets, 1000)
 
 		t2 := time.Now()
 		duration := t2.Sub(t1).Milliseconds()
 		logger.Info("Duration: %v", duration)
 		// response to master
 		targets = []uint64{dm.GetSimDemand().GetSenderId()}
-		msgId = dm.GetSimDemand().GetMsgId()
+		msgId := dm.GetSimDemand().GetMsgId()
 		logger.Debug("Response to master pid %v, msgId%v\n", myProvider.Id, msgId)
 		masterapi.ForwardClockResponse(senderId, targets, msgId)
 
@@ -156,12 +173,12 @@ func masterDemandCallback(clt *api.SMServiceClient, dm *api.Demand) {
 		targets := pm.GetProviderIds([]simutil.IDType{
 			simutil.IDType_AGENT,
 		})
-		msgId := workerapi.SetAgentRequest(senderId, targets, agents)
-		waiter.WaitSp(msgId, targets, 1000)
+		workerapi.SetAgentRequest(senderId, targets, agents)
+		//waiter.WaitSp(msgId, targets, 1000)
 
 		// response to master
 		targets = []uint64{dm.GetSimDemand().GetSenderId()}
-		msgId = dm.GetSimDemand().GetMsgId()
+		msgId := dm.GetSimDemand().GetMsgId()
 		masterapi.SetAgentResponse(senderId, targets, msgId)
 	}
 }
@@ -177,28 +194,28 @@ func workerSupplyCallback(clt *api.SMServiceClient, sp *api.Supply) {
 	switch sp.GetSimSupply().GetType() {
 	case api.SupplyType_READY_PROVIDER_RESPONSE:
 		//logger.Info("get sp: %v\n", sp)
-		time.Sleep(10 * time.Millisecond)
-		waiter.SendSpToWait(sp)
+		//time.Sleep(10 * time.Millisecond)
+		//workerapi.SendSpToWait(sp)
 	case api.SupplyType_UPDATE_PROVIDERS_RESPONSE:
 		logger.Info("get sp: %v\n", sp)
-		time.Sleep(10 * time.Millisecond)
-		waiter.SendSpToWait(sp)
+		//time.Sleep(10 * time.Millisecond)
+		workerapi.SendSpToWait(sp)
 	case api.SupplyType_SET_CLOCK_RESPONSE:
 		//logger.Info("get sp: %v\n", sp)
-		time.Sleep(10 * time.Millisecond)
-		waiter.SendSpToWait(sp)
+		//time.Sleep(10 * time.Millisecond)
+		workerapi.SendSpToWait(sp)
 	case api.SupplyType_SET_AGENT_RESPONSE:
 		//logger.Info("get sp: %v\n", sp)
-		time.Sleep(10 * time.Millisecond)
-		waiter.SendSpToWait(sp)
+		//time.Sleep(10 * time.Millisecond)
+		workerapi.SendSpToWait(sp)
 	case api.SupplyType_FORWARD_CLOCK_RESPONSE:
 		//logger.Info("get sp: %v\n", sp)
-		time.Sleep(10 * time.Millisecond)
-		waiter.SendSpToWait(sp)
+		//time.Sleep(10 * time.Millisecond)
+		workerapi.SendSpToWait(sp)
 	case api.SupplyType_FORWARD_CLOCK_INIT_RESPONSE:
 		//logger.Info("get sp: %v\n", sp)
-		time.Sleep(10 * time.Millisecond)
-		waiter.SendSpToWait(sp)
+		//time.Sleep(10 * time.Millisecond)
+		workerapi.SendSpToWait(sp)
 	}
 }
 
@@ -226,9 +243,9 @@ func workerDemandCallback(clt *api.SMServiceClient, dm *api.Demand) {
 			simutil.IDType_VISUALIZATION,
 		})
 		providers := pm.GetProviders()
-		msgId = workerapi.UpdateProvidersRequest(senderId, targets, providers)
+		workerapi.UpdateProvidersRequest(senderId, targets, providers)
 		logger.Debug("Wait response from &v\n", targets)
-		waiter.WaitSp(msgId, targets, 1000)
+		// waiter.WaitSp(msgId, targets, 1000)
 		logger.Info("Update Providers! \n")
 
 	}
