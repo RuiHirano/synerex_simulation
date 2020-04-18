@@ -180,6 +180,17 @@ func masterDemandCallback(clt *api.SMServiceClient, dm *api.Demand) {
 		targets = []uint64{dm.GetSimDemand().GetSenderId()}
 		msgId := dm.GetSimDemand().GetMsgId()
 		masterapi.SetAgentResponse(senderId, targets, msgId)
+
+	case api.DemandType_UPDATE_PROVIDERS_REQUEST:
+		providers := dm.GetSimDemand().GetUpdateProvidersRequest().GetProviders()
+		//pm.SetProviders(providers)
+
+		// response
+		targets := []uint64{dm.GetSimDemand().GetSenderId()}
+		senderId := myProvider.Id
+		msgId := dm.GetSimDemand().GetMsgId()
+		masterapi.UpdateProvidersResponse(senderId, targets, msgId)
+		logger.Info("Finish: Update Workers num: %v\n", len(providers))
 	}
 }
 
@@ -197,7 +208,7 @@ func workerSupplyCallback(clt *api.SMServiceClient, sp *api.Supply) {
 		//time.Sleep(10 * time.Millisecond)
 		//workerapi.SendSpToWait(sp)
 	case api.SupplyType_UPDATE_PROVIDERS_RESPONSE:
-		logger.Info("get sp: %v\n", sp)
+		//logger.Info("get sp: %v\n", sp)
 		//time.Sleep(10 * time.Millisecond)
 		workerapi.SendSpToWait(sp)
 	case api.SupplyType_SET_CLOCK_RESPONSE:

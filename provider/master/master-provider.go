@@ -157,6 +157,10 @@ func supplyCallback(clt *api.SMServiceClient, sp *api.Supply) {
 		//logger.Info("get sp: %v\n", sp)
 		//time.Sleep(10 * time.Millisecond)
 		simapi.SendSpToWait(sp)
+	case api.SupplyType_UPDATE_PROVIDERS_RESPONSE:
+		//logger.Info("get sp: %v\n", sp)
+		//time.Sleep(10 * time.Millisecond)
+		simapi.SendSpToWait(sp)
 	}
 }
 
