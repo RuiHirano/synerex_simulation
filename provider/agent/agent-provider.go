@@ -152,7 +152,7 @@ func forwardClock() {
 	})
 
 	neighborAgents := []*api.Agent{}
-	/*if len(targets) != 0 {
+	if len(targets) != 0 {
 		senderId := myProvider.Id
 		sps, _ := simapi.GetAgentRequest(senderId, targets)
 		logger.Debug("3: targets %v\n", targets)
@@ -161,7 +161,7 @@ func forwardClock() {
 			agents := sp.GetSimSupply().GetGetAgentResponse().GetAgents()
 			neighborAgents = append(neighborAgents, agents...)
 		}
-	}*/
+	}
 
 	logger.Debug("4: エージェントを更新")
 	// [4. Update Agents]重複エリアのエージェントを更新する
@@ -271,16 +271,6 @@ func demandCallback(clt *api.SMServiceClient, dm *api.Demand) {
 			// Visプロバイダの場合
 			agents = agentsMessage.Get()
 		}
-
-		// 全てのプロバイダにmessageを送信し終えたらMessageを初期化する
-		/*agentsMessage.AddSenderId(senderId)
-		logger.Debug("mesIds: %v\n", append(neighborAreaIds, visIds...))
-		if agentsMessage.FinishSend(append(neighborAreaIds, visIds...)) {
-			logger.Debug("init Message")
-			mu.Lock()
-			agentsMessage = NewMessage()
-			mu.Unlock()
-		}*/
 
 		// response
 		pId := myProvider.Id
