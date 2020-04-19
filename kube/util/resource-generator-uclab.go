@@ -153,9 +153,9 @@ func NewWorker(area Area) Resource {
 		Spec: Spec{
 			Containers: []Container{
 				{
-					Name:            "nodeid-server",
-					Image:           "ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/nodeid-server:" + *version,
-					ImagePullPolicy: "Never",
+					Name:  "nodeid-server",
+					Image: "ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/nodeid-server:" + *version,
+					//ImagePullPolicy: "Never",
 					Env: []Env{
 						{
 							Name:  "NODEID_SERVER",
@@ -165,9 +165,9 @@ func NewWorker(area Area) Resource {
 					Ports: []Port{{ContainerPort: 9000}},
 				},
 				{
-					Name:            "synerex-server",
-					Image:           "ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/synerex-server:" + *version,
-					ImagePullPolicy: "Never",
+					Name:  "synerex-server",
+					Image: "ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/synerex-server:" + *version,
+					//ImagePullPolicy: "Never",
 					Env: []Env{
 						{
 							Name:  "NODEID_SERVER",
@@ -185,9 +185,9 @@ func NewWorker(area Area) Resource {
 					Ports: []Port{{ContainerPort: 10000}},
 				},
 				{
-					Name:            "worker-provider",
-					Image:           "ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/worker-provider:" + *version,
-					ImagePullPolicy: "Never",
+					Name:  "worker-provider",
+					Image: "ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/worker-provider:" + *version,
+					//ImagePullPolicy: "Never",
 					Env: []Env{
 						{
 							Name:  "NODEID_SERVER",
@@ -217,9 +217,9 @@ func NewWorker(area Area) Resource {
 					Ports: []Port{{ContainerPort: 9980}},
 				},
 				{
-					Name:            "agent-provider",
-					Image:           "ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/agent-provider:" + *version,
-					ImagePullPolicy: "Never",
+					Name:  "agent-provider",
+					Image: "ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/agent-provider:" + *version,
+					//ImagePullPolicy: "Never",
 					Env: []Env{
 						{
 							Name:  "NODEID_SERVER",
@@ -240,9 +240,9 @@ func NewWorker(area Area) Resource {
 					},
 				},
 				{
-					Name:            "visualization-provider",
-					Image:           "ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/visualization-provider:" + *version,
-					ImagePullPolicy: "Never",
+					Name:  "visualization-provider",
+					Image: "ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/visualization-provider:" + *version,
+					//ImagePullPolicy: "Never",
 					Env: []Env{
 						{
 							Name:  "NODEID_SERVER",
@@ -309,9 +309,9 @@ func NewMaster() Resource {
 		Spec: Spec{
 			Containers: []Container{
 				{
-					Name:            "nodeid-server",
-					Image:           "ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/nodeid-server:" + *version,
-					ImagePullPolicy: "Never",
+					Name:  "nodeid-server",
+					Image: "ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/nodeid-server:" + *version,
+					//ImagePullPolicy: "Never",
 					Env: []Env{
 						{
 							Name:  "NODEID_SERVER",
@@ -321,9 +321,9 @@ func NewMaster() Resource {
 					Ports: []Port{{ContainerPort: 9000}},
 				},
 				{
-					Name:            "synerex-server",
-					Image:           "ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/synerex-server:" + *version,
-					ImagePullPolicy: "Never",
+					Name:  "synerex-server",
+					Image: "ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/synerex-server:" + *version,
+					//ImagePullPolicy: "Never",
 					Env: []Env{
 						{
 							Name:  "NODEID_SERVER",
@@ -337,9 +337,9 @@ func NewMaster() Resource {
 					Ports: []Port{{ContainerPort: 10000}},
 				},
 				{
-					Name:            "master-provider",
-					Image:           "ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/master-provider:" + *version,
-					ImagePullPolicy: "Never",
+					Name:  "master-provider",
+					Image: "ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/master-provider:" + *version,
+					//ImagePullPolicy: "Never",
 					Env: []Env{
 						{
 							Name:  "NODEID_SERVER",
@@ -393,11 +393,11 @@ func NewSimulator() Resource {
 		Spec: Spec{
 			Containers: []Container{
 				{
-					Name:            "simulator",
-					Image:           "ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/simulator:" + *version,
-					ImagePullPolicy: "Never",
-					Stdin:           true,
-					Tty:             true,
+					Name:  "simulator",
+					Image: "ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/simulator:" + *version,
+					//ImagePullPolicy: "Never",
+					Stdin: true,
+					Tty:   true,
 					Env: []Env{
 						{
 							Name:  "MASTER_ADDRESS",
@@ -427,9 +427,9 @@ func NewGateway(neiPair []int) Resource {
 		Spec: Spec{
 			Containers: []Container{
 				{
-					Name:            "gateway-provider",
-					Image:           "ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/gateway-provider:" + *version,
-					ImagePullPolicy: "Never",
+					Name:  "gateway-provider",
+					Image: "ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/gateway-provider:" + *version,
+					//ImagePullPolicy: "Never",
 					Env: []Env{
 						{
 							Name:  "WORKER_SYNEREX_SERVER1",
@@ -494,7 +494,7 @@ func convertAreaToJson(area Area) string {
 func main() {
 
 	option := Option{
-		FileName: "higashiyama-4-test.yaml",
+		FileName: "higashiyama-4.yaml",
 		AreaCoords: []Coord{
 			{Longitude: 136.971626, Latitude: 35.161499},
 			{Longitude: 136.971626, Latitude: 35.152210},
