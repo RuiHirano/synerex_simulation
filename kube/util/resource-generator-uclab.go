@@ -494,7 +494,7 @@ func convertAreaToJson(area Area) string {
 func main() {
 
 	option := Option{
-		FileName: "higashiyama-4.yaml",
+		FileName: "higashiyama-4-uclab.yaml",
 		AreaCoords: []Coord{
 			{Longitude: 136.971626, Latitude: 35.161499},
 			{Longitude: 136.971626, Latitude: 35.152210},
