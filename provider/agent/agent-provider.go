@@ -190,7 +190,7 @@ func forwardClock() {
 func demandCallback(clt *api.SMServiceClient, dm *api.Demand) {
 	switch dm.GetSimDemand().GetType() {
 	case api.DemandType_READY_PROVIDER_REQUEST:
-		provider := dm.GetSimDemand().GetReadyProviderRequest().GetProvider()
+		/*provider := dm.GetSimDemand().GetReadyProviderRequest().GetProvider()
 		//pm.SetProviders(providers)
 
 		// workerへ登録
@@ -204,7 +204,7 @@ func demandCallback(clt *api.SMServiceClient, dm *api.Demand) {
 		senderId = myProvider.Id
 		msgId := dm.GetSimDemand().GetMsgId()
 		simapi.ReadyProviderResponse(senderId, targets, msgId)
-		logger.Info("Finish: Regist Provider from ready ")
+		logger.Info("Finish: Regist Provider from ready ")*/
 
 	case api.DemandType_UPDATE_PROVIDERS_REQUEST:
 		providers := dm.GetSimDemand().GetUpdateProvidersRequest().GetProviders()
@@ -262,7 +262,7 @@ func demandCallback(clt *api.SMServiceClient, dm *api.Demand) {
 			simutil.IDType_SAME,
 		})
 		neighborAreaIds := pm.GetProviderIds([]simutil.IDType{
-			simutil.IDType_NEIGHBOR,
+			//simutil.IDType_NEIGHBOR,
 			simutil.IDType_GATEWAY,
 		})
 		visIds := pm.GetProviderIds([]simutil.IDType{
@@ -275,6 +275,7 @@ func demandCallback(clt *api.SMServiceClient, dm *api.Demand) {
 			agents = sim.Agents
 		} else if simutil.Contains(neighborAreaIds, senderId) {
 			// 隣接エリアのエージェントプロバイダの場合
+			logger.Debug("Get Agent Request from \n%v\n", dm)
 			agents = agentsMessage.Get()
 		} else if simutil.Contains(visIds, senderId) {
 			// Visプロバイダの場合
@@ -293,13 +294,11 @@ func demandCallback(clt *api.SMServiceClient, dm *api.Demand) {
 // callback for each Supply
 func supplyCallback(clt *api.SMServiceClient, sp *api.Supply) {
 	switch sp.GetSimSupply().GetType() {
-	case api.SupplyType_READY_PROVIDER_RESPONSE:
-		//time.Sleep(10 * time.Millisecond)
-		simapi.SendSpToWait(sp)
-		fmt.Printf("ready provider response")
 	case api.SupplyType_REGIST_PROVIDER_RESPONSE:
 		logger.Debug("resist provider response")
+		mu.Lock()
 		workerProvider = sp.GetSimSupply().GetRegistProviderResponse().GetProvider()
+		mu.Unlock()
 	case api.SupplyType_GET_AGENT_RESPONSE:
 		//time.Sleep(10 * time.Millisecond)
 		//logger.Debug("get agent response \n", sp)
@@ -353,6 +352,27 @@ func forward() {
 	}
 }*/
 
+func registToWorker() {
+	// workerへ登録
+	senderId := myProvider.Id
+	targets := make([]uint64, 0)
+	simapi.RegistProviderRequest(senderId, targets, myProvider)
+
+	go func() {
+		for {
+			if workerProvider != nil {
+				logger.Debug("Regist Success to Worker!")
+				return
+			} else {
+				logger.Debug("Couldn't Regist Worker...Retry...\n")
+				time.Sleep(2 * time.Second)
+				// workerへ登録
+				simapi.RegistProviderRequest(senderId, targets, myProvider)
+			}
+		}
+	}()
+}
+
 func main() {
 	logger.Info("StartUp Provider")
 
@@ -403,16 +423,22 @@ func main() {
 	//sim = NewSimulator(clockInfo, areaInfo, agentType)
 	sim = NewSimulator2(myArea, api.AgentType_PEDESTRIAN)
 
+	time.Sleep(5 * time.Second)
+
 	// WorkerAPI作成
 	simapi = api.NewSimAPI()
 	simapi.RegistClients(client, myProvider.Id, argJson) // channelごとのClientを作成
 	simapi.SubscribeAll(demandCallback, supplyCallback)  // ChannelにSubscribe
 
+	time.Sleep(5 * time.Second)
+
+	registToWorker()
+
 	// workerへ登録
-	logger.Debug("regist to worker")
+	/*logger.Debug("regist to worker")
 	senderId := myProvider.Id
 	targets := make([]uint64, 0)
-	simapi.RegistProviderRequest(senderId, targets, myProvider)
+	simapi.RegistProviderRequest(senderId, targets, myProvider)*/
 	//sps := waiter.WaitSp(msgId, targets, 1000)
 
 	// test

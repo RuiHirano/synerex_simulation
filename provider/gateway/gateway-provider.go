@@ -28,12 +28,16 @@ var (
 	providerName       string
 	//pm1                *simutil.ProviderManager
 	//pm2                *simutil.ProviderManager
-	apm        *AgentProviderManager
-	waiter     *api.Waiter
-	mu         sync.Mutex
-	myProvider *api.Provider
-	worker1api *api.SimAPI
-	worker2api *api.SimAPI
+	apm            *AgentProviderManager
+	waiter         *api.Waiter
+	mu             sync.Mutex
+	myProvider     *api.Provider
+	worker1        *api.Provider
+	worker2        *api.Provider
+	agentProvider1 *api.Provider
+	agentProvider2 *api.Provider
+	worker1api     *api.SimAPI
+	worker2api     *api.SimAPI
 	//scenarioProvider   *provider.Provider
 	//com1               *simutil.Communicator
 	//com2               *simutil.Communicator
@@ -227,7 +231,9 @@ func supplyCallback1(clt *api.SMServiceClient, sp *api.Supply) {
 		worker1api.GetAgentResponse(senderId, targets, msgId1, agents)*/
 
 	case api.SupplyType_REGIST_PROVIDER_RESPONSE:
-		//masterProvider = sp.GetSimSupply().GetRegistProviderResponse().GetProvider()
+		mu.Lock()
+		worker1 = sp.GetSimSupply().GetRegistProviderResponse().GetProvider()
+		mu.Unlock()
 		fmt.Printf("regist provider to Worler1 Provider!\n")
 	}
 }
@@ -238,7 +244,7 @@ func demandCallback1(clt *api.SMServiceClient, dm *api.Demand) {
 	switch dm.GetSimDemand().GetType() {
 	case api.DemandType_READY_PROVIDER_REQUEST:
 		logger.Debug("ready provider request\n")
-		provider := dm.GetSimDemand().GetReadyProviderRequest().GetProvider()
+		/*provider := dm.GetSimDemand().GetReadyProviderRequest().GetProvider()
 		//pm.SetProviders(providers)
 
 		// workerへ登録
@@ -253,24 +259,22 @@ func demandCallback1(clt *api.SMServiceClient, dm *api.Demand) {
 		senderId = myProvider.Id
 		msgId := dm.GetSimDemand().GetMsgId()
 		worker1api.ReadyProviderResponse(senderId, targets, msgId)
-		logger.Info("Finish: Regist Provider from ready ")
+		logger.Info("Finish: Regist Provider from ready ")*/
 
 	case api.DemandType_GET_AGENT_REQUEST:
 		logger.Debug("get agent request\n")
 		// 隣接エリアがない場合はそのまま返す
 		t1 := time.Now()
 
-		/*targets := []uint64{dm.GetSimDemand().GetSenderId()}
-		senderId := myProvider.Id
-		msgId := dm.GetSimDemand().GetMsgId()
-		agents := []*api.Agent{}
-		worker1api.GetAgentResponse(senderId, targets, msgId, agents)
-		logger.Debug("Finish: Get Agent Request Worker1 %v %v\n", targets, msgId)*/
 		agents := []*api.Agent{}
 		senderId := myProvider.Id
 		// worker2のagent-providerから取得
-		targets2 := []uint64{apm.Provider2.GetId()}
+		targets2 := []uint64{agentProvider2.Id}
 		sps, _ := worker2api.GetAgentRequest(senderId, targets2)
+
+		// test
+		//targets2 := []uint64{agentProvider1.Id}
+		//sps, _ := worker1api.GetAgentRequest(senderId, targets2)
 		//logger.Debug("Get Agent Request to Worker2 %v %v %v\n", targets2, msgId2, dm)
 		//sps, _ := waiter.WaitSp(msgId2, targets2, 1000)
 		for _, sp := range sps {
@@ -283,11 +287,6 @@ func demandCallback1(clt *api.SMServiceClient, dm *api.Demand) {
 		worker1api.GetAgentResponse(senderId, targets, msgId, agents)
 		logger.Debug("Finish: Get Agent Response to Worker1 %v %v %v\n", targets, msgId)
 
-		//		agents := []*api.Agent{}
-		//		senderId := myProvider.Id
-		//		targets := []uint64{dm.GetSimDemand().GetSenderId()}
-		//		msgId := dm.GetSimDemand().GetMsgId()
-		//		worker1api.GetAgentResponse(senderId, targets, msgId, agents)
 		t2 := time.Now()
 		duration := t2.Sub(t1).Milliseconds()
 		logger.Info("Duration: %v, PID: %v", duration, myProvider.Id)
@@ -296,8 +295,18 @@ func demandCallback1(clt *api.SMServiceClient, dm *api.Demand) {
 		logger.Debug("update providers request\n")
 		ps1 := dm.GetSimDemand().GetUpdateProvidersRequest().GetProviders()
 		//apm.SetProviders1(ps1)
-		apm.SetProvider1(ps1)
+		//apm.SetProvider1(ps1)
 		//pm.SetProviders(providers)
+
+		//test
+		for _, p := range ps1 {
+			if agentProvider1 == nil && p.GetType() == api.ProviderType_AGENT {
+				mu.Lock()
+				agentProvider1 = p
+				mu.Unlock()
+				logger.Debug("Set Provider1!\n")
+			}
+		}
 
 		// response
 		targets := []uint64{dm.GetSimDemand().GetSenderId()}
@@ -322,7 +331,9 @@ func supplyCallback2(clt *api.SMServiceClient, sp *api.Supply) {
 		// send to worker1 agent-provider
 
 	case api.SupplyType_REGIST_PROVIDER_RESPONSE:
-		//masterProvider = sp.GetSimSupply().GetRegistProviderResponse().GetProvider()
+		mu.Lock()
+		worker2 = sp.GetSimSupply().GetRegistProviderResponse().GetProvider()
+		mu.Unlock()
 		fmt.Printf("regist provider to Worler2 Provider!\n")
 
 	case api.SupplyType_READY_PROVIDER_RESPONSE:
@@ -337,7 +348,7 @@ func demandCallback2(clt *api.SMServiceClient, dm *api.Demand) {
 	switch dm.GetSimDemand().GetType() {
 	case api.DemandType_READY_PROVIDER_REQUEST:
 		logger.Debug("ready provider request\n")
-		provider := dm.GetSimDemand().GetReadyProviderRequest().GetProvider()
+		/*provider := dm.GetSimDemand().GetReadyProviderRequest().GetProvider()
 		//pm.SetProviders(providers)
 
 		// workerへ登録
@@ -351,7 +362,7 @@ func demandCallback2(clt *api.SMServiceClient, dm *api.Demand) {
 		senderId = myProvider.Id
 		msgId := dm.GetSimDemand().GetMsgId()
 		worker2api.ReadyProviderResponse(senderId, targets, msgId)
-		logger.Info("Finish: Regist Provider from ready ")
+		logger.Info("Finish: Regist Provider from ready ")*/
 
 	case api.DemandType_GET_AGENT_REQUEST:
 		logger.Debug("get agent request\n")
@@ -361,8 +372,12 @@ func demandCallback2(clt *api.SMServiceClient, dm *api.Demand) {
 		agents := []*api.Agent{}
 		senderId := myProvider.Id
 		// worker2のagent-providerから取得
-		targets1 := []uint64{apm.Provider1.GetId()}
+		targets1 := []uint64{agentProvider1.Id}
 		sps, _ := worker1api.GetAgentRequest(senderId, targets1)
+
+		// test
+		//targets1 := []uint64{agentProvider2.Id}
+		//sps, _ := worker2api.GetAgentRequest(senderId, targets1)
 		//logger.Debug("Get Agent Request to Worker1 %v %v %v\n", targets1, msgId1, dm)
 		//sps, _ := waiter.WaitSp(msgId1, targets1, 1000)
 		for _, sp := range sps {
@@ -374,12 +389,7 @@ func demandCallback2(clt *api.SMServiceClient, dm *api.Demand) {
 		msgId := dm.GetSimDemand().GetMsgId()
 		worker2api.GetAgentResponse(senderId, targets, msgId, agents)
 		logger.Debug("Finish: Get Agent Response to Worker2 %v %v\n", targets, msgId)
-		//隣接エリアが存在していたらそのAgentProviderへ送る
-		//		agents := []*api.Agent{}
-		//		senderId := myProvider.Id
-		//		targets := []uint64{dm.GetSimDemand().GetSenderId()}
-		//		msgId := dm.GetSimDemand().GetMsgId()
-		//		worker2api.GetAgentResponse(senderId, targets, msgId, agents)
+
 		t2 := time.Now()
 		duration := t2.Sub(t1).Milliseconds()
 		logger.Info("Duration: %v, PID: %v", duration, myProvider.Id)
@@ -389,8 +399,18 @@ func demandCallback2(clt *api.SMServiceClient, dm *api.Demand) {
 		logger.Debug("update providers request\n")
 		ps2 := dm.GetSimDemand().GetUpdateProvidersRequest().GetProviders()
 		//apm.SetProviders2(ps2)
-		apm.SetProvider2(ps2)
+		//apm.SetProvider2(ps2)
 		//pm.SetProviders(providers)
+
+		//test
+		for _, p := range ps2 {
+			if agentProvider2 == nil && p.GetType() == api.ProviderType_AGENT {
+				mu.Lock()
+				agentProvider2 = p
+				mu.Unlock()
+				logger.Debug("Set Provider2!\n")
+			}
+		}
 
 		// response
 		targets := []uint64{dm.GetSimDemand().GetSenderId()}
@@ -400,6 +420,42 @@ func demandCallback2(clt *api.SMServiceClient, dm *api.Demand) {
 		logger.Info("Finish: Update Providers2 num: %v\n", len(ps2))
 	}
 
+}
+
+func registToWorker() {
+	// workerへ登録
+	senderId := myProvider.Id
+	targets := make([]uint64, 0)
+	worker1api.RegistProviderRequest(senderId, targets, myProvider)
+	worker2api.RegistProviderRequest(senderId, targets, myProvider)
+
+	go func() {
+		for {
+			if worker2 != nil {
+				logger.Debug("Regist Success to Worker2!")
+				return
+			} else {
+				logger.Debug("Couldn't Regist Worker2...Retry...\n")
+				time.Sleep(2 * time.Second)
+				// workerへ登録
+				worker2api.RegistProviderRequest(senderId, targets, myProvider)
+			}
+		}
+	}()
+
+	go func() {
+		for {
+			if worker1 != nil {
+				logger.Debug("Regist Success to Worker1!")
+				return
+			} else {
+				logger.Debug("Couldn't Regist Worker1...Retry...\n")
+				time.Sleep(2 * time.Second)
+				// workerへ登録
+				worker1api.RegistProviderRequest(senderId, targets, myProvider)
+			}
+		}
+	}()
 }
 
 func main() {
@@ -434,31 +490,6 @@ func main() {
 		}
 	}
 
-	// Connect to Worker1 Synerex Server
-	var opts []grpc.DialOption
-	opts = append(opts, grpc.WithInsecure())
-	conn, err := grpc.Dial(workerSynerexAddr1, opts...)
-	if err != nil {
-		log.Fatalf("fail to dial: %v", err)
-	}
-	nodeapi1.RegisterDeferFunction(func() { conn.Close() })
-	client := api.NewSynerexClient(conn)
-	argJson := fmt.Sprintf("{Client:Gateway}")
-
-	// Communicator
-	worker1api = api.NewSimAPI()
-	worker1api.RegistClients(client, myProvider.Id, argJson)  // channelごとのClientを作成
-	worker1api.SubscribeAll(demandCallback1, supplyCallback1) // ChannelにSubscribe
-
-	// workerへ登録
-	senderId := myProvider.Id
-	targets := make([]uint64, 0)
-	worker1api.RegistProviderRequest(senderId, targets, myProvider)
-
-	//////////////////////////////////////////////////
-	//////////           worker2             ////////
-	////////////////////////////////////////////////
-
 	// Connect to Worker2 Node Server
 	nodeapi2 := api.NewNodeAPI()
 	for {
@@ -474,6 +505,21 @@ func main() {
 		}
 	}
 
+	// Connect to Worker1 Synerex Server
+	var opts []grpc.DialOption
+	opts = append(opts, grpc.WithInsecure())
+	conn, err := grpc.Dial(workerSynerexAddr1, opts...)
+	if err != nil {
+		log.Fatalf("fail to dial: %v", err)
+	}
+	nodeapi1.RegisterDeferFunction(func() { conn.Close() })
+	client := api.NewSynerexClient(conn)
+	argJson := fmt.Sprintf("{Client:Gateway}")
+
+	//////////////////////////////////////////////////
+	//////////           worker2             ////////
+	////////////////////////////////////////////////
+
 	// Connect to Worker2 Synerex Server
 	var opts2 []grpc.DialOption
 	opts2 = append(opts, grpc.WithInsecure())
@@ -485,15 +531,21 @@ func main() {
 	client2 := api.NewSynerexClient(conn2)
 	argJson2 := fmt.Sprintf("{Client:Gateway}")
 
+	time.Sleep(5 * time.Second)
+
+	// Communicator
+	worker1api = api.NewSimAPI()
+	worker1api.RegistClients(client, myProvider.Id, argJson)  // channelごとのClientを作成
+	worker1api.SubscribeAll(demandCallback1, supplyCallback1) // ChannelにSubscribe
+
 	// Communicator
 	worker2api = api.NewSimAPI()
 	worker2api.RegistClients(client2, myProvider.Id, argJson2) // channelごとのClientを作成
 	worker2api.SubscribeAll(demandCallback2, supplyCallback2)  // ChannelにSubscribe
 
-	// workerへ登録
-	senderId = myProvider.Id
-	targets = make([]uint64, 0)
-	worker2api.RegistProviderRequest(senderId, targets, myProvider)
+	time.Sleep(5 * time.Second)
+
+	registToWorker()
 
 	wg := sync.WaitGroup{}
 	wg.Add(1)

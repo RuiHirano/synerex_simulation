@@ -44,6 +44,11 @@ func NewProviderManager(myProvider *api.Provider) *ProviderManager {
 }
 
 func (pm *ProviderManager) AddProvider(p *api.Provider) {
+	for _, pv := range pm.Providers {
+		if pv.Id == p.Id {
+			return
+		}
+	}
 	mu.Lock()
 	pm.Providers = append(pm.Providers, p)
 	pm.CreateProvidersMap()

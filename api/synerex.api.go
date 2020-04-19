@@ -12,6 +12,8 @@ import (
 	"os"
 	"os/signal"
 
+	"github.com/google/uuid"
+
 	"github.com/bwmarrin/snowflake"
 	"github.com/golang/protobuf/ptypes"
 	"github.com/synerex/synerex_alpha/nodeapi"
@@ -344,8 +346,9 @@ type SMServiceClient struct {
 
 // NewSMServiceClient Creates wrapper structre SMServiceClient from SynerexClient
 func NewSMServiceClient(clt SynerexClient, mtype ChannelType, providerID uint64, argJson string) *SMServiceClient {
+	uid, _ := uuid.NewRandom()
 	s := &SMServiceClient{
-		ClientID:   IDType(node.Generate()),
+		ClientID:   IDType(uid.ID()),
 		ProviderID: providerID,
 		MType:      mtype,
 		Client:     clt,
@@ -356,7 +359,8 @@ func NewSMServiceClient(clt SynerexClient, mtype ChannelType, providerID uint64,
 
 // GenerateIntID for generate uniquie ID
 func GenerateIntID() uint64 {
-	return uint64(node.Generate())
+	uid, _ := uuid.NewRandom()
+	return uint64(uid.ID())
 }
 
 func (clt SMServiceClient) getChannel() *Channel {
@@ -478,7 +482,7 @@ func (clt *SMServiceClient) SubscribeSupply(ctx context.Context, spcb func(*SMSe
 			if err == io.EOF {
 				log.Print("End Supply subscribe OK")
 			} else {
-				log.Printf("SMServiceClient SubscribeSupply error\n")
+				log.Printf("SMServiceClient SubscribeSupply error %v\n", err)
 			}
 			break
 		}
@@ -509,7 +513,7 @@ func (clt *SMServiceClient) SubscribeDemand(ctx context.Context, dmcb func(*SMSe
 			if err == io.EOF {
 				log.Print("End Demand subscribe OK")
 			} else {
-				log.Printf("SMServiceClient SubscribeDemand error\n")
+				log.Printf("SMServiceClient SubscribeDemand error %v\n", err)
 			}
 			break
 		}

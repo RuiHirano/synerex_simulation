@@ -386,6 +386,8 @@ func main() {
 	client := api.NewSynerexClient(conn)
 	argJson := fmt.Sprintf("{Client:Master}")
 
+	time.Sleep(3 * time.Second)
+
 	// api
 	fmt.Printf("client: %v\n", client)
 	simapi = api.NewSimAPI()
@@ -394,9 +396,9 @@ func main() {
 	//logger.Info("Connected Synerex Server!\n")
 
 	// ready provider request
-	senderId := myProvider.Id
-	targets := make([]uint64, 0)
-	simapi.ReadyProviderRequest(senderId, targets, myProvider)
+	//senderId := myProvider.Id
+	//targets := make([]uint64, 0)
+	//simapi.ReadyProviderRequest(senderId, targets, myProvider)
 
 	wg := sync.WaitGroup{}
 	wg.Add(1)
