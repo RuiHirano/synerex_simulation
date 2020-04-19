@@ -690,18 +690,22 @@ func (w *Waiter) WaitSp(msgId uint64, targets []uint64, timeout uint64) ([]*Supp
 				mu.Unlock()
 			case <-time.After(time.Duration(timeout) * time.Millisecond):
 				noIds := []uint64{}
+				noSps := []*Supply{} // test
+				var sp2 *Supply
 				for _, tgt := range targets {
 					isExist := false
 					for _, sp := range w.SpMap[msgId] {
+						sp2 = sp
 						if tgt == sp.GetSimSupply().GetSenderId() {
 							isExist = true
 						}
 					}
 					if isExist == false {
 						noIds = append(noIds, tgt)
+						noSps = append(noSps, sp2)
 					}
 				}
-				log.Printf("Sync Error... noids %v, msgId %v\n", noIds, msgId)
+				log.Printf("Sync Error... noids %v, msgId %v \n%v\n\n", noIds, msgId, noSps)
 				err = fmt.Errorf("Timeout Error")
 				wg.Done()
 				return

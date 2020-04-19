@@ -30,6 +30,7 @@ const MessageChannelBufferSize = 20
 var (
 	synerexAddr string
 	nodeIdAddr  string
+	serverName  string
 	logger      *simutil.Logger
 )
 
@@ -53,6 +54,11 @@ func init() {
 	nodeIdAddr = os.Getenv("NODEID_SERVER")
 	if nodeIdAddr == "" {
 		nodeIdAddr = "127.0.0.1:9000"
+	}
+
+	serverName = os.Getenv("SERVER_NAME")
+	if serverName == "" {
+		serverName = "SynerexServer"
 	}
 
 	logger = simutil.NewLogger()
@@ -790,7 +796,7 @@ func prepareGrpcServer(s *synerexServerInfo, opts ...grpc.ServerOption) *grpc.Se
 func main() {
 	flag.Parse()
 	for {
-		err := api.RegisterNodeName(nodeIdAddr, "SynerexServer", true)
+		err := api.RegisterNodeName(nodeIdAddr, serverName, true)
 		if err == nil {
 			logger.Info("connected NodeID server!")
 			go api.HandleSigInt()

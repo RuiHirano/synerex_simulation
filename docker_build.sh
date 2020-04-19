@@ -10,4 +10,3 @@ docker image build -t synerex-simulation/gateway-provider:latest -f provider/gat
 docker image build -t synerex-simulation/simulator:latest -f cli/Dockerfile .
 
 docker image build -t synerex-simulation/pod-manager:latest -f provider/pod-manager/Dockerfile .
-

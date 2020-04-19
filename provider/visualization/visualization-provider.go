@@ -28,6 +28,7 @@ var (
 	synerexAddr    string
 	nodeIdAddr     string
 	visAddr        string
+	providerName   string
 	myProvider     *api.Provider
 	workerProvider *api.Provider
 	pm             *simutil.ProviderManager
@@ -53,6 +54,11 @@ func init() {
 	visAddr = os.Getenv("VIS_ADDRESS")
 	if visAddr == "" {
 		visAddr = "127.0.0.1:9500"
+	}
+
+	providerName = os.Getenv("PROVIDER_NAME")
+	if providerName == "" {
+		providerName = "VisProvider"
 	}
 
 	waiter = api.NewWaiter()
@@ -198,7 +204,7 @@ func forwardClock(dm *api.Demand) {
 
 	t2 := time.Now()
 	duration := t2.Sub(t1).Milliseconds()
-	logger.Info("Duration: %v", duration)
+	logger.Info("Duration: %v, PID: %v", duration, myProvider.Id)
 }
 
 // callback for each Supply
@@ -319,14 +325,14 @@ func main() {
 	uid, _ := uuid.NewRandom()
 	myProvider = &api.Provider{
 		Id:   uint64(uid.ID()),
-		Name: "VisualizationProvider",
+		Name: providerName,
 		Type: api.ProviderType_VISUALIZATION,
 	}
 	pm = simutil.NewProviderManager(myProvider)
 
 	// Connect to Node Server
 	for {
-		err := api.RegisterNodeName(nodeIdAddr, "VisualizationProvider", false)
+		err := api.RegisterNodeName(nodeIdAddr, providerName, false)
 		if err == nil {
 			logger.Info("connected NodeID server!")
 			go api.HandleSigInt()

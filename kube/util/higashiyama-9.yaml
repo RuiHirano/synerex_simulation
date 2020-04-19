@@ -144,6 +144,8 @@ spec:
       value: :9000
     - name: SYNEREX_SERVER
       value: :10000
+    - name: SERVER_NAME
+      value: SynerexServer11
     ports:
     - containerPort: 10000
   - name: worker-provider
@@ -160,6 +162,8 @@ spec:
       value: master:600
     - name: PORT
       value: "9980"
+    - name: PROVIDER_NAME
+      value: WorkerProvider11
     ports:
     - containerPort: 9980
   - name: agent-provider
@@ -177,6 +181,8 @@ spec:
         "control_area": [{"latitude":35.15530633333333, "longitude":136.971626},{"latitude":35.15221,
         "longitude":136.971626},{"latitude":35.15221, "longitude":136.97754366666666},{"latitude":35.15530633333333,
         "longitude":136.97754366666666}]}'
+    - name: PROVIDER_NAME
+      value: AgentProvider11
   - name: visualization-provider
     image: synerex-simulation/visualization-provider:latest
     imagePullPolicy: Never
@@ -187,6 +193,8 @@ spec:
       value: :10000
     - name: VIS_ADDRESS
       value: :9500
+    - name: PROVIDER_NAME
+      value: VisProvider11
 
 ---
 apiVersion: v1
@@ -243,6 +251,8 @@ spec:
       value: :9000
     - name: SYNEREX_SERVER
       value: :10000
+    - name: SERVER_NAME
+      value: SynerexServer12
     ports:
     - containerPort: 10000
   - name: worker-provider
@@ -259,6 +269,8 @@ spec:
       value: master:600
     - name: PORT
       value: "9980"
+    - name: PROVIDER_NAME
+      value: WorkerProvider12
     ports:
     - containerPort: 9980
   - name: agent-provider
@@ -276,6 +288,8 @@ spec:
         "control_area": [{"latitude":35.15840266666667, "longitude":136.971626},{"latitude":35.15530633333333,
         "longitude":136.971626},{"latitude":35.15530633333333, "longitude":136.97754366666666},{"latitude":35.15840266666667,
         "longitude":136.97754366666666}]}'
+    - name: PROVIDER_NAME
+      value: AgentProvider12
   - name: visualization-provider
     image: synerex-simulation/visualization-provider:latest
     imagePullPolicy: Never
@@ -286,6 +300,8 @@ spec:
       value: :10000
     - name: VIS_ADDRESS
       value: :9500
+    - name: PROVIDER_NAME
+      value: VisProvider12
 
 ---
 apiVersion: v1
@@ -342,6 +358,8 @@ spec:
       value: :9000
     - name: SYNEREX_SERVER
       value: :10000
+    - name: SERVER_NAME
+      value: SynerexServer13
     ports:
     - containerPort: 10000
   - name: worker-provider
@@ -358,6 +376,8 @@ spec:
       value: master:600
     - name: PORT
       value: "9980"
+    - name: PROVIDER_NAME
+      value: WorkerProvider13
     ports:
     - containerPort: 9980
   - name: agent-provider
@@ -375,6 +395,8 @@ spec:
         "control_area": [{"latitude":35.161499, "longitude":136.971626},{"latitude":35.15840266666667,
         "longitude":136.971626},{"latitude":35.15840266666667, "longitude":136.97754366666666},{"latitude":35.161499,
         "longitude":136.97754366666666}]}'
+    - name: PROVIDER_NAME
+      value: AgentProvider13
   - name: visualization-provider
     image: synerex-simulation/visualization-provider:latest
     imagePullPolicy: Never
@@ -385,6 +407,8 @@ spec:
       value: :10000
     - name: VIS_ADDRESS
       value: :9500
+    - name: PROVIDER_NAME
+      value: VisProvider13
 
 ---
 apiVersion: v1
@@ -441,6 +465,8 @@ spec:
       value: :9000
     - name: SYNEREX_SERVER
       value: :10000
+    - name: SERVER_NAME
+      value: SynerexServer21
     ports:
     - containerPort: 10000
   - name: worker-provider
@@ -457,6 +483,8 @@ spec:
       value: master:600
     - name: PORT
       value: "9980"
+    - name: PROVIDER_NAME
+      value: WorkerProvider21
     ports:
     - containerPort: 9980
   - name: agent-provider
@@ -474,6 +502,8 @@ spec:
         "control_area": [{"latitude":35.15530633333333, "longitude":136.97754366666666},{"latitude":35.15221,
         "longitude":136.97754366666666},{"latitude":35.15221, "longitude":136.98346133333334},{"latitude":35.15530633333333,
         "longitude":136.98346133333334}]}'
+    - name: PROVIDER_NAME
+      value: AgentProvider21
   - name: visualization-provider
     image: synerex-simulation/visualization-provider:latest
     imagePullPolicy: Never
@@ -484,6 +514,8 @@ spec:
       value: :10000
     - name: VIS_ADDRESS
       value: :9500
+    - name: PROVIDER_NAME
+      value: VisProvider21
 
 ---
 apiVersion: v1
@@ -540,6 +572,8 @@ spec:
       value: :9000
     - name: SYNEREX_SERVER
       value: :10000
+    - name: SERVER_NAME
+      value: SynerexServer22
     ports:
     - containerPort: 10000
   - name: worker-provider
@@ -556,6 +590,8 @@ spec:
       value: master:600
     - name: PORT
       value: "9980"
+    - name: PROVIDER_NAME
+      value: WorkerProvider22
     ports:
     - containerPort: 9980
   - name: agent-provider
@@ -573,6 +609,8 @@ spec:
         "control_area": [{"latitude":35.15840266666667, "longitude":136.97754366666666},{"latitude":35.15530633333333,
         "longitude":136.97754366666666},{"latitude":35.15530633333333, "longitude":136.98346133333334},{"latitude":35.15840266666667,
         "longitude":136.98346133333334}]}'
+    - name: PROVIDER_NAME
+      value: AgentProvider22
   - name: visualization-provider
     image: synerex-simulation/visualization-provider:latest
     imagePullPolicy: Never
@@ -583,6 +621,8 @@ spec:
       value: :10000
     - name: VIS_ADDRESS
       value: :9500
+    - name: PROVIDER_NAME
+      value: VisProvider22
 
 ---
 apiVersion: v1
@@ -639,6 +679,8 @@ spec:
       value: :9000
     - name: SYNEREX_SERVER
       value: :10000
+    - name: SERVER_NAME
+      value: SynerexServer23
     ports:
     - containerPort: 10000
   - name: worker-provider
@@ -655,6 +697,8 @@ spec:
       value: master:600
     - name: PORT
       value: "9980"
+    - name: PROVIDER_NAME
+      value: WorkerProvider23
     ports:
     - containerPort: 9980
   - name: agent-provider
@@ -672,6 +716,8 @@ spec:
         "control_area": [{"latitude":35.161499, "longitude":136.97754366666666},{"latitude":35.15840266666667,
         "longitude":136.97754366666666},{"latitude":35.15840266666667, "longitude":136.98346133333334},{"latitude":35.161499,
         "longitude":136.98346133333334}]}'
+    - name: PROVIDER_NAME
+      value: AgentProvider23
   - name: visualization-provider
     image: synerex-simulation/visualization-provider:latest
     imagePullPolicy: Never
@@ -682,6 +728,8 @@ spec:
       value: :10000
     - name: VIS_ADDRESS
       value: :9500
+    - name: PROVIDER_NAME
+      value: VisProvider23
 
 ---
 apiVersion: v1
@@ -738,6 +786,8 @@ spec:
       value: :9000
     - name: SYNEREX_SERVER
       value: :10000
+    - name: SERVER_NAME
+      value: SynerexServer31
     ports:
     - containerPort: 10000
   - name: worker-provider
@@ -754,6 +804,8 @@ spec:
       value: master:600
     - name: PORT
       value: "9980"
+    - name: PROVIDER_NAME
+      value: WorkerProvider31
     ports:
     - containerPort: 9980
   - name: agent-provider
@@ -771,6 +823,8 @@ spec:
         "control_area": [{"latitude":35.15530633333333, "longitude":136.98346133333334},{"latitude":35.15221,
         "longitude":136.98346133333334},{"latitude":35.15221, "longitude":136.989379},{"latitude":35.15530633333333,
         "longitude":136.989379}]}'
+    - name: PROVIDER_NAME
+      value: AgentProvider31
   - name: visualization-provider
     image: synerex-simulation/visualization-provider:latest
     imagePullPolicy: Never
@@ -781,6 +835,8 @@ spec:
       value: :10000
     - name: VIS_ADDRESS
       value: :9500
+    - name: PROVIDER_NAME
+      value: VisProvider31
 
 ---
 apiVersion: v1
@@ -837,6 +893,8 @@ spec:
       value: :9000
     - name: SYNEREX_SERVER
       value: :10000
+    - name: SERVER_NAME
+      value: SynerexServer32
     ports:
     - containerPort: 10000
   - name: worker-provider
@@ -853,6 +911,8 @@ spec:
       value: master:600
     - name: PORT
       value: "9980"
+    - name: PROVIDER_NAME
+      value: WorkerProvider32
     ports:
     - containerPort: 9980
   - name: agent-provider
@@ -870,6 +930,8 @@ spec:
         "control_area": [{"latitude":35.15840266666667, "longitude":136.98346133333334},{"latitude":35.15530633333333,
         "longitude":136.98346133333334},{"latitude":35.15530633333333, "longitude":136.989379},{"latitude":35.15840266666667,
         "longitude":136.989379}]}'
+    - name: PROVIDER_NAME
+      value: AgentProvider32
   - name: visualization-provider
     image: synerex-simulation/visualization-provider:latest
     imagePullPolicy: Never
@@ -880,6 +942,8 @@ spec:
       value: :10000
     - name: VIS_ADDRESS
       value: :9500
+    - name: PROVIDER_NAME
+      value: VisProvider32
 
 ---
 apiVersion: v1
@@ -936,6 +1000,8 @@ spec:
       value: :9000
     - name: SYNEREX_SERVER
       value: :10000
+    - name: SERVER_NAME
+      value: SynerexServer33
     ports:
     - containerPort: 10000
   - name: worker-provider
@@ -952,6 +1018,8 @@ spec:
       value: master:600
     - name: PORT
       value: "9980"
+    - name: PROVIDER_NAME
+      value: WorkerProvider33
     ports:
     - containerPort: 9980
   - name: agent-provider
@@ -969,6 +1037,8 @@ spec:
         "control_area": [{"latitude":35.161499, "longitude":136.98346133333334},{"latitude":35.15840266666667,
         "longitude":136.98346133333334},{"latitude":35.15840266666667, "longitude":136.989379},{"latitude":35.161499,
         "longitude":136.989379}]}'
+    - name: PROVIDER_NAME
+      value: AgentProvider33
   - name: visualization-provider
     image: synerex-simulation/visualization-provider:latest
     imagePullPolicy: Never
@@ -979,6 +1049,8 @@ spec:
       value: :10000
     - name: VIS_ADDRESS
       value: :9500
+    - name: PROVIDER_NAME
+      value: VisProvider33
 
 ---
 apiVersion: v1
@@ -1001,6 +1073,8 @@ spec:
       value: worker21:700
     - name: WORKER_NODEID_SERVER2
       value: worker21:600
+    - name: PROVIDER_NAME
+      value: GatewayProvider1121
     ports:
     - containerPort: 9980
 
@@ -1025,6 +1099,8 @@ spec:
       value: worker12:700
     - name: WORKER_NODEID_SERVER2
       value: worker12:600
+    - name: PROVIDER_NAME
+      value: GatewayProvider1112
     ports:
     - containerPort: 9980
 
@@ -1049,6 +1125,8 @@ spec:
       value: worker22:700
     - name: WORKER_NODEID_SERVER2
       value: worker22:600
+    - name: PROVIDER_NAME
+      value: GatewayProvider1222
     ports:
     - containerPort: 9980
 
@@ -1073,6 +1151,8 @@ spec:
       value: worker13:700
     - name: WORKER_NODEID_SERVER2
       value: worker13:600
+    - name: PROVIDER_NAME
+      value: GatewayProvider1213
     ports:
     - containerPort: 9980
 
@@ -1097,6 +1177,8 @@ spec:
       value: worker23:700
     - name: WORKER_NODEID_SERVER2
       value: worker23:600
+    - name: PROVIDER_NAME
+      value: GatewayProvider1323
     ports:
     - containerPort: 9980
 
@@ -1121,6 +1203,8 @@ spec:
       value: worker31:700
     - name: WORKER_NODEID_SERVER2
       value: worker31:600
+    - name: PROVIDER_NAME
+      value: GatewayProvider2131
     ports:
     - containerPort: 9980
 
@@ -1145,6 +1229,8 @@ spec:
       value: worker22:700
     - name: WORKER_NODEID_SERVER2
       value: worker22:600
+    - name: PROVIDER_NAME
+      value: GatewayProvider2122
     ports:
     - containerPort: 9980
 
@@ -1169,6 +1255,8 @@ spec:
       value: worker32:700
     - name: WORKER_NODEID_SERVER2
       value: worker32:600
+    - name: PROVIDER_NAME
+      value: GatewayProvider2232
     ports:
     - containerPort: 9980
 
@@ -1193,6 +1281,8 @@ spec:
       value: worker23:700
     - name: WORKER_NODEID_SERVER2
       value: worker23:600
+    - name: PROVIDER_NAME
+      value: GatewayProvider2223
     ports:
     - containerPort: 9980
 
@@ -1217,6 +1307,8 @@ spec:
       value: worker33:700
     - name: WORKER_NODEID_SERVER2
       value: worker33:600
+    - name: PROVIDER_NAME
+      value: GatewayProvider2333
     ports:
     - containerPort: 9980
 
@@ -1241,6 +1333,8 @@ spec:
       value: worker32:700
     - name: WORKER_NODEID_SERVER2
       value: worker32:600
+    - name: PROVIDER_NAME
+      value: GatewayProvider3132
     ports:
     - containerPort: 9980
 
@@ -1265,6 +1359,8 @@ spec:
       value: worker33:700
     - name: WORKER_NODEID_SERVER2
       value: worker33:600
+    - name: PROVIDER_NAME
+      value: GatewayProvider3233
     ports:
     - containerPort: 9980
 

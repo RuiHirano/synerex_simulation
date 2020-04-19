@@ -25,6 +25,7 @@ var (
 	workerNodeIdAddr  string
 	masterNodeIdAddr  string
 	masterSynerexAddr string
+	providerName      string
 	mu                sync.Mutex
 	masterapi         *api.SimAPI
 	workerapi         *api.SimAPI
@@ -61,6 +62,11 @@ func init() {
 	if masterNodeIdAddr == "" {
 		masterNodeIdAddr = "127.0.0.1:9000"
 	}
+	providerName = os.Getenv("PROVIDER_NAME")
+	if providerName == "" {
+		providerName = "WorkerProvider"
+	}
+
 	areaJson := os.Getenv("AREA")
 	areaJson = "[{\"latitude\": 3, \"longitude\": 4},{\"latitude\": 3, \"longitude\": 4},{\"latitude\": 3, \"longitude\": 4},{\"latitude\": 3, \"longitude\": 4}]"
 	bytes := []byte(areaJson)
@@ -159,7 +165,7 @@ func masterDemandCallback(clt *api.SMServiceClient, dm *api.Demand) {
 
 		t2 := time.Now()
 		duration := t2.Sub(t1).Milliseconds()
-		logger.Info("Duration: %v", duration)
+		logger.Info("Duration: %v, PID: %v", duration, myProvider.Id)
 		// response to master
 		targets = []uint64{dm.GetSimDemand().GetSenderId()}
 		msgId := dm.GetSimDemand().GetMsgId()
@@ -328,19 +334,20 @@ func main() {
 	uid, _ := uuid.NewRandom()
 	myProvider = &api.Provider{
 		Id:   uint64(uid.ID()),
-		Name: "WorkerServer",
+		Name: providerName,
 		Type: api.ProviderType_WORKER,
 	}
 	pm = simutil.NewProviderManager(myProvider)
 
 	// For Master
 	// Connect to Node Server
+	nodeapi1 := api.NewNodeAPI()
 	for {
-		err := api.RegisterNodeName(masterNodeIdAddr, "WorkerProvider", false)
+		err := nodeapi1.RegisterNodeName(masterNodeIdAddr, providerName, false)
 		if err == nil {
 			logger.Info("connected NodeID server!")
-			go api.HandleSigInt()
-			api.RegisterDeferFunction(api.UnRegisterNode)
+			go nodeapi1.HandleSigInt()
+			nodeapi1.RegisterDeferFunction(nodeapi1.UnRegisterNode)
 			break
 		} else {
 			logger.Warn("NodeID Error... reconnecting...")
@@ -355,7 +362,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("fail to dial: %v", err)
 	}
-	api.RegisterDeferFunction(func() { conn.Close() })
+	nodeapi1.RegisterDeferFunction(func() { conn.Close() })
 	client := api.NewSynerexClient(conn)
 	argJson := fmt.Sprintf("{Client:Worker}")
 
@@ -371,12 +378,13 @@ func main() {
 
 	// For Worker
 	// Connect to Node Server
+	nodeapi2 := api.NewNodeAPI()
 	for {
-		err := api.RegisterNodeName(workerNodeIdAddr, "WorkerProvider", false)
+		err := nodeapi2.RegisterNodeName(workerNodeIdAddr, providerName, false)
 		if err == nil {
 			logger.Info("connected NodeID server!")
-			go api.HandleSigInt()
-			api.RegisterDeferFunction(api.UnRegisterNode)
+			go nodeapi2.HandleSigInt()
+			nodeapi2.RegisterDeferFunction(nodeapi2.UnRegisterNode)
 			break
 		} else {
 			logger.Warn("NodeID Error... reconnecting...")
@@ -391,7 +399,7 @@ func main() {
 	if werr != nil {
 		log.Fatalf("fail to dial: %v", werr)
 	}
-	api.RegisterDeferFunction(func() { wconn.Close() })
+	nodeapi2.RegisterDeferFunction(func() { wconn.Close() })
 	wclient := api.NewSynerexClient(wconn)
 	wargJson := fmt.Sprintf("{Client:Worker}")
 

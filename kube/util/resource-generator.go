@@ -163,6 +163,10 @@ func NewWorker(area Area) Resource {
 							Name:  "SYNEREX_SERVER",
 							Value: ":10000",
 						},
+						{
+							Name:  "SERVER_NAME",
+							Value: "SynerexServer" + strconv.Itoa(area.Id),
+						},
 					},
 					Ports: []Port{{ContainerPort: 10000}},
 				},
@@ -191,6 +195,10 @@ func NewWorker(area Area) Resource {
 							Name:  "PORT",
 							Value: "9980",
 						},
+						{
+							Name:  "PROVIDER_NAME",
+							Value: "WorkerProvider" + strconv.Itoa(area.Id),
+						},
 					},
 					Ports: []Port{{ContainerPort: 9980}},
 				},
@@ -211,6 +219,10 @@ func NewWorker(area Area) Resource {
 							Name:  "AREA",
 							Value: convertAreaToJson(area),
 						},
+						{
+							Name:  "PROVIDER_NAME",
+							Value: "AgentProvider" + strconv.Itoa(area.Id),
+						},
 					},
 				},
 				{
@@ -229,6 +241,10 @@ func NewWorker(area Area) Resource {
 						{
 							Name:  "VIS_ADDRESS",
 							Value: ":9500",
+						},
+						{
+							Name:  "PROVIDER_NAME",
+							Value: "VisProvider" + strconv.Itoa(area.Id),
 						},
 					},
 				},
@@ -417,6 +433,10 @@ func NewGateway(neiPair []int) Resource {
 							Name:  "WORKER_NODEID_SERVER2",
 							Value: worker2Name + ":600",
 						},
+						{
+							Name:  "PROVIDER_NAME",
+							Value: "GatewayProvider" + strconv.Itoa(neiPair[0]) + strconv.Itoa(neiPair[1]),
+						},
 					},
 					Ports: []Port{{ContainerPort: 9980}},
 				},
@@ -460,14 +480,14 @@ func convertAreaToJson(area Area) string {
 func main() {
 
 	option := Option{
-		FileName: "higashiyama-16.yaml",
+		FileName: "higashiyama-4.yaml",
 		AreaCoords: []Coord{
 			{Longitude: 136.971626, Latitude: 35.161499},
 			{Longitude: 136.971626, Latitude: 35.152210},
 			{Longitude: 136.989379, Latitude: 35.152210},
 			{Longitude: 136.989379, Latitude: 35.161499},
 		},
-		DevideSquareNum: 4,   // 2*2 = 4 areas
+		DevideSquareNum: 2,   // 2*2 = 4 areas
 		DuplicateRate:   0.1, // 10% of each area
 	}
 
@@ -492,7 +512,7 @@ func createData(option Option) []Resource {
 		NewMasterService(),
 		NewMaster(),
 	}
-	areas, _ := AreaDivider(option.AreaCoords, option.DevideSquareNum, option.DuplicateRate)
+	areas, neighbors := AreaDivider(option.AreaCoords, option.DevideSquareNum, option.DuplicateRate)
 	//fmt.Printf("areas: %v\n", areas)
 
 	for _, area := range areas {

@@ -25,6 +25,7 @@ import (
 var (
 	synerexAddr    string
 	nodeIdAddr     string
+	providerName   string
 	myProvider     *api.Provider
 	workerProvider *api.Provider
 	pm             *simutil.ProviderManager
@@ -61,6 +62,11 @@ func init() {
 	nodeIdAddr = os.Getenv("NODEID_SERVER")
 	if nodeIdAddr == "" {
 		nodeIdAddr = "127.0.0.1:9000"
+	}
+
+	providerName = os.Getenv("PROVIDER_NAME")
+	if providerName == "" {
+		providerName = "AgentProvider"
 	}
 
 	areaJson := os.Getenv("AREA")
@@ -177,7 +183,7 @@ func forwardClock() {
 	logger.Info("Finish: Clock Forwarded. AgentNum:  %v", len(nextControlAgents))
 	t2 := time.Now()
 	duration := t2.Sub(t1).Milliseconds()
-	logger.Info("Duration: %v", duration)
+	logger.Info("Duration: %v, PID: %v", duration, myProvider.Id)
 }
 
 // callback for each Supply
@@ -210,6 +216,9 @@ func demandCallback(clt *api.SMServiceClient, dm *api.Demand) {
 		msgId := dm.GetSimDemand().GetMsgId()
 		simapi.UpdateProvidersResponse(senderId, targets, msgId)
 		logger.Info("Finish: Update Providers num: %v\n", len(providers))
+		for _, p := range providers {
+			logger.Debug("PID: %v,  Name: %v\n", p.Id, p.Name)
+		}
 
 	case api.DemandType_SET_AGENT_REQUEST:
 		// Agentをセットする
@@ -351,7 +360,7 @@ func main() {
 	uid, _ := uuid.NewRandom()
 	myProvider = &api.Provider{
 		Id:   uint64(uid.ID()),
-		Name: "AgentProvider",
+		Name: providerName,
 		Type: api.ProviderType_AGENT,
 		Data: &api.Provider_AgentStatus{
 			AgentStatus: &api.AgentStatus{
