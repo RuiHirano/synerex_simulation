@@ -8,4 +8,7 @@ require (
 	golang.org/x/net v0.0.0-20190311183353-d8887717615a
 )
 
+replace (
+	github.com/synerex/synerex_alpha/util => ../util
+)
 go 1.13

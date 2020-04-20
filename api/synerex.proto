@@ -6,7 +6,6 @@ option go_package="api";
 
 import "google/protobuf/timestamp.proto";
 import "google/protobuf/duration.proto";
-import "simulation.proto";
 
 service Synerex {
     rpc RegisterDemand(Demand) returns (Response) {}

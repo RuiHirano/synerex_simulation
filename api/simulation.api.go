@@ -8,17 +8,20 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	"github.com/synerex/synerex_alpha/util"
 )
 
 var (
 	mu        sync.Mutex
 	waitChMap map[SupplyType]chan *Supply
 	//spMesMap            map[SupplyType]*Message
+	logger              *util.Logger
 	CHANNEL_BUFFER_SIZE int
 )
 
 func init() {
 	waitChMap = make(map[SupplyType]chan *Supply)
+	logger = util.NewLogger()
 	CHANNEL_BUFFER_SIZE = 10
 }
 
@@ -681,7 +684,7 @@ func (w *Waiter) WaitSp(msgId uint64, targets []uint64, timeout uint64) ([]*Supp
 
 					// 同期が終了したかどうか
 					if w.isFinishSpSync(msgId, targets) {
-						log.Printf("Finish Wait!")
+						logger.Debug("Finish Wait!")
 						mu.Unlock()
 						wg.Done()
 						return
@@ -705,7 +708,7 @@ func (w *Waiter) WaitSp(msgId uint64, targets []uint64, timeout uint64) ([]*Supp
 						noSps = append(noSps, sp2)
 					}
 				}
-				log.Printf("Sync Error... noids %v, msgId %v \n%v\n\n", noIds, msgId, noSps)
+				logger.Error("Sync Error... noids %v, msgId %v \n%v\n\n", noIds, msgId, noSps)
 				err = fmt.Errorf("Timeout Error")
 				wg.Done()
 				return
