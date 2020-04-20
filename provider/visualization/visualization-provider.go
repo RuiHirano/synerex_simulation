@@ -11,6 +11,7 @@ import (
 
 	//"github.com/golang/protobuf/jsonpb"
 	api "github.com/synerex/synerex_alpha/api"
+	napi "github.com/synerex/synerex_alpha/nodeapi"
 	"github.com/synerex/synerex_alpha/provider/simutil"
 
 	"fmt"
@@ -351,7 +352,7 @@ func main() {
 	pm = simutil.NewProviderManager(myProvider)
 
 	// Connect to Node Server
-	nodeapi := api.NewNodeAPI()
+	nodeapi := napi.NewNodeAPI()
 	for {
 		err := nodeapi.RegisterNodeName(nodeIdAddr, providerName, false)
 		if err == nil {

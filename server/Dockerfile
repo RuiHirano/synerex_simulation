@@ -23,6 +23,7 @@ RUN go get -u google.golang.org/grpc
 WORKDIR /synerex_simulation
 COPY /server ./server
 COPY /api ./api
+COPY /nodeapi ./nodeapi
 COPY /provider/simutil ./provider/simutil
 RUN cd server && \
     sed -i 's/\r//' ./entrypoint.sh && \

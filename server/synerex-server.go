@@ -2,6 +2,7 @@ package main
 
 //go:generate protoc -I ../api -I .. --go_out=plugins=grpc:../api simulation.proto
 //go:generate protoc -I ../api -I .. --go_out=plugins=grpc:../api synerex.proto
+//go:generate protoc -I ../nodeapi -I .. --go_out=plugins=grpc:../nodeapi nodeid.proto
 
 import (
 	"context"
@@ -21,6 +22,7 @@ import (
 
 	"github.com/sirupsen/logrus"
 	"github.com/synerex/synerex_alpha/api"
+	napi "github.com/synerex/synerex_alpha/nodeapi"
 	"github.com/synerex/synerex_alpha/provider/simutil"
 	"google.golang.org/grpc"
 )
@@ -32,7 +34,7 @@ var (
 	nodeIdAddr  string
 	serverName  string
 	logger      *simutil.Logger
-	nodeapi     *api.NodeAPI
+	nodeapi     *napi.NodeAPI
 )
 
 type synerexServerInfo struct {
@@ -796,7 +798,7 @@ func prepareGrpcServer(s *synerexServerInfo, opts ...grpc.ServerOption) *grpc.Se
 
 func main() {
 	flag.Parse()
-	nodeapi = api.NewNodeAPI()
+	nodeapi = napi.NewNodeAPI()
 	for {
 		err := nodeapi.RegisterNodeName(nodeIdAddr, serverName, true)
 		if err == nil {

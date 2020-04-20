@@ -14,6 +14,7 @@ import (
 	"github.com/labstack/echo"
 	"github.com/labstack/echo/middleware"
 	api "github.com/synerex/synerex_alpha/api"
+	napi "github.com/synerex/synerex_alpha/nodeapi"
 	"github.com/synerex/synerex_alpha/provider/simutil"
 	"google.golang.org/grpc"
 )
@@ -362,7 +363,7 @@ func main() {
 	go startSimulatorServer()
 
 	// Connect to Node Server
-	nodeapi := api.NewNodeAPI()
+	nodeapi := napi.NewNodeAPI()
 	for {
 		err := nodeapi.RegisterNodeName(nodeIdAddr, "MasterProvider", false)
 		if err == nil {

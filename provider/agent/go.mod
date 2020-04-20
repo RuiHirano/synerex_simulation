@@ -15,6 +15,7 @@ require (
 
 replace (
 	github.com/synerex/synerex_alpha/api => ./../../api
+	github.com/synerex/synerex_alpha/nodeapi => ./../../nodeapi
 	github.com/synerex/synerex_alpha/provider/agent/algorithm => ./algorithm
 	github.com/synerex/synerex_alpha/provider/simutil => ../simutil
 )

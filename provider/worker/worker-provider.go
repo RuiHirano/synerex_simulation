@@ -14,6 +14,7 @@ import (
 
 	"github.com/google/uuid"
 	api "github.com/synerex/synerex_alpha/api"
+	napi "github.com/synerex/synerex_alpha/nodeapi"
 	"github.com/synerex/synerex_alpha/provider/simutil"
 	"google.golang.org/grpc"
 )
@@ -360,7 +361,7 @@ func main() {
 
 	// For Master
 	// Connect to Node Server
-	nodeapi1 := api.NewNodeAPI()
+	nodeapi1 := napi.NewNodeAPI()
 	for {
 		err := nodeapi1.RegisterNodeName(masterNodeIdAddr, providerName, false)
 		if err == nil {
@@ -375,7 +376,7 @@ func main() {
 	}
 
 	// Connect to Node Server
-	nodeapi2 := api.NewNodeAPI()
+	nodeapi2 := napi.NewNodeAPI()
 	for {
 		err := nodeapi2.RegisterNodeName(workerNodeIdAddr, providerName, false)
 		if err == nil {

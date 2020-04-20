@@ -24,6 +24,7 @@ WORKDIR /synerex_simulation
 COPY /provider/visualization ./provider/visualization
 COPY /provider/simutil ./provider/simutil
 COPY /api ./api
+COPY /nodeapi ./nodeapi
 RUN cd provider/visualization && \
     sed -i 's/\r//' ./entrypoint.sh && \
     chmod +x ./entrypoint.sh

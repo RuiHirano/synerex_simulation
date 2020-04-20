@@ -16,6 +16,7 @@ import (
 	"github.com/google/uuid"
 	//"github.com/golang/protobuf/jsonpb"
 	"github.com/synerex/synerex_alpha/api"
+	napi "github.com/synerex/synerex_alpha/nodeapi"
 	"github.com/synerex/synerex_alpha/provider/simutil"
 	"google.golang.org/grpc"
 )
@@ -476,7 +477,7 @@ func main() {
 	////////////////////////////////////////////////
 
 	// Connect to Worker1 Node Server
-	nodeapi1 := api.NewNodeAPI()
+	nodeapi1 := napi.NewNodeAPI()
 	for {
 		err := nodeapi1.RegisterNodeName(workerNodeIdAddr1, providerName, false)
 		if err == nil {
@@ -491,7 +492,7 @@ func main() {
 	}
 
 	// Connect to Worker2 Node Server
-	nodeapi2 := api.NewNodeAPI()
+	nodeapi2 := napi.NewNodeAPI()
 	for {
 		err := nodeapi2.RegisterNodeName(workerNodeIdAddr2, providerName, false)
 		if err == nil {

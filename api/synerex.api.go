@@ -3,27 +3,29 @@ package api
 import (
 	"context"
 	"errors"
-	"fmt"
+
+	//"fmt"
 	"io"
 	"log"
-	"sync"
+
+	//"sync"
 	"time"
 
-	"os"
-	"os/signal"
+	//"os"
+	//"os/signal"
 
 	"github.com/google/uuid"
 
-	"github.com/bwmarrin/snowflake"
+	//"github.com/bwmarrin/snowflake"
 	"github.com/golang/protobuf/ptypes"
-	"github.com/synerex/synerex_alpha/nodeapi"
-	"google.golang.org/grpc"
+	//"github.com/synerex/synerex_alpha/nodeapi"
+	//"google.golang.org/grpc"
 )
 
 // IDType for all ID in Synergic Exchange
 type IDType uint64
 
-var (
+/*var (
 	node       *snowflake.Node // package variable for keeping unique ID.
 	nid        *nodeapi.NodeID
 	nupd       *nodeapi.NodeUpdate
@@ -32,7 +34,7 @@ var (
 	conn       *grpc.ClientConn
 	clt        nodeapi.NodeClient
 	funcSlice  []func()
-)
+)*/
 
 // DemandOpts is sender options for Demand
 type DemandOpts struct {
@@ -52,12 +54,12 @@ type SupplyOpts struct {
 	SimSupply *SimSupply
 }
 
-func init() {
+/*func init() {
 	fmt.Println("Synergic Exchange Util init() is called!")
 	funcSlice = make([]func(), 0)
-}
+}*/
 
-/////////////////////////////////////
+/*/////////////////////////////////////
 //////////   NodeAPI    ////////////
 ////////////////////////////////////
 
@@ -204,7 +206,7 @@ func (api *NodeAPI) UnRegisterNode() {
 	if err != nil || !resp.Ok {
 		log.Print("Can't unregister", err, resp)
 	}
-}
+}*/
 
 ///////////////////////////////////////////////
 

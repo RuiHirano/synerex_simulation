@@ -29,6 +29,7 @@ WORKDIR /synerex_simulation
 COPY /provider/pod-manager ./provider/pod-manager
 COPY /provider/simutil ./provider/simutil
 COPY /api ./api
+COPY /nodeapi ./nodeapi
 RUN cd provider/pod-manager && \
     sed -i 's/\r//' ./entrypoint.sh && \
     chmod +x ./entrypoint.sh

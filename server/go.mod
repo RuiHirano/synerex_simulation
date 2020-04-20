@@ -41,6 +41,8 @@ require (
 
 replace github.com/synerex/synerex_alpha/api => ../api
 
+replace github.com/synerex/synerex_alpha/nodeapi => ../nodeapi
+
 replace github.com/synerex/synerex_alpha/provider/simutil => ../provider/simutil
 
 go 1.13
