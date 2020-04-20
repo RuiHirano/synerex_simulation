@@ -6,6 +6,7 @@ require (
 	github.com/synerex/synerex_alpha/api v0.0.0
 	github.com/synerex/synerex_alpha/provider/agent/algorithm v0.0.0-00010101000000-000000000000 // indirect
 	github.com/synerex/synerex_alpha/provider/simutil v0.0.0-00010101000000-000000000000 // indirect
+	github.com/synerex/synerex_alpha/util v0.0.0-00010101000000-000000000000 // indirect
 	golang.org/x/net v0.0.0-20200202094626-16171245cfb2 // indirect
 	golang.org/x/sys v0.0.0-20200202164722-d101bd2416d5 // indirect
 	golang.org/x/text v0.3.2 // indirect
@@ -18,6 +19,7 @@ replace (
 	github.com/synerex/synerex_alpha/nodeapi => ./../../nodeapi
 	github.com/synerex/synerex_alpha/provider/agent/algorithm => ./algorithm
 	github.com/synerex/synerex_alpha/provider/simutil => ../simutil
+	github.com/synerex/synerex_alpha/util => ../../util
 )
 
 go 1.13

@@ -12,6 +12,7 @@ import (
 	api "github.com/synerex/synerex_alpha/api"
 	napi "github.com/synerex/synerex_alpha/nodeapi"
 	"github.com/synerex/synerex_alpha/provider/simutil"
+	"github.com/synerex/synerex_alpha/util"
 	"google.golang.org/grpc"
 )
 
@@ -27,7 +28,7 @@ var (
 	simapi      *api.SimAPI
 	//providerManager *Manager
 	pm     *simutil.ProviderManager
-	logger *simutil.Logger
+	logger *util.Logger
 	waiter *api.Waiter
 )
 
@@ -36,7 +37,7 @@ func init() {
 	startFlag = false
 	masterClock = 0
 	workerHosts = make([]string, 0)
-	logger = simutil.NewLogger()
+	logger = util.NewLogger()
 	flag.Parse()
 	//providerManager = NewManager()
 

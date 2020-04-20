@@ -16,6 +16,7 @@ import (
 	api "github.com/synerex/synerex_alpha/api"
 	napi "github.com/synerex/synerex_alpha/nodeapi"
 	"github.com/synerex/synerex_alpha/provider/simutil"
+	"github.com/synerex/synerex_alpha/util"
 	"google.golang.org/grpc"
 )
 
@@ -32,7 +33,7 @@ var (
 	workerapi         *api.SimAPI
 	workerClock       int
 	providerHosts     []string
-	logger            *simutil.Logger
+	logger            *util.Logger
 	//providerManager   *Manager
 	pm     *simutil.ProviderManager
 	waiter *api.Waiter
@@ -43,7 +44,7 @@ const MAX_AGENTS_NUM = 1000
 func init() {
 	workerClock = 0
 	providerHosts = make([]string, 0)
-	logger = simutil.NewLogger()
+	logger = util.NewLogger()
 	logger.SetPrefix("Scenario")
 	flag.Parse()
 

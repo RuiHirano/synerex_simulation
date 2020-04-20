@@ -23,6 +23,7 @@ RUN go get -u google.golang.org/grpc
 WORKDIR /synerex_simulation
 COPY /nodeserv ./nodeserv
 COPY /nodeapi ./nodeapi
+COPY /util ./util
 RUN cd nodeserv && \
     sed -i 's/\r//' ./entrypoint.sh && \
     chmod +x ./entrypoint.sh

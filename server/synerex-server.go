@@ -23,7 +23,7 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/synerex/synerex_alpha/api"
 	napi "github.com/synerex/synerex_alpha/nodeapi"
-	"github.com/synerex/synerex_alpha/provider/simutil"
+	"github.com/synerex/synerex_alpha/util"
 	"google.golang.org/grpc"
 )
 
@@ -33,7 +33,7 @@ var (
 	synerexAddr string
 	nodeIdAddr  string
 	serverName  string
-	logger      *simutil.Logger
+	logger      *util.Logger
 	nodeapi     *napi.NodeAPI
 )
 
@@ -64,7 +64,7 @@ func init() {
 		serverName = "SynerexServer"
 	}
 
-	logger = simutil.NewLogger()
+	logger = util.NewLogger()
 
 }
 

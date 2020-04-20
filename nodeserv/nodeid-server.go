@@ -16,6 +16,7 @@ import (
 	"github.com/google/gops/agent"
 
 	nodepb "github.com/synerex/synerex_alpha/nodeapi"
+	"github.com/synerex/synerex_alpha/util"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/peer"
 )
@@ -60,10 +61,12 @@ var (
 	lastNode   int32 = MaxServerID // start ID from MAX_SERVER_ID to MAX_NODE_NUM
 	lastPrint  time.Time
 	nmmu       sync.RWMutex
+	logger     *util.Logger
 )
 
 func init() {
 	log.Println("Starting Node ID Server..")
+	logger = util.NewLogger()
 	rand.Seed(time.Now().UnixNano())
 	s := &srvInfo
 	s.nodeMap = make(map[int32]*eachNodeInfo)

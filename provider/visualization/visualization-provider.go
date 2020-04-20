@@ -13,6 +13,7 @@ import (
 	api "github.com/synerex/synerex_alpha/api"
 	napi "github.com/synerex/synerex_alpha/nodeapi"
 	"github.com/synerex/synerex_alpha/provider/simutil"
+	"github.com/synerex/synerex_alpha/util"
 
 	"fmt"
 	"net/http"
@@ -36,14 +37,14 @@ var (
 	mu             sync.Mutex
 	assetsDir      http.FileSystem
 	ioserv         *gosocketio.Server
-	logger         *simutil.Logger
+	logger         *util.Logger
 	simapi         *api.SimAPI
 	waiter         *api.Waiter
 )
 
 func init() {
 	//flag.Parse()
-	logger = simutil.NewLogger()
+	logger = util.NewLogger()
 	synerexAddr = os.Getenv("SYNEREX_SERVER")
 	if synerexAddr == "" {
 		synerexAddr = "127.0.0.1:10000"

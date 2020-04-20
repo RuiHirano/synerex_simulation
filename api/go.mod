@@ -5,7 +5,6 @@ require (
 	github.com/golang/protobuf v1.3.2
 	github.com/google/uuid v1.1.1 // indirect
 	github.com/stretchr/testify v1.2.2
-	github.com/synerex/synerex_alpha/nodeapi v0.0.0-20190904050037-afd3805ee7cc // indirect
 	golang.org/x/net v0.0.0-20190311183353-d8887717615a
 )
 

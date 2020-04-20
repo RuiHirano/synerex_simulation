@@ -5,7 +5,6 @@ require (
 	github.com/golang/protobuf v1.2.0
 	github.com/google/uuid v1.1.1 // indirect
 	golang.org/x/net v0.0.0-20181102091132-c10e9556a7bc
-	google.golang.org/grpc v1.16.0
 )
 
 go 1.13

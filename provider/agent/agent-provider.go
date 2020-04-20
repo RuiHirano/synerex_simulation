@@ -20,6 +20,7 @@ import (
 	api "github.com/synerex/synerex_alpha/api"
 	napi "github.com/synerex/synerex_alpha/nodeapi"
 	"github.com/synerex/synerex_alpha/provider/simutil"
+	"github.com/synerex/synerex_alpha/util"
 	"google.golang.org/grpc"
 )
 
@@ -35,7 +36,7 @@ var (
 	//com                  *simutil.Communicator
 	sim *Simulator2
 	//providerManager      *simutil.ProviderManager
-	logger        *simutil.Logger
+	logger        *util.Logger
 	mu            sync.Mutex
 	agentsMessage *Message
 	myArea        *api.Area
@@ -44,7 +45,7 @@ var (
 
 func init() {
 	flag.Parse()
-	logger = simutil.NewLogger()
+	logger = util.NewLogger()
 	waiter = api.NewWaiter()
 	//myProvider = flagToProviderInfo(*providerJson)
 	//scenarioProvider = flagToProviderInfo(*scenarioProviderJson)

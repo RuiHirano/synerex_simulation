@@ -17,7 +17,7 @@ import (
 	//"github.com/golang/protobuf/jsonpb"
 	"github.com/synerex/synerex_alpha/api"
 	napi "github.com/synerex/synerex_alpha/nodeapi"
-	"github.com/synerex/synerex_alpha/provider/simutil"
+	"github.com/synerex/synerex_alpha/util"
 	"google.golang.org/grpc"
 )
 
@@ -44,14 +44,14 @@ var (
 	//com2               *simutil.Communicator
 	//providerManager1   *simutil.ProviderManager
 	//providerManager2   *simutil.ProviderManager
-	logger *simutil.Logger
+	logger *util.Logger
 	//mes1               *Message
 	//mes2               *Message
 )
 
 func init() {
 	//flag.Parse()
-	logger = simutil.NewLogger()
+	logger = util.NewLogger()
 	waiter = api.NewWaiter()
 	apm = NewAgentProviderManager()
 	//myProvider = flagToProviderInfo(*providerJson)

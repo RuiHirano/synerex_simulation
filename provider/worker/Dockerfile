@@ -23,6 +23,7 @@ RUN go get -u google.golang.org/grpc
 WORKDIR /synerex_simulation
 COPY /provider/worker ./provider/worker
 COPY /provider/simutil ./provider/simutil
+COPY /util ./util
 COPY /api ./api
 COPY /nodeapi ./nodeapi
 RUN cd provider/worker && \
