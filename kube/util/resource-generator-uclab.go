@@ -32,10 +32,15 @@ type Resource struct {
 }
 
 type Spec struct {
-	Containers []Container `yaml:"containers,omitempty"`
-	Selector   Selector    `yaml:"selector,omitempty"`
-	Ports      []Port      `yaml:"ports,omitempty"`
-	Type       string      `yaml:"type,omitempty"`
+	Containers       []Container       `yaml:"containers,omitempty"`
+	ImagePullSecrets []ImagePullSecret `yaml:"imagePullSecrets,omitempty"`
+	Selector         Selector          `yaml:"selector,omitempty"`
+	Ports            []Port            `yaml:"ports,omitempty"`
+	Type             string            `yaml:"type,omitempty"`
+}
+
+type ImagePullSecret struct {
+	Name string `yaml:"name,omitempty"`
 }
 
 type Container struct {
@@ -263,6 +268,11 @@ func NewWorker(area Area) Resource {
 					},
 				},
 			},
+			ImagePullSecrets: []ImagePullSecret{
+				{
+					Name: "ruirui-regcred",
+				},
+			},
 		},
 	}
 	return worker
@@ -357,6 +367,11 @@ func NewMaster() Resource {
 					Ports: []Port{{ContainerPort: 9990}},
 				},
 			},
+			ImagePullSecrets: []ImagePullSecret{
+				{
+					Name: "ruirui-regcred",
+				},
+			},
 		},
 	}
 	return master
@@ -407,6 +422,11 @@ func NewSimulator() Resource {
 					Ports: []Port{{ContainerPort: 8000}},
 				},
 			},
+			ImagePullSecrets: []ImagePullSecret{
+				{
+					Name: "ruirui-regcred",
+				},
+			},
 		},
 	}
 	return simulator
@@ -453,6 +473,11 @@ func NewGateway(neiPair []int) Resource {
 						},
 					},
 					Ports: []Port{{ContainerPort: 9980}},
+				},
+			},
+			ImagePullSecrets: []ImagePullSecret{
+				{
+					Name: "ruirui-regcred",
 				},
 			},
 		},
