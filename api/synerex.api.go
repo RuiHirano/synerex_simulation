@@ -100,7 +100,7 @@ func (api *NodeAPI) HandleSigInt() {
 		close(c)
 	}
 
-	CallDeferFunctions()
+	api.CallDeferFunctions()
 
 	log.Println("End at HandleSigInt in sxutil/signal.go")
 	os.Exit(1)
@@ -209,7 +209,7 @@ func (api *NodeAPI) UnRegisterNode() {
 ///////////////////////////////////////////////
 
 // register closing functions.
-func RegisterDeferFunction(f func()) {
+/*func RegisterDeferFunction(f func()) {
 	funcSlice = append(funcSlice, f)
 }
 
@@ -332,7 +332,7 @@ func UnRegisterNode() {
 	if err != nil || !resp.Ok {
 		log.Print("Can't unregister", err, resp)
 	}
-}
+}*/
 
 // SMServiceClient Wrappter Structure for market client
 type SMServiceClient struct {

@@ -551,6 +551,7 @@ func main() {
 	wg.Add(1)
 
 	wg.Wait()
-	api.CallDeferFunctions() // cleanup!
+	nodeapi1.CallDeferFunctions() // cleanup!
+	nodeapi2.CallDeferFunctions() // cleanup!
 
 }

@@ -32,6 +32,7 @@ var (
 	nodeIdAddr  string
 	serverName  string
 	logger      *simutil.Logger
+	nodeapi     *api.NodeAPI
 )
 
 type synerexServerInfo struct {
@@ -655,7 +656,7 @@ func idToNode(id uint64) string {
 	var ok bool
 	var str string
 	if str, ok = nodeMap[nodeNum]; !ok {
-		str = api.GetNodeName(nodeNum)
+		str = nodeapi.GetNodeName(nodeNum)
 	}
 	rs := strings.Replace(str, "Provider", "", -1)
 	rs2 := strings.Replace(rs, "Server", "", -1)
@@ -795,12 +796,13 @@ func prepareGrpcServer(s *synerexServerInfo, opts ...grpc.ServerOption) *grpc.Se
 
 func main() {
 	flag.Parse()
+	nodeapi = api.NewNodeAPI()
 	for {
-		err := api.RegisterNodeName(nodeIdAddr, serverName, true)
+		err := nodeapi.RegisterNodeName(nodeIdAddr, serverName, true)
 		if err == nil {
 			logger.Info("connected NodeID server!")
-			go api.HandleSigInt()
-			api.RegisterDeferFunction(api.UnRegisterNode)
+			go nodeapi.HandleSigInt()
+			nodeapi.RegisterDeferFunction(nodeapi.UnRegisterNode)
 			break
 		} else {
 			logger.Warn("NodeID Error... reconnecting...")

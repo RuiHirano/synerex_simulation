@@ -351,12 +351,13 @@ func main() {
 	pm = simutil.NewProviderManager(myProvider)
 
 	// Connect to Node Server
+	nodeapi := api.NewNodeAPI()
 	for {
-		err := api.RegisterNodeName(nodeIdAddr, providerName, false)
+		err := nodeapi.RegisterNodeName(nodeIdAddr, providerName, false)
 		if err == nil {
 			logger.Info("connected NodeID server!")
-			go api.HandleSigInt()
-			api.RegisterDeferFunction(api.UnRegisterNode)
+			go nodeapi.HandleSigInt()
+			nodeapi.RegisterDeferFunction(nodeapi.UnRegisterNode)
 			break
 		} else {
 			logger.Warn("NodeID Error... reconnecting...")
@@ -371,7 +372,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("fail to dial: %v", err)
 	}
-	api.RegisterDeferFunction(func() { conn.Close() })
+	nodeapi.RegisterDeferFunction(func() { conn.Close() })
 	client := api.NewSynerexClient(conn)
 	argJson := fmt.Sprintf("{Client:Visualization}")
 
@@ -413,5 +414,5 @@ func main() {
 	wg := sync.WaitGroup{}
 	wg.Add(1)
 	wg.Wait()
-	api.CallDeferFunctions() // cleanup!
+	nodeapi.CallDeferFunctions() // cleanup!
 }

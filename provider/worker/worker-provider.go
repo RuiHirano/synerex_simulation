@@ -438,6 +438,7 @@ func main() {
 	wg.Add(1)
 	wg.Wait()
 	fmt.Printf("clean up!")
-	api.CallDeferFunctions() // cleanup!
+	nodeapi1.CallDeferFunctions() // cleanup!
+	nodeapi2.CallDeferFunctions() // cleanup!
 
 }
