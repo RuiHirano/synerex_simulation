@@ -266,14 +266,14 @@ func demandCallback(clt *api.SMServiceClient, dm *api.Demand) {
 		})
 
 		agents := []*api.Agent{}
-		if simutil.Contains(sameAreaIds, senderId) {
+		if util.Contains(sameAreaIds, senderId) {
 			// 同じエリアのエージェントプロバイダの場合
 			agents = sim.Agents
-		} else if simutil.Contains(neighborAreaIds, senderId) {
+		} else if util.Contains(neighborAreaIds, senderId) {
 			// 隣接エリアのエージェントプロバイダの場合
 			logger.Debug("Get Agent Request from \n%v\n", dm)
 			agents = agentsMessage.Get()
-		} else if simutil.Contains(visIds, senderId) {
+		} else if util.Contains(visIds, senderId) {
 			// Visプロバイダの場合
 			agents = agentsMessage.Get()
 		}
