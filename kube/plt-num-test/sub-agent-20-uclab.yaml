@@ -154,7 +154,6 @@ spec:
     - containerPort: 9980
   - name: agent-provider11
     image: synerex-simulation/agent-provider:1.2
-    imagePullPolicy: Never
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -171,7 +170,6 @@ spec:
       value: AgentProvider11
   - name: agent-provider12
     image: synerex-simulation/agent-provider:1.2
-    imagePullPolicy: Never
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -188,7 +186,6 @@ spec:
       value: AgentProvider12
   - name: agent-provider13
     image: synerex-simulation/agent-provider:1.2
-    imagePullPolicy: Never
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -205,7 +202,6 @@ spec:
       value: AgentProvider13
   - name: agent-provider14
     image: synerex-simulation/agent-provider:1.2
-    imagePullPolicy: Never
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -222,7 +218,6 @@ spec:
       value: AgentProvider14
   - name: agent-provider15
     image: synerex-simulation/agent-provider:1.2
-    imagePullPolicy: Never
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -239,7 +234,6 @@ spec:
       value: AgentProvider15
   - name: agent-provider16
     image: synerex-simulation/agent-provider:1.2
-    imagePullPolicy: Never
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -256,7 +250,6 @@ spec:
       value: AgentProvider16
   - name: agent-provider17
     image: synerex-simulation/agent-provider:1.2
-    imagePullPolicy: Never
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -273,7 +266,6 @@ spec:
       value: AgentProvider17
   - name: agent-provider18
     image: synerex-simulation/agent-provider:1.2
-    imagePullPolicy: Never
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -290,7 +282,6 @@ spec:
       value: AgentProvider18
   - name: agent-provider19
     image: synerex-simulation/agent-provider:1.2
-    imagePullPolicy: Never
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -307,7 +298,6 @@ spec:
       value: AgentProvider19
   - name: agent-provider20
     image: synerex-simulation/agent-provider:1.2
-    imagePullPolicy: Never
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -324,7 +314,6 @@ spec:
       value: AgentProvider20
   - name: agent-provider21
     image: synerex-simulation/agent-provider:1.2
-    imagePullPolicy: Never
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -341,7 +330,6 @@ spec:
       value: AgentProvider21
   - name: agent-provider22
     image: synerex-simulation/agent-provider:1.2
-    imagePullPolicy: Never
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -358,7 +346,6 @@ spec:
       value: AgentProvider22
   - name: agent-provider23
     image: synerex-simulation/agent-provider:1.2
-    imagePullPolicy: Never
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -375,7 +362,6 @@ spec:
       value: AgentProvider23
   - name: agent-provider24
     image: synerex-simulation/agent-provider:1.2
-    imagePullPolicy: Never
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -392,7 +378,6 @@ spec:
       value: AgentProvider24
   - name: agent-provider25
     image: synerex-simulation/agent-provider:1.2
-    imagePullPolicy: Never
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -409,7 +394,6 @@ spec:
       value: AgentProvider25
   - name: agent-provider26
     image: synerex-simulation/agent-provider:1.2
-    imagePullPolicy: Never
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -426,7 +410,6 @@ spec:
       value: AgentProvider26
   - name: agent-provider27
     image: synerex-simulation/agent-provider:1.2
-    imagePullPolicy: Never
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -443,7 +426,6 @@ spec:
       value: AgentProvider27
   - name: agent-provider28
     image: synerex-simulation/agent-provider:1.2
-    imagePullPolicy: Never
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -460,7 +442,6 @@ spec:
       value: AgentProvider28
   - name: agent-provider29
     image: synerex-simulation/agent-provider:1.2
-    imagePullPolicy: Never
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -477,7 +458,6 @@ spec:
       value: AgentProvider29
   - name: agent-provider30
     image: synerex-simulation/agent-provider:1.2
-    imagePullPolicy: Never
     env:
     - name: NODEID_SERVER
       value: :9000

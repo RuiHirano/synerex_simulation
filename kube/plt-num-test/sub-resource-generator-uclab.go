@@ -219,7 +219,6 @@ func NewWorker(area Area, agentNum int) Resource {
 		containers = append(containers, Container{
 				Name:            "agent-provider" + strconv.Itoa(area.Id+i) ,
 				Image:           "synerex-simulation/agent-provider:"+*version,
-				ImagePullPolicy: "Never",
 				Env: []Env{
 					{
 						Name:  "NODEID_SERVER",
