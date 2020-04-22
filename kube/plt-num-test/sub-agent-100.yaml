@@ -1,0 +1,1856 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: simulator
+spec:
+  selector:
+    app: simulator
+  ports:
+  - name: http
+    port: 8000
+  type: NodePort
+
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: simulator
+  labels:
+    app: simulator
+spec:
+  containers:
+  - name: simulator
+    image: synerex-simulation/simulator:latest
+    imagePullPolicy: Never
+    stdin: true
+    tty: true
+    env:
+    - name: MASTER_ADDRESS
+      value: http://master:800
+    ports:
+    - containerPort: 8000
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: master
+spec:
+  selector:
+    app: master
+  ports:
+  - name: synerex
+    port: 700
+    targetPort: 10000
+  - name: nodeid
+    port: 600
+    targetPort: 9000
+  - name: master-provider
+    port: 800
+    targetPort: 9990
+
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: master
+  labels:
+    app: master
+spec:
+  containers:
+  - name: nodeid-server
+    image: synerex-simulation/nodeid-server:latest
+    imagePullPolicy: Never
+    env:
+    - name: NODEID_SERVER
+      value: :9000
+    ports:
+    - containerPort: 9000
+  - name: synerex-server
+    image: synerex-simulation/synerex-server:latest
+    imagePullPolicy: Never
+    env:
+    - name: NODEID_SERVER
+      value: :9000
+    - name: SYNEREX_SERVER
+      value: :10000
+    ports:
+    - containerPort: 10000
+  - name: master-provider
+    image: synerex-simulation/master-provider:latest
+    imagePullPolicy: Never
+    env:
+    - name: NODEID_SERVER
+      value: :9000
+    - name: SYNEREX_SERVER
+      value: :10000
+    - name: PORT
+      value: "9990"
+    ports:
+    - containerPort: 9990
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: worker11
+spec:
+  selector:
+    app: worker11
+  ports:
+  - name: synerex
+    port: 700
+    targetPort: 10000
+  - name: nodeid
+    port: 600
+    targetPort: 9000
+
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: worker11
+  labels:
+    app: worker11
+spec:
+  containers:
+  - name: nodeid-server
+    image: synerex-simulation/nodeid-server:latest
+    imagePullPolicy: Never
+    env:
+    - name: NODEID_SERVER
+      value: :9000
+    ports:
+    - containerPort: 9000
+  - name: synerex-server
+    image: synerex-simulation/synerex-server:latest
+    imagePullPolicy: Never
+    env:
+    - name: NODEID_SERVER
+      value: :9000
+    - name: SYNEREX_SERVER
+      value: :10000
+    - name: SERVER_NAME
+      value: SynerexServer11
+    ports:
+    - containerPort: 10000
+  - name: worker-provider
+    image: synerex-simulation/worker-provider:latest
+    imagePullPolicy: Never
+    env:
+    - name: NODEID_SERVER
+      value: :9000
+    - name: SYNEREX_SERVER
+      value: :10000
+    - name: MASTER_SYNEREX_SERVER
+      value: master:700
+    - name: MASTER_NODEID_SERVER
+      value: master:600
+    - name: PORT
+      value: "9980"
+    - name: PROVIDER_NAME
+      value: WorkerProvider11
+    ports:
+    - containerPort: 9980
+  - name: agent-provider11
+    image: synerex-simulation/agent-provider:latest
+    imagePullPolicy: Never
+    env:
+    - name: NODEID_SERVER
+      value: :9000
+    - name: SYNEREX_SERVER
+      value: :10000
+    - name: AREA
+      value: '{"id":11, "name":"Unknown", "duplicate_area": [{"latitude":35.1624279,
+        "longitude":136.9698507},{"latitude":35.1512811, "longitude":136.9698507},{"latitude":35.1512811,
+        "longitude":136.9911543},{"latitude":35.1624279, "longitude":136.9911543}],
+        "control_area": [{"latitude":35.161499, "longitude":136.971626},{"latitude":35.15221,
+        "longitude":136.971626},{"latitude":35.15221, "longitude":136.989379},{"latitude":35.161499,
+        "longitude":136.989379}]}'
+    - name: PROVIDER_NAME
+      value: AgentProvider11
+  - name: agent-provider12
+    image: synerex-simulation/agent-provider:latest
+    imagePullPolicy: Never
+    env:
+    - name: NODEID_SERVER
+      value: :9000
+    - name: SYNEREX_SERVER
+      value: :10000
+    - name: AREA
+      value: '{"id":11, "name":"Unknown", "duplicate_area": [{"latitude":35.1624279,
+        "longitude":136.9698507},{"latitude":35.1512811, "longitude":136.9698507},{"latitude":35.1512811,
+        "longitude":136.9911543},{"latitude":35.1624279, "longitude":136.9911543}],
+        "control_area": [{"latitude":35.161499, "longitude":136.971626},{"latitude":35.15221,
+        "longitude":136.971626},{"latitude":35.15221, "longitude":136.989379},{"latitude":35.161499,
+        "longitude":136.989379}]}'
+    - name: PROVIDER_NAME
+      value: AgentProvider12
+  - name: agent-provider13
+    image: synerex-simulation/agent-provider:latest
+    imagePullPolicy: Never
+    env:
+    - name: NODEID_SERVER
+      value: :9000
+    - name: SYNEREX_SERVER
+      value: :10000
+    - name: AREA
+      value: '{"id":11, "name":"Unknown", "duplicate_area": [{"latitude":35.1624279,
+        "longitude":136.9698507},{"latitude":35.1512811, "longitude":136.9698507},{"latitude":35.1512811,
+        "longitude":136.9911543},{"latitude":35.1624279, "longitude":136.9911543}],
+        "control_area": [{"latitude":35.161499, "longitude":136.971626},{"latitude":35.15221,
+        "longitude":136.971626},{"latitude":35.15221, "longitude":136.989379},{"latitude":35.161499,
+        "longitude":136.989379}]}'
+    - name: PROVIDER_NAME
+      value: AgentProvider13
+  - name: agent-provider14
+    image: synerex-simulation/agent-provider:latest
+    imagePullPolicy: Never
+    env:
+    - name: NODEID_SERVER
+      value: :9000
+    - name: SYNEREX_SERVER
+      value: :10000
+    - name: AREA
+      value: '{"id":11, "name":"Unknown", "duplicate_area": [{"latitude":35.1624279,
+        "longitude":136.9698507},{"latitude":35.1512811, "longitude":136.9698507},{"latitude":35.1512811,
+        "longitude":136.9911543},{"latitude":35.1624279, "longitude":136.9911543}],
+        "control_area": [{"latitude":35.161499, "longitude":136.971626},{"latitude":35.15221,
+        "longitude":136.971626},{"latitude":35.15221, "longitude":136.989379},{"latitude":35.161499,
+        "longitude":136.989379}]}'
+    - name: PROVIDER_NAME
+      value: AgentProvider14
+  - name: agent-provider15
+    image: synerex-simulation/agent-provider:latest
+    imagePullPolicy: Never
+    env:
+    - name: NODEID_SERVER
+      value: :9000
+    - name: SYNEREX_SERVER
+      value: :10000
+    - name: AREA
+      value: '{"id":11, "name":"Unknown", "duplicate_area": [{"latitude":35.1624279,
+        "longitude":136.9698507},{"latitude":35.1512811, "longitude":136.9698507},{"latitude":35.1512811,
+        "longitude":136.9911543},{"latitude":35.1624279, "longitude":136.9911543}],
+        "control_area": [{"latitude":35.161499, "longitude":136.971626},{"latitude":35.15221,
+        "longitude":136.971626},{"latitude":35.15221, "longitude":136.989379},{"latitude":35.161499,
+        "longitude":136.989379}]}'
+    - name: PROVIDER_NAME
+      value: AgentProvider15
+  - name: agent-provider16
+    image: synerex-simulation/agent-provider:latest
+    imagePullPolicy: Never
+    env:
+    - name: NODEID_SERVER
+      value: :9000
+    - name: SYNEREX_SERVER
+      value: :10000
+    - name: AREA
+      value: '{"id":11, "name":"Unknown", "duplicate_area": [{"latitude":35.1624279,
+        "longitude":136.9698507},{"latitude":35.1512811, "longitude":136.9698507},{"latitude":35.1512811,
+        "longitude":136.9911543},{"latitude":35.1624279, "longitude":136.9911543}],
+        "control_area": [{"latitude":35.161499, "longitude":136.971626},{"latitude":35.15221,
+        "longitude":136.971626},{"latitude":35.15221, "longitude":136.989379},{"latitude":35.161499,
+        "longitude":136.989379}]}'
+    - name: PROVIDER_NAME
+      value: AgentProvider16
+  - name: agent-provider17
+    image: synerex-simulation/agent-provider:latest
+    imagePullPolicy: Never
+    env:
+    - name: NODEID_SERVER
+      value: :9000
+    - name: SYNEREX_SERVER
+      value: :10000
+    - name: AREA
+      value: '{"id":11, "name":"Unknown", "duplicate_area": [{"latitude":35.1624279,
+        "longitude":136.9698507},{"latitude":35.1512811, "longitude":136.9698507},{"latitude":35.1512811,
+        "longitude":136.9911543},{"latitude":35.1624279, "longitude":136.9911543}],
+        "control_area": [{"latitude":35.161499, "longitude":136.971626},{"latitude":35.15221,
+        "longitude":136.971626},{"latitude":35.15221, "longitude":136.989379},{"latitude":35.161499,
+        "longitude":136.989379}]}'
+    - name: PROVIDER_NAME
+      value: AgentProvider17
+  - name: agent-provider18
+    image: synerex-simulation/agent-provider:latest
+    imagePullPolicy: Never
+    env:
+    - name: NODEID_SERVER
+      value: :9000
+    - name: SYNEREX_SERVER
+      value: :10000
+    - name: AREA
+      value: '{"id":11, "name":"Unknown", "duplicate_area": [{"latitude":35.1624279,
+        "longitude":136.9698507},{"latitude":35.1512811, "longitude":136.9698507},{"latitude":35.1512811,
+        "longitude":136.9911543},{"latitude":35.1624279, "longitude":136.9911543}],
+        "control_area": [{"latitude":35.161499, "longitude":136.971626},{"latitude":35.15221,
+        "longitude":136.971626},{"latitude":35.15221, "longitude":136.989379},{"latitude":35.161499,
+        "longitude":136.989379}]}'
+    - name: PROVIDER_NAME
+      value: AgentProvider18
+  - name: agent-provider19
+    image: synerex-simulation/agent-provider:latest
+    imagePullPolicy: Never
+    env:
+    - name: NODEID_SERVER
+      value: :9000
+    - name: SYNEREX_SERVER
+      value: :10000
+    - name: AREA
+      value: '{"id":11, "name":"Unknown", "duplicate_area": [{"latitude":35.1624279,
+        "longitude":136.9698507},{"latitude":35.1512811, "longitude":136.9698507},{"latitude":35.1512811,
+        "longitude":136.9911543},{"latitude":35.1624279, "longitude":136.9911543}],
+        "control_area": [{"latitude":35.161499, "longitude":136.971626},{"latitude":35.15221,
+        "longitude":136.971626},{"latitude":35.15221, "longitude":136.989379},{"latitude":35.161499,
+        "longitude":136.989379}]}'
+    - name: PROVIDER_NAME
+      value: AgentProvider19
+  - name: agent-provider20
+    image: synerex-simulation/agent-provider:latest
+    imagePullPolicy: Never
+    env:
+    - name: NODEID_SERVER
+      value: :9000
+    - name: SYNEREX_SERVER
+      value: :10000
+    - name: AREA
+      value: '{"id":11, "name":"Unknown", "duplicate_area": [{"latitude":35.1624279,
+        "longitude":136.9698507},{"latitude":35.1512811, "longitude":136.9698507},{"latitude":35.1512811,
+        "longitude":136.9911543},{"latitude":35.1624279, "longitude":136.9911543}],
+        "control_area": [{"latitude":35.161499, "longitude":136.971626},{"latitude":35.15221,
+        "longitude":136.971626},{"latitude":35.15221, "longitude":136.989379},{"latitude":35.161499,
+        "longitude":136.989379}]}'
+    - name: PROVIDER_NAME
+      value: AgentProvider20
+  - name: agent-provider21
+    image: synerex-simulation/agent-provider:latest
+    imagePullPolicy: Never
+    env:
+    - name: NODEID_SERVER
+      value: :9000
+    - name: SYNEREX_SERVER
+      value: :10000
+    - name: AREA
+      value: '{"id":11, "name":"Unknown", "duplicate_area": [{"latitude":35.1624279,
+        "longitude":136.9698507},{"latitude":35.1512811, "longitude":136.9698507},{"latitude":35.1512811,
+        "longitude":136.9911543},{"latitude":35.1624279, "longitude":136.9911543}],
+        "control_area": [{"latitude":35.161499, "longitude":136.971626},{"latitude":35.15221,
+        "longitude":136.971626},{"latitude":35.15221, "longitude":136.989379},{"latitude":35.161499,
+        "longitude":136.989379}]}'
+    - name: PROVIDER_NAME
+      value: AgentProvider21
+  - name: agent-provider22
+    image: synerex-simulation/agent-provider:latest
+    imagePullPolicy: Never
+    env:
+    - name: NODEID_SERVER
+      value: :9000
+    - name: SYNEREX_SERVER
+      value: :10000
+    - name: AREA
+      value: '{"id":11, "name":"Unknown", "duplicate_area": [{"latitude":35.1624279,
+        "longitude":136.9698507},{"latitude":35.1512811, "longitude":136.9698507},{"latitude":35.1512811,
+        "longitude":136.9911543},{"latitude":35.1624279, "longitude":136.9911543}],
+        "control_area": [{"latitude":35.161499, "longitude":136.971626},{"latitude":35.15221,
+        "longitude":136.971626},{"latitude":35.15221, "longitude":136.989379},{"latitude":35.161499,
+        "longitude":136.989379}]}'
+    - name: PROVIDER_NAME
+      value: AgentProvider22
+  - name: agent-provider23
+    image: synerex-simulation/agent-provider:latest
+    imagePullPolicy: Never
+    env:
+    - name: NODEID_SERVER
+      value: :9000
+    - name: SYNEREX_SERVER
+      value: :10000
+    - name: AREA
+      value: '{"id":11, "name":"Unknown", "duplicate_area": [{"latitude":35.1624279,
+        "longitude":136.9698507},{"latitude":35.1512811, "longitude":136.9698507},{"latitude":35.1512811,
+        "longitude":136.9911543},{"latitude":35.1624279, "longitude":136.9911543}],
+        "control_area": [{"latitude":35.161499, "longitude":136.971626},{"latitude":35.15221,
+        "longitude":136.971626},{"latitude":35.15221, "longitude":136.989379},{"latitude":35.161499,
+        "longitude":136.989379}]}'
+    - name: PROVIDER_NAME
+      value: AgentProvider23
+  - name: agent-provider24
+    image: synerex-simulation/agent-provider:latest
+    imagePullPolicy: Never
+    env:
+    - name: NODEID_SERVER
+      value: :9000
+    - name: SYNEREX_SERVER
+      value: :10000
+    - name: AREA
+      value: '{"id":11, "name":"Unknown", "duplicate_area": [{"latitude":35.1624279,
+        "longitude":136.9698507},{"latitude":35.1512811, "longitude":136.9698507},{"latitude":35.1512811,
+        "longitude":136.9911543},{"latitude":35.1624279, "longitude":136.9911543}],
+        "control_area": [{"latitude":35.161499, "longitude":136.971626},{"latitude":35.15221,
+        "longitude":136.971626},{"latitude":35.15221, "longitude":136.989379},{"latitude":35.161499,
+        "longitude":136.989379}]}'
+    - name: PROVIDER_NAME
+      value: AgentProvider24
+  - name: agent-provider25
+    image: synerex-simulation/agent-provider:latest
+    imagePullPolicy: Never
+    env:
+    - name: NODEID_SERVER
+      value: :9000
+    - name: SYNEREX_SERVER
+      value: :10000
+    - name: AREA
+      value: '{"id":11, "name":"Unknown", "duplicate_area": [{"latitude":35.1624279,
+        "longitude":136.9698507},{"latitude":35.1512811, "longitude":136.9698507},{"latitude":35.1512811,
+        "longitude":136.9911543},{"latitude":35.1624279, "longitude":136.9911543}],
+        "control_area": [{"latitude":35.161499, "longitude":136.971626},{"latitude":35.15221,
+        "longitude":136.971626},{"latitude":35.15221, "longitude":136.989379},{"latitude":35.161499,
+        "longitude":136.989379}]}'
+    - name: PROVIDER_NAME
+      value: AgentProvider25
+  - name: agent-provider26
+    image: synerex-simulation/agent-provider:latest
+    imagePullPolicy: Never
+    env:
+    - name: NODEID_SERVER
+      value: :9000
+    - name: SYNEREX_SERVER
+      value: :10000
+    - name: AREA
+      value: '{"id":11, "name":"Unknown", "duplicate_area": [{"latitude":35.1624279,
+        "longitude":136.9698507},{"latitude":35.1512811, "longitude":136.9698507},{"latitude":35.1512811,
+        "longitude":136.9911543},{"latitude":35.1624279, "longitude":136.9911543}],
+        "control_area": [{"latitude":35.161499, "longitude":136.971626},{"latitude":35.15221,
+        "longitude":136.971626},{"latitude":35.15221, "longitude":136.989379},{"latitude":35.161499,
+        "longitude":136.989379}]}'
+    - name: PROVIDER_NAME
+      value: AgentProvider26
+  - name: agent-provider27
+    image: synerex-simulation/agent-provider:latest
+    imagePullPolicy: Never
+    env:
+    - name: NODEID_SERVER
+      value: :9000
+    - name: SYNEREX_SERVER
+      value: :10000
+    - name: AREA
+      value: '{"id":11, "name":"Unknown", "duplicate_area": [{"latitude":35.1624279,
+        "longitude":136.9698507},{"latitude":35.1512811, "longitude":136.9698507},{"latitude":35.1512811,
+        "longitude":136.9911543},{"latitude":35.1624279, "longitude":136.9911543}],
+        "control_area": [{"latitude":35.161499, "longitude":136.971626},{"latitude":35.15221,
+        "longitude":136.971626},{"latitude":35.15221, "longitude":136.989379},{"latitude":35.161499,
+        "longitude":136.989379}]}'
+    - name: PROVIDER_NAME
+      value: AgentProvider27
+  - name: agent-provider28
+    image: synerex-simulation/agent-provider:latest
+    imagePullPolicy: Never
+    env:
+    - name: NODEID_SERVER
+      value: :9000
+    - name: SYNEREX_SERVER
+      value: :10000
+    - name: AREA
+      value: '{"id":11, "name":"Unknown", "duplicate_area": [{"latitude":35.1624279,
+        "longitude":136.9698507},{"latitude":35.1512811, "longitude":136.9698507},{"latitude":35.1512811,
+        "longitude":136.9911543},{"latitude":35.1624279, "longitude":136.9911543}],
+        "control_area": [{"latitude":35.161499, "longitude":136.971626},{"latitude":35.15221,
+        "longitude":136.971626},{"latitude":35.15221, "longitude":136.989379},{"latitude":35.161499,
+        "longitude":136.989379}]}'
+    - name: PROVIDER_NAME
+      value: AgentProvider28
+  - name: agent-provider29
+    image: synerex-simulation/agent-provider:latest
+    imagePullPolicy: Never
+    env:
+    - name: NODEID_SERVER
+      value: :9000
+    - name: SYNEREX_SERVER
+      value: :10000
+    - name: AREA
+      value: '{"id":11, "name":"Unknown", "duplicate_area": [{"latitude":35.1624279,
+        "longitude":136.9698507},{"latitude":35.1512811, "longitude":136.9698507},{"latitude":35.1512811,
+        "longitude":136.9911543},{"latitude":35.1624279, "longitude":136.9911543}],
+        "control_area": [{"latitude":35.161499, "longitude":136.971626},{"latitude":35.15221,
+        "longitude":136.971626},{"latitude":35.15221, "longitude":136.989379},{"latitude":35.161499,
+        "longitude":136.989379}]}'
+    - name: PROVIDER_NAME
+      value: AgentProvider29
+  - name: agent-provider30
+    image: synerex-simulation/agent-provider:latest
+    imagePullPolicy: Never
+    env:
+    - name: NODEID_SERVER
+      value: :9000
+    - name: SYNEREX_SERVER
+      value: :10000
+    - name: AREA
+      value: '{"id":11, "name":"Unknown", "duplicate_area": [{"latitude":35.1624279,
+        "longitude":136.9698507},{"latitude":35.1512811, "longitude":136.9698507},{"latitude":35.1512811,
+        "longitude":136.9911543},{"latitude":35.1624279, "longitude":136.9911543}],
+        "control_area": [{"latitude":35.161499, "longitude":136.971626},{"latitude":35.15221,
+        "longitude":136.971626},{"latitude":35.15221, "longitude":136.989379},{"latitude":35.161499,
+        "longitude":136.989379}]}'
+    - name: PROVIDER_NAME
+      value: AgentProvider30
+  - name: agent-provider31
+    image: synerex-simulation/agent-provider:latest
+    imagePullPolicy: Never
+    env:
+    - name: NODEID_SERVER
+      value: :9000
+    - name: SYNEREX_SERVER
+      value: :10000
+    - name: AREA
+      value: '{"id":11, "name":"Unknown", "duplicate_area": [{"latitude":35.1624279,
+        "longitude":136.9698507},{"latitude":35.1512811, "longitude":136.9698507},{"latitude":35.1512811,
+        "longitude":136.9911543},{"latitude":35.1624279, "longitude":136.9911543}],
+        "control_area": [{"latitude":35.161499, "longitude":136.971626},{"latitude":35.15221,
+        "longitude":136.971626},{"latitude":35.15221, "longitude":136.989379},{"latitude":35.161499,
+        "longitude":136.989379}]}'
+    - name: PROVIDER_NAME
+      value: AgentProvider31
+  - name: agent-provider32
+    image: synerex-simulation/agent-provider:latest
+    imagePullPolicy: Never
+    env:
+    - name: NODEID_SERVER
+      value: :9000
+    - name: SYNEREX_SERVER
+      value: :10000
+    - name: AREA
+      value: '{"id":11, "name":"Unknown", "duplicate_area": [{"latitude":35.1624279,
+        "longitude":136.9698507},{"latitude":35.1512811, "longitude":136.9698507},{"latitude":35.1512811,
+        "longitude":136.9911543},{"latitude":35.1624279, "longitude":136.9911543}],
+        "control_area": [{"latitude":35.161499, "longitude":136.971626},{"latitude":35.15221,
+        "longitude":136.971626},{"latitude":35.15221, "longitude":136.989379},{"latitude":35.161499,
+        "longitude":136.989379}]}'
+    - name: PROVIDER_NAME
+      value: AgentProvider32
+  - name: agent-provider33
+    image: synerex-simulation/agent-provider:latest
+    imagePullPolicy: Never
+    env:
+    - name: NODEID_SERVER
+      value: :9000
+    - name: SYNEREX_SERVER
+      value: :10000
+    - name: AREA
+      value: '{"id":11, "name":"Unknown", "duplicate_area": [{"latitude":35.1624279,
+        "longitude":136.9698507},{"latitude":35.1512811, "longitude":136.9698507},{"latitude":35.1512811,
+        "longitude":136.9911543},{"latitude":35.1624279, "longitude":136.9911543}],
+        "control_area": [{"latitude":35.161499, "longitude":136.971626},{"latitude":35.15221,
+        "longitude":136.971626},{"latitude":35.15221, "longitude":136.989379},{"latitude":35.161499,
+        "longitude":136.989379}]}'
+    - name: PROVIDER_NAME
+      value: AgentProvider33
+  - name: agent-provider34
+    image: synerex-simulation/agent-provider:latest
+    imagePullPolicy: Never
+    env:
+    - name: NODEID_SERVER
+      value: :9000
+    - name: SYNEREX_SERVER
+      value: :10000
+    - name: AREA
+      value: '{"id":11, "name":"Unknown", "duplicate_area": [{"latitude":35.1624279,
+        "longitude":136.9698507},{"latitude":35.1512811, "longitude":136.9698507},{"latitude":35.1512811,
+        "longitude":136.9911543},{"latitude":35.1624279, "longitude":136.9911543}],
+        "control_area": [{"latitude":35.161499, "longitude":136.971626},{"latitude":35.15221,
+        "longitude":136.971626},{"latitude":35.15221, "longitude":136.989379},{"latitude":35.161499,
+        "longitude":136.989379}]}'
+    - name: PROVIDER_NAME
+      value: AgentProvider34
+  - name: agent-provider35
+    image: synerex-simulation/agent-provider:latest
+    imagePullPolicy: Never
+    env:
+    - name: NODEID_SERVER
+      value: :9000
+    - name: SYNEREX_SERVER
+      value: :10000
+    - name: AREA
+      value: '{"id":11, "name":"Unknown", "duplicate_area": [{"latitude":35.1624279,
+        "longitude":136.9698507},{"latitude":35.1512811, "longitude":136.9698507},{"latitude":35.1512811,
+        "longitude":136.9911543},{"latitude":35.1624279, "longitude":136.9911543}],
+        "control_area": [{"latitude":35.161499, "longitude":136.971626},{"latitude":35.15221,
+        "longitude":136.971626},{"latitude":35.15221, "longitude":136.989379},{"latitude":35.161499,
+        "longitude":136.989379}]}'
+    - name: PROVIDER_NAME
+      value: AgentProvider35
+  - name: agent-provider36
+    image: synerex-simulation/agent-provider:latest
+    imagePullPolicy: Never
+    env:
+    - name: NODEID_SERVER
+      value: :9000
+    - name: SYNEREX_SERVER
+      value: :10000
+    - name: AREA
+      value: '{"id":11, "name":"Unknown", "duplicate_area": [{"latitude":35.1624279,
+        "longitude":136.9698507},{"latitude":35.1512811, "longitude":136.9698507},{"latitude":35.1512811,
+        "longitude":136.9911543},{"latitude":35.1624279, "longitude":136.9911543}],
+        "control_area": [{"latitude":35.161499, "longitude":136.971626},{"latitude":35.15221,
+        "longitude":136.971626},{"latitude":35.15221, "longitude":136.989379},{"latitude":35.161499,
+        "longitude":136.989379}]}'
+    - name: PROVIDER_NAME
+      value: AgentProvider36
+  - name: agent-provider37
+    image: synerex-simulation/agent-provider:latest
+    imagePullPolicy: Never
+    env:
+    - name: NODEID_SERVER
+      value: :9000
+    - name: SYNEREX_SERVER
+      value: :10000
+    - name: AREA
+      value: '{"id":11, "name":"Unknown", "duplicate_area": [{"latitude":35.1624279,
+        "longitude":136.9698507},{"latitude":35.1512811, "longitude":136.9698507},{"latitude":35.1512811,
+        "longitude":136.9911543},{"latitude":35.1624279, "longitude":136.9911543}],
+        "control_area": [{"latitude":35.161499, "longitude":136.971626},{"latitude":35.15221,
+        "longitude":136.971626},{"latitude":35.15221, "longitude":136.989379},{"latitude":35.161499,
+        "longitude":136.989379}]}'
+    - name: PROVIDER_NAME
+      value: AgentProvider37
+  - name: agent-provider38
+    image: synerex-simulation/agent-provider:latest
+    imagePullPolicy: Never
+    env:
+    - name: NODEID_SERVER
+      value: :9000
+    - name: SYNEREX_SERVER
+      value: :10000
+    - name: AREA
+      value: '{"id":11, "name":"Unknown", "duplicate_area": [{"latitude":35.1624279,
+        "longitude":136.9698507},{"latitude":35.1512811, "longitude":136.9698507},{"latitude":35.1512811,
+        "longitude":136.9911543},{"latitude":35.1624279, "longitude":136.9911543}],
+        "control_area": [{"latitude":35.161499, "longitude":136.971626},{"latitude":35.15221,
+        "longitude":136.971626},{"latitude":35.15221, "longitude":136.989379},{"latitude":35.161499,
+        "longitude":136.989379}]}'
+    - name: PROVIDER_NAME
+      value: AgentProvider38
+  - name: agent-provider39
+    image: synerex-simulation/agent-provider:latest
+    imagePullPolicy: Never
+    env:
+    - name: NODEID_SERVER
+      value: :9000
+    - name: SYNEREX_SERVER
+      value: :10000
+    - name: AREA
+      value: '{"id":11, "name":"Unknown", "duplicate_area": [{"latitude":35.1624279,
+        "longitude":136.9698507},{"latitude":35.1512811, "longitude":136.9698507},{"latitude":35.1512811,
+        "longitude":136.9911543},{"latitude":35.1624279, "longitude":136.9911543}],
+        "control_area": [{"latitude":35.161499, "longitude":136.971626},{"latitude":35.15221,
+        "longitude":136.971626},{"latitude":35.15221, "longitude":136.989379},{"latitude":35.161499,
+        "longitude":136.989379}]}'
+    - name: PROVIDER_NAME
+      value: AgentProvider39
+  - name: agent-provider40
+    image: synerex-simulation/agent-provider:latest
+    imagePullPolicy: Never
+    env:
+    - name: NODEID_SERVER
+      value: :9000
+    - name: SYNEREX_SERVER
+      value: :10000
+    - name: AREA
+      value: '{"id":11, "name":"Unknown", "duplicate_area": [{"latitude":35.1624279,
+        "longitude":136.9698507},{"latitude":35.1512811, "longitude":136.9698507},{"latitude":35.1512811,
+        "longitude":136.9911543},{"latitude":35.1624279, "longitude":136.9911543}],
+        "control_area": [{"latitude":35.161499, "longitude":136.971626},{"latitude":35.15221,
+        "longitude":136.971626},{"latitude":35.15221, "longitude":136.989379},{"latitude":35.161499,
+        "longitude":136.989379}]}'
+    - name: PROVIDER_NAME
+      value: AgentProvider40
+  - name: agent-provider41
+    image: synerex-simulation/agent-provider:latest
+    imagePullPolicy: Never
+    env:
+    - name: NODEID_SERVER
+      value: :9000
+    - name: SYNEREX_SERVER
+      value: :10000
+    - name: AREA
+      value: '{"id":11, "name":"Unknown", "duplicate_area": [{"latitude":35.1624279,
+        "longitude":136.9698507},{"latitude":35.1512811, "longitude":136.9698507},{"latitude":35.1512811,
+        "longitude":136.9911543},{"latitude":35.1624279, "longitude":136.9911543}],
+        "control_area": [{"latitude":35.161499, "longitude":136.971626},{"latitude":35.15221,
+        "longitude":136.971626},{"latitude":35.15221, "longitude":136.989379},{"latitude":35.161499,
+        "longitude":136.989379}]}'
+    - name: PROVIDER_NAME
+      value: AgentProvider41
+  - name: agent-provider42
+    image: synerex-simulation/agent-provider:latest
+    imagePullPolicy: Never
+    env:
+    - name: NODEID_SERVER
+      value: :9000
+    - name: SYNEREX_SERVER
+      value: :10000
+    - name: AREA
+      value: '{"id":11, "name":"Unknown", "duplicate_area": [{"latitude":35.1624279,
+        "longitude":136.9698507},{"latitude":35.1512811, "longitude":136.9698507},{"latitude":35.1512811,
+        "longitude":136.9911543},{"latitude":35.1624279, "longitude":136.9911543}],
+        "control_area": [{"latitude":35.161499, "longitude":136.971626},{"latitude":35.15221,
+        "longitude":136.971626},{"latitude":35.15221, "longitude":136.989379},{"latitude":35.161499,
+        "longitude":136.989379}]}'
+    - name: PROVIDER_NAME
+      value: AgentProvider42
+  - name: agent-provider43
+    image: synerex-simulation/agent-provider:latest
+    imagePullPolicy: Never
+    env:
+    - name: NODEID_SERVER
+      value: :9000
+    - name: SYNEREX_SERVER
+      value: :10000
+    - name: AREA
+      value: '{"id":11, "name":"Unknown", "duplicate_area": [{"latitude":35.1624279,
+        "longitude":136.9698507},{"latitude":35.1512811, "longitude":136.9698507},{"latitude":35.1512811,
+        "longitude":136.9911543},{"latitude":35.1624279, "longitude":136.9911543}],
+        "control_area": [{"latitude":35.161499, "longitude":136.971626},{"latitude":35.15221,
+        "longitude":136.971626},{"latitude":35.15221, "longitude":136.989379},{"latitude":35.161499,
+        "longitude":136.989379}]}'
+    - name: PROVIDER_NAME
+      value: AgentProvider43
+  - name: agent-provider44
+    image: synerex-simulation/agent-provider:latest
+    imagePullPolicy: Never
+    env:
+    - name: NODEID_SERVER
+      value: :9000
+    - name: SYNEREX_SERVER
+      value: :10000
+    - name: AREA
+      value: '{"id":11, "name":"Unknown", "duplicate_area": [{"latitude":35.1624279,
+        "longitude":136.9698507},{"latitude":35.1512811, "longitude":136.9698507},{"latitude":35.1512811,
+        "longitude":136.9911543},{"latitude":35.1624279, "longitude":136.9911543}],
+        "control_area": [{"latitude":35.161499, "longitude":136.971626},{"latitude":35.15221,
+        "longitude":136.971626},{"latitude":35.15221, "longitude":136.989379},{"latitude":35.161499,
+        "longitude":136.989379}]}'
+    - name: PROVIDER_NAME
+      value: AgentProvider44
+  - name: agent-provider45
+    image: synerex-simulation/agent-provider:latest
+    imagePullPolicy: Never
+    env:
+    - name: NODEID_SERVER
+      value: :9000
+    - name: SYNEREX_SERVER
+      value: :10000
+    - name: AREA
+      value: '{"id":11, "name":"Unknown", "duplicate_area": [{"latitude":35.1624279,
+        "longitude":136.9698507},{"latitude":35.1512811, "longitude":136.9698507},{"latitude":35.1512811,
+        "longitude":136.9911543},{"latitude":35.1624279, "longitude":136.9911543}],
+        "control_area": [{"latitude":35.161499, "longitude":136.971626},{"latitude":35.15221,
+        "longitude":136.971626},{"latitude":35.15221, "longitude":136.989379},{"latitude":35.161499,
+        "longitude":136.989379}]}'
+    - name: PROVIDER_NAME
+      value: AgentProvider45
+  - name: agent-provider46
+    image: synerex-simulation/agent-provider:latest
+    imagePullPolicy: Never
+    env:
+    - name: NODEID_SERVER
+      value: :9000
+    - name: SYNEREX_SERVER
+      value: :10000
+    - name: AREA
+      value: '{"id":11, "name":"Unknown", "duplicate_area": [{"latitude":35.1624279,
+        "longitude":136.9698507},{"latitude":35.1512811, "longitude":136.9698507},{"latitude":35.1512811,
+        "longitude":136.9911543},{"latitude":35.1624279, "longitude":136.9911543}],
+        "control_area": [{"latitude":35.161499, "longitude":136.971626},{"latitude":35.15221,
+        "longitude":136.971626},{"latitude":35.15221, "longitude":136.989379},{"latitude":35.161499,
+        "longitude":136.989379}]}'
+    - name: PROVIDER_NAME
+      value: AgentProvider46
+  - name: agent-provider47
+    image: synerex-simulation/agent-provider:latest
+    imagePullPolicy: Never
+    env:
+    - name: NODEID_SERVER
+      value: :9000
+    - name: SYNEREX_SERVER
+      value: :10000
+    - name: AREA
+      value: '{"id":11, "name":"Unknown", "duplicate_area": [{"latitude":35.1624279,
+        "longitude":136.9698507},{"latitude":35.1512811, "longitude":136.9698507},{"latitude":35.1512811,
+        "longitude":136.9911543},{"latitude":35.1624279, "longitude":136.9911543}],
+        "control_area": [{"latitude":35.161499, "longitude":136.971626},{"latitude":35.15221,
+        "longitude":136.971626},{"latitude":35.15221, "longitude":136.989379},{"latitude":35.161499,
+        "longitude":136.989379}]}'
+    - name: PROVIDER_NAME
+      value: AgentProvider47
+  - name: agent-provider48
+    image: synerex-simulation/agent-provider:latest
+    imagePullPolicy: Never
+    env:
+    - name: NODEID_SERVER
+      value: :9000
+    - name: SYNEREX_SERVER
+      value: :10000
+    - name: AREA
+      value: '{"id":11, "name":"Unknown", "duplicate_area": [{"latitude":35.1624279,
+        "longitude":136.9698507},{"latitude":35.1512811, "longitude":136.9698507},{"latitude":35.1512811,
+        "longitude":136.9911543},{"latitude":35.1624279, "longitude":136.9911543}],
+        "control_area": [{"latitude":35.161499, "longitude":136.971626},{"latitude":35.15221,
+        "longitude":136.971626},{"latitude":35.15221, "longitude":136.989379},{"latitude":35.161499,
+        "longitude":136.989379}]}'
+    - name: PROVIDER_NAME
+      value: AgentProvider48
+  - name: agent-provider49
+    image: synerex-simulation/agent-provider:latest
+    imagePullPolicy: Never
+    env:
+    - name: NODEID_SERVER
+      value: :9000
+    - name: SYNEREX_SERVER
+      value: :10000
+    - name: AREA
+      value: '{"id":11, "name":"Unknown", "duplicate_area": [{"latitude":35.1624279,
+        "longitude":136.9698507},{"latitude":35.1512811, "longitude":136.9698507},{"latitude":35.1512811,
+        "longitude":136.9911543},{"latitude":35.1624279, "longitude":136.9911543}],
+        "control_area": [{"latitude":35.161499, "longitude":136.971626},{"latitude":35.15221,
+        "longitude":136.971626},{"latitude":35.15221, "longitude":136.989379},{"latitude":35.161499,
+        "longitude":136.989379}]}'
+    - name: PROVIDER_NAME
+      value: AgentProvider49
+  - name: agent-provider50
+    image: synerex-simulation/agent-provider:latest
+    imagePullPolicy: Never
+    env:
+    - name: NODEID_SERVER
+      value: :9000
+    - name: SYNEREX_SERVER
+      value: :10000
+    - name: AREA
+      value: '{"id":11, "name":"Unknown", "duplicate_area": [{"latitude":35.1624279,
+        "longitude":136.9698507},{"latitude":35.1512811, "longitude":136.9698507},{"latitude":35.1512811,
+        "longitude":136.9911543},{"latitude":35.1624279, "longitude":136.9911543}],
+        "control_area": [{"latitude":35.161499, "longitude":136.971626},{"latitude":35.15221,
+        "longitude":136.971626},{"latitude":35.15221, "longitude":136.989379},{"latitude":35.161499,
+        "longitude":136.989379}]}'
+    - name: PROVIDER_NAME
+      value: AgentProvider50
+  - name: agent-provider51
+    image: synerex-simulation/agent-provider:latest
+    imagePullPolicy: Never
+    env:
+    - name: NODEID_SERVER
+      value: :9000
+    - name: SYNEREX_SERVER
+      value: :10000
+    - name: AREA
+      value: '{"id":11, "name":"Unknown", "duplicate_area": [{"latitude":35.1624279,
+        "longitude":136.9698507},{"latitude":35.1512811, "longitude":136.9698507},{"latitude":35.1512811,
+        "longitude":136.9911543},{"latitude":35.1624279, "longitude":136.9911543}],
+        "control_area": [{"latitude":35.161499, "longitude":136.971626},{"latitude":35.15221,
+        "longitude":136.971626},{"latitude":35.15221, "longitude":136.989379},{"latitude":35.161499,
+        "longitude":136.989379}]}'
+    - name: PROVIDER_NAME
+      value: AgentProvider51
+  - name: agent-provider52
+    image: synerex-simulation/agent-provider:latest
+    imagePullPolicy: Never
+    env:
+    - name: NODEID_SERVER
+      value: :9000
+    - name: SYNEREX_SERVER
+      value: :10000
+    - name: AREA
+      value: '{"id":11, "name":"Unknown", "duplicate_area": [{"latitude":35.1624279,
+        "longitude":136.9698507},{"latitude":35.1512811, "longitude":136.9698507},{"latitude":35.1512811,
+        "longitude":136.9911543},{"latitude":35.1624279, "longitude":136.9911543}],
+        "control_area": [{"latitude":35.161499, "longitude":136.971626},{"latitude":35.15221,
+        "longitude":136.971626},{"latitude":35.15221, "longitude":136.989379},{"latitude":35.161499,
+        "longitude":136.989379}]}'
+    - name: PROVIDER_NAME
+      value: AgentProvider52
+  - name: agent-provider53
+    image: synerex-simulation/agent-provider:latest
+    imagePullPolicy: Never
+    env:
+    - name: NODEID_SERVER
+      value: :9000
+    - name: SYNEREX_SERVER
+      value: :10000
+    - name: AREA
+      value: '{"id":11, "name":"Unknown", "duplicate_area": [{"latitude":35.1624279,
+        "longitude":136.9698507},{"latitude":35.1512811, "longitude":136.9698507},{"latitude":35.1512811,
+        "longitude":136.9911543},{"latitude":35.1624279, "longitude":136.9911543}],
+        "control_area": [{"latitude":35.161499, "longitude":136.971626},{"latitude":35.15221,
+        "longitude":136.971626},{"latitude":35.15221, "longitude":136.989379},{"latitude":35.161499,
+        "longitude":136.989379}]}'
+    - name: PROVIDER_NAME
+      value: AgentProvider53
+  - name: agent-provider54
+    image: synerex-simulation/agent-provider:latest
+    imagePullPolicy: Never
+    env:
+    - name: NODEID_SERVER
+      value: :9000
+    - name: SYNEREX_SERVER
+      value: :10000
+    - name: AREA
+      value: '{"id":11, "name":"Unknown", "duplicate_area": [{"latitude":35.1624279,
+        "longitude":136.9698507},{"latitude":35.1512811, "longitude":136.9698507},{"latitude":35.1512811,
+        "longitude":136.9911543},{"latitude":35.1624279, "longitude":136.9911543}],
+        "control_area": [{"latitude":35.161499, "longitude":136.971626},{"latitude":35.15221,
+        "longitude":136.971626},{"latitude":35.15221, "longitude":136.989379},{"latitude":35.161499,
+        "longitude":136.989379}]}'
+    - name: PROVIDER_NAME
+      value: AgentProvider54
+  - name: agent-provider55
+    image: synerex-simulation/agent-provider:latest
+    imagePullPolicy: Never
+    env:
+    - name: NODEID_SERVER
+      value: :9000
+    - name: SYNEREX_SERVER
+      value: :10000
+    - name: AREA
+      value: '{"id":11, "name":"Unknown", "duplicate_area": [{"latitude":35.1624279,
+        "longitude":136.9698507},{"latitude":35.1512811, "longitude":136.9698507},{"latitude":35.1512811,
+        "longitude":136.9911543},{"latitude":35.1624279, "longitude":136.9911543}],
+        "control_area": [{"latitude":35.161499, "longitude":136.971626},{"latitude":35.15221,
+        "longitude":136.971626},{"latitude":35.15221, "longitude":136.989379},{"latitude":35.161499,
+        "longitude":136.989379}]}'
+    - name: PROVIDER_NAME
+      value: AgentProvider55
+  - name: agent-provider56
+    image: synerex-simulation/agent-provider:latest
+    imagePullPolicy: Never
+    env:
+    - name: NODEID_SERVER
+      value: :9000
+    - name: SYNEREX_SERVER
+      value: :10000
+    - name: AREA
+      value: '{"id":11, "name":"Unknown", "duplicate_area": [{"latitude":35.1624279,
+        "longitude":136.9698507},{"latitude":35.1512811, "longitude":136.9698507},{"latitude":35.1512811,
+        "longitude":136.9911543},{"latitude":35.1624279, "longitude":136.9911543}],
+        "control_area": [{"latitude":35.161499, "longitude":136.971626},{"latitude":35.15221,
+        "longitude":136.971626},{"latitude":35.15221, "longitude":136.989379},{"latitude":35.161499,
+        "longitude":136.989379}]}'
+    - name: PROVIDER_NAME
+      value: AgentProvider56
+  - name: agent-provider57
+    image: synerex-simulation/agent-provider:latest
+    imagePullPolicy: Never
+    env:
+    - name: NODEID_SERVER
+      value: :9000
+    - name: SYNEREX_SERVER
+      value: :10000
+    - name: AREA
+      value: '{"id":11, "name":"Unknown", "duplicate_area": [{"latitude":35.1624279,
+        "longitude":136.9698507},{"latitude":35.1512811, "longitude":136.9698507},{"latitude":35.1512811,
+        "longitude":136.9911543},{"latitude":35.1624279, "longitude":136.9911543}],
+        "control_area": [{"latitude":35.161499, "longitude":136.971626},{"latitude":35.15221,
+        "longitude":136.971626},{"latitude":35.15221, "longitude":136.989379},{"latitude":35.161499,
+        "longitude":136.989379}]}'
+    - name: PROVIDER_NAME
+      value: AgentProvider57
+  - name: agent-provider58
+    image: synerex-simulation/agent-provider:latest
+    imagePullPolicy: Never
+    env:
+    - name: NODEID_SERVER
+      value: :9000
+    - name: SYNEREX_SERVER
+      value: :10000
+    - name: AREA
+      value: '{"id":11, "name":"Unknown", "duplicate_area": [{"latitude":35.1624279,
+        "longitude":136.9698507},{"latitude":35.1512811, "longitude":136.9698507},{"latitude":35.1512811,
+        "longitude":136.9911543},{"latitude":35.1624279, "longitude":136.9911543}],
+        "control_area": [{"latitude":35.161499, "longitude":136.971626},{"latitude":35.15221,
+        "longitude":136.971626},{"latitude":35.15221, "longitude":136.989379},{"latitude":35.161499,
+        "longitude":136.989379}]}'
+    - name: PROVIDER_NAME
+      value: AgentProvider58
+  - name: agent-provider59
+    image: synerex-simulation/agent-provider:latest
+    imagePullPolicy: Never
+    env:
+    - name: NODEID_SERVER
+      value: :9000
+    - name: SYNEREX_SERVER
+      value: :10000
+    - name: AREA
+      value: '{"id":11, "name":"Unknown", "duplicate_area": [{"latitude":35.1624279,
+        "longitude":136.9698507},{"latitude":35.1512811, "longitude":136.9698507},{"latitude":35.1512811,
+        "longitude":136.9911543},{"latitude":35.1624279, "longitude":136.9911543}],
+        "control_area": [{"latitude":35.161499, "longitude":136.971626},{"latitude":35.15221,
+        "longitude":136.971626},{"latitude":35.15221, "longitude":136.989379},{"latitude":35.161499,
+        "longitude":136.989379}]}'
+    - name: PROVIDER_NAME
+      value: AgentProvider59
+  - name: agent-provider60
+    image: synerex-simulation/agent-provider:latest
+    imagePullPolicy: Never
+    env:
+    - name: NODEID_SERVER
+      value: :9000
+    - name: SYNEREX_SERVER
+      value: :10000
+    - name: AREA
+      value: '{"id":11, "name":"Unknown", "duplicate_area": [{"latitude":35.1624279,
+        "longitude":136.9698507},{"latitude":35.1512811, "longitude":136.9698507},{"latitude":35.1512811,
+        "longitude":136.9911543},{"latitude":35.1624279, "longitude":136.9911543}],
+        "control_area": [{"latitude":35.161499, "longitude":136.971626},{"latitude":35.15221,
+        "longitude":136.971626},{"latitude":35.15221, "longitude":136.989379},{"latitude":35.161499,
+        "longitude":136.989379}]}'
+    - name: PROVIDER_NAME
+      value: AgentProvider60
+  - name: agent-provider61
+    image: synerex-simulation/agent-provider:latest
+    imagePullPolicy: Never
+    env:
+    - name: NODEID_SERVER
+      value: :9000
+    - name: SYNEREX_SERVER
+      value: :10000
+    - name: AREA
+      value: '{"id":11, "name":"Unknown", "duplicate_area": [{"latitude":35.1624279,
+        "longitude":136.9698507},{"latitude":35.1512811, "longitude":136.9698507},{"latitude":35.1512811,
+        "longitude":136.9911543},{"latitude":35.1624279, "longitude":136.9911543}],
+        "control_area": [{"latitude":35.161499, "longitude":136.971626},{"latitude":35.15221,
+        "longitude":136.971626},{"latitude":35.15221, "longitude":136.989379},{"latitude":35.161499,
+        "longitude":136.989379}]}'
+    - name: PROVIDER_NAME
+      value: AgentProvider61
+  - name: agent-provider62
+    image: synerex-simulation/agent-provider:latest
+    imagePullPolicy: Never
+    env:
+    - name: NODEID_SERVER
+      value: :9000
+    - name: SYNEREX_SERVER
+      value: :10000
+    - name: AREA
+      value: '{"id":11, "name":"Unknown", "duplicate_area": [{"latitude":35.1624279,
+        "longitude":136.9698507},{"latitude":35.1512811, "longitude":136.9698507},{"latitude":35.1512811,
+        "longitude":136.9911543},{"latitude":35.1624279, "longitude":136.9911543}],
+        "control_area": [{"latitude":35.161499, "longitude":136.971626},{"latitude":35.15221,
+        "longitude":136.971626},{"latitude":35.15221, "longitude":136.989379},{"latitude":35.161499,
+        "longitude":136.989379}]}'
+    - name: PROVIDER_NAME
+      value: AgentProvider62
+  - name: agent-provider63
+    image: synerex-simulation/agent-provider:latest
+    imagePullPolicy: Never
+    env:
+    - name: NODEID_SERVER
+      value: :9000
+    - name: SYNEREX_SERVER
+      value: :10000
+    - name: AREA
+      value: '{"id":11, "name":"Unknown", "duplicate_area": [{"latitude":35.1624279,
+        "longitude":136.9698507},{"latitude":35.1512811, "longitude":136.9698507},{"latitude":35.1512811,
+        "longitude":136.9911543},{"latitude":35.1624279, "longitude":136.9911543}],
+        "control_area": [{"latitude":35.161499, "longitude":136.971626},{"latitude":35.15221,
+        "longitude":136.971626},{"latitude":35.15221, "longitude":136.989379},{"latitude":35.161499,
+        "longitude":136.989379}]}'
+    - name: PROVIDER_NAME
+      value: AgentProvider63
+  - name: agent-provider64
+    image: synerex-simulation/agent-provider:latest
+    imagePullPolicy: Never
+    env:
+    - name: NODEID_SERVER
+      value: :9000
+    - name: SYNEREX_SERVER
+      value: :10000
+    - name: AREA
+      value: '{"id":11, "name":"Unknown", "duplicate_area": [{"latitude":35.1624279,
+        "longitude":136.9698507},{"latitude":35.1512811, "longitude":136.9698507},{"latitude":35.1512811,
+        "longitude":136.9911543},{"latitude":35.1624279, "longitude":136.9911543}],
+        "control_area": [{"latitude":35.161499, "longitude":136.971626},{"latitude":35.15221,
+        "longitude":136.971626},{"latitude":35.15221, "longitude":136.989379},{"latitude":35.161499,
+        "longitude":136.989379}]}'
+    - name: PROVIDER_NAME
+      value: AgentProvider64
+  - name: agent-provider65
+    image: synerex-simulation/agent-provider:latest
+    imagePullPolicy: Never
+    env:
+    - name: NODEID_SERVER
+      value: :9000
+    - name: SYNEREX_SERVER
+      value: :10000
+    - name: AREA
+      value: '{"id":11, "name":"Unknown", "duplicate_area": [{"latitude":35.1624279,
+        "longitude":136.9698507},{"latitude":35.1512811, "longitude":136.9698507},{"latitude":35.1512811,
+        "longitude":136.9911543},{"latitude":35.1624279, "longitude":136.9911543}],
+        "control_area": [{"latitude":35.161499, "longitude":136.971626},{"latitude":35.15221,
+        "longitude":136.971626},{"latitude":35.15221, "longitude":136.989379},{"latitude":35.161499,
+        "longitude":136.989379}]}'
+    - name: PROVIDER_NAME
+      value: AgentProvider65
+  - name: agent-provider66
+    image: synerex-simulation/agent-provider:latest
+    imagePullPolicy: Never
+    env:
+    - name: NODEID_SERVER
+      value: :9000
+    - name: SYNEREX_SERVER
+      value: :10000
+    - name: AREA
+      value: '{"id":11, "name":"Unknown", "duplicate_area": [{"latitude":35.1624279,
+        "longitude":136.9698507},{"latitude":35.1512811, "longitude":136.9698507},{"latitude":35.1512811,
+        "longitude":136.9911543},{"latitude":35.1624279, "longitude":136.9911543}],
+        "control_area": [{"latitude":35.161499, "longitude":136.971626},{"latitude":35.15221,
+        "longitude":136.971626},{"latitude":35.15221, "longitude":136.989379},{"latitude":35.161499,
+        "longitude":136.989379}]}'
+    - name: PROVIDER_NAME
+      value: AgentProvider66
+  - name: agent-provider67
+    image: synerex-simulation/agent-provider:latest
+    imagePullPolicy: Never
+    env:
+    - name: NODEID_SERVER
+      value: :9000
+    - name: SYNEREX_SERVER
+      value: :10000
+    - name: AREA
+      value: '{"id":11, "name":"Unknown", "duplicate_area": [{"latitude":35.1624279,
+        "longitude":136.9698507},{"latitude":35.1512811, "longitude":136.9698507},{"latitude":35.1512811,
+        "longitude":136.9911543},{"latitude":35.1624279, "longitude":136.9911543}],
+        "control_area": [{"latitude":35.161499, "longitude":136.971626},{"latitude":35.15221,
+        "longitude":136.971626},{"latitude":35.15221, "longitude":136.989379},{"latitude":35.161499,
+        "longitude":136.989379}]}'
+    - name: PROVIDER_NAME
+      value: AgentProvider67
+  - name: agent-provider68
+    image: synerex-simulation/agent-provider:latest
+    imagePullPolicy: Never
+    env:
+    - name: NODEID_SERVER
+      value: :9000
+    - name: SYNEREX_SERVER
+      value: :10000
+    - name: AREA
+      value: '{"id":11, "name":"Unknown", "duplicate_area": [{"latitude":35.1624279,
+        "longitude":136.9698507},{"latitude":35.1512811, "longitude":136.9698507},{"latitude":35.1512811,
+        "longitude":136.9911543},{"latitude":35.1624279, "longitude":136.9911543}],
+        "control_area": [{"latitude":35.161499, "longitude":136.971626},{"latitude":35.15221,
+        "longitude":136.971626},{"latitude":35.15221, "longitude":136.989379},{"latitude":35.161499,
+        "longitude":136.989379}]}'
+    - name: PROVIDER_NAME
+      value: AgentProvider68
+  - name: agent-provider69
+    image: synerex-simulation/agent-provider:latest
+    imagePullPolicy: Never
+    env:
+    - name: NODEID_SERVER
+      value: :9000
+    - name: SYNEREX_SERVER
+      value: :10000
+    - name: AREA
+      value: '{"id":11, "name":"Unknown", "duplicate_area": [{"latitude":35.1624279,
+        "longitude":136.9698507},{"latitude":35.1512811, "longitude":136.9698507},{"latitude":35.1512811,
+        "longitude":136.9911543},{"latitude":35.1624279, "longitude":136.9911543}],
+        "control_area": [{"latitude":35.161499, "longitude":136.971626},{"latitude":35.15221,
+        "longitude":136.971626},{"latitude":35.15221, "longitude":136.989379},{"latitude":35.161499,
+        "longitude":136.989379}]}'
+    - name: PROVIDER_NAME
+      value: AgentProvider69
+  - name: agent-provider70
+    image: synerex-simulation/agent-provider:latest
+    imagePullPolicy: Never
+    env:
+    - name: NODEID_SERVER
+      value: :9000
+    - name: SYNEREX_SERVER
+      value: :10000
+    - name: AREA
+      value: '{"id":11, "name":"Unknown", "duplicate_area": [{"latitude":35.1624279,
+        "longitude":136.9698507},{"latitude":35.1512811, "longitude":136.9698507},{"latitude":35.1512811,
+        "longitude":136.9911543},{"latitude":35.1624279, "longitude":136.9911543}],
+        "control_area": [{"latitude":35.161499, "longitude":136.971626},{"latitude":35.15221,
+        "longitude":136.971626},{"latitude":35.15221, "longitude":136.989379},{"latitude":35.161499,
+        "longitude":136.989379}]}'
+    - name: PROVIDER_NAME
+      value: AgentProvider70
+  - name: agent-provider71
+    image: synerex-simulation/agent-provider:latest
+    imagePullPolicy: Never
+    env:
+    - name: NODEID_SERVER
+      value: :9000
+    - name: SYNEREX_SERVER
+      value: :10000
+    - name: AREA
+      value: '{"id":11, "name":"Unknown", "duplicate_area": [{"latitude":35.1624279,
+        "longitude":136.9698507},{"latitude":35.1512811, "longitude":136.9698507},{"latitude":35.1512811,
+        "longitude":136.9911543},{"latitude":35.1624279, "longitude":136.9911543}],
+        "control_area": [{"latitude":35.161499, "longitude":136.971626},{"latitude":35.15221,
+        "longitude":136.971626},{"latitude":35.15221, "longitude":136.989379},{"latitude":35.161499,
+        "longitude":136.989379}]}'
+    - name: PROVIDER_NAME
+      value: AgentProvider71
+  - name: agent-provider72
+    image: synerex-simulation/agent-provider:latest
+    imagePullPolicy: Never
+    env:
+    - name: NODEID_SERVER
+      value: :9000
+    - name: SYNEREX_SERVER
+      value: :10000
+    - name: AREA
+      value: '{"id":11, "name":"Unknown", "duplicate_area": [{"latitude":35.1624279,
+        "longitude":136.9698507},{"latitude":35.1512811, "longitude":136.9698507},{"latitude":35.1512811,
+        "longitude":136.9911543},{"latitude":35.1624279, "longitude":136.9911543}],
+        "control_area": [{"latitude":35.161499, "longitude":136.971626},{"latitude":35.15221,
+        "longitude":136.971626},{"latitude":35.15221, "longitude":136.989379},{"latitude":35.161499,
+        "longitude":136.989379}]}'
+    - name: PROVIDER_NAME
+      value: AgentProvider72
+  - name: agent-provider73
+    image: synerex-simulation/agent-provider:latest
+    imagePullPolicy: Never
+    env:
+    - name: NODEID_SERVER
+      value: :9000
+    - name: SYNEREX_SERVER
+      value: :10000
+    - name: AREA
+      value: '{"id":11, "name":"Unknown", "duplicate_area": [{"latitude":35.1624279,
+        "longitude":136.9698507},{"latitude":35.1512811, "longitude":136.9698507},{"latitude":35.1512811,
+        "longitude":136.9911543},{"latitude":35.1624279, "longitude":136.9911543}],
+        "control_area": [{"latitude":35.161499, "longitude":136.971626},{"latitude":35.15221,
+        "longitude":136.971626},{"latitude":35.15221, "longitude":136.989379},{"latitude":35.161499,
+        "longitude":136.989379}]}'
+    - name: PROVIDER_NAME
+      value: AgentProvider73
+  - name: agent-provider74
+    image: synerex-simulation/agent-provider:latest
+    imagePullPolicy: Never
+    env:
+    - name: NODEID_SERVER
+      value: :9000
+    - name: SYNEREX_SERVER
+      value: :10000
+    - name: AREA
+      value: '{"id":11, "name":"Unknown", "duplicate_area": [{"latitude":35.1624279,
+        "longitude":136.9698507},{"latitude":35.1512811, "longitude":136.9698507},{"latitude":35.1512811,
+        "longitude":136.9911543},{"latitude":35.1624279, "longitude":136.9911543}],
+        "control_area": [{"latitude":35.161499, "longitude":136.971626},{"latitude":35.15221,
+        "longitude":136.971626},{"latitude":35.15221, "longitude":136.989379},{"latitude":35.161499,
+        "longitude":136.989379}]}'
+    - name: PROVIDER_NAME
+      value: AgentProvider74
+  - name: agent-provider75
+    image: synerex-simulation/agent-provider:latest
+    imagePullPolicy: Never
+    env:
+    - name: NODEID_SERVER
+      value: :9000
+    - name: SYNEREX_SERVER
+      value: :10000
+    - name: AREA
+      value: '{"id":11, "name":"Unknown", "duplicate_area": [{"latitude":35.1624279,
+        "longitude":136.9698507},{"latitude":35.1512811, "longitude":136.9698507},{"latitude":35.1512811,
+        "longitude":136.9911543},{"latitude":35.1624279, "longitude":136.9911543}],
+        "control_area": [{"latitude":35.161499, "longitude":136.971626},{"latitude":35.15221,
+        "longitude":136.971626},{"latitude":35.15221, "longitude":136.989379},{"latitude":35.161499,
+        "longitude":136.989379}]}'
+    - name: PROVIDER_NAME
+      value: AgentProvider75
+  - name: agent-provider76
+    image: synerex-simulation/agent-provider:latest
+    imagePullPolicy: Never
+    env:
+    - name: NODEID_SERVER
+      value: :9000
+    - name: SYNEREX_SERVER
+      value: :10000
+    - name: AREA
+      value: '{"id":11, "name":"Unknown", "duplicate_area": [{"latitude":35.1624279,
+        "longitude":136.9698507},{"latitude":35.1512811, "longitude":136.9698507},{"latitude":35.1512811,
+        "longitude":136.9911543},{"latitude":35.1624279, "longitude":136.9911543}],
+        "control_area": [{"latitude":35.161499, "longitude":136.971626},{"latitude":35.15221,
+        "longitude":136.971626},{"latitude":35.15221, "longitude":136.989379},{"latitude":35.161499,
+        "longitude":136.989379}]}'
+    - name: PROVIDER_NAME
+      value: AgentProvider76
+  - name: agent-provider77
+    image: synerex-simulation/agent-provider:latest
+    imagePullPolicy: Never
+    env:
+    - name: NODEID_SERVER
+      value: :9000
+    - name: SYNEREX_SERVER
+      value: :10000
+    - name: AREA
+      value: '{"id":11, "name":"Unknown", "duplicate_area": [{"latitude":35.1624279,
+        "longitude":136.9698507},{"latitude":35.1512811, "longitude":136.9698507},{"latitude":35.1512811,
+        "longitude":136.9911543},{"latitude":35.1624279, "longitude":136.9911543}],
+        "control_area": [{"latitude":35.161499, "longitude":136.971626},{"latitude":35.15221,
+        "longitude":136.971626},{"latitude":35.15221, "longitude":136.989379},{"latitude":35.161499,
+        "longitude":136.989379}]}'
+    - name: PROVIDER_NAME
+      value: AgentProvider77
+  - name: agent-provider78
+    image: synerex-simulation/agent-provider:latest
+    imagePullPolicy: Never
+    env:
+    - name: NODEID_SERVER
+      value: :9000
+    - name: SYNEREX_SERVER
+      value: :10000
+    - name: AREA
+      value: '{"id":11, "name":"Unknown", "duplicate_area": [{"latitude":35.1624279,
+        "longitude":136.9698507},{"latitude":35.1512811, "longitude":136.9698507},{"latitude":35.1512811,
+        "longitude":136.9911543},{"latitude":35.1624279, "longitude":136.9911543}],
+        "control_area": [{"latitude":35.161499, "longitude":136.971626},{"latitude":35.15221,
+        "longitude":136.971626},{"latitude":35.15221, "longitude":136.989379},{"latitude":35.161499,
+        "longitude":136.989379}]}'
+    - name: PROVIDER_NAME
+      value: AgentProvider78
+  - name: agent-provider79
+    image: synerex-simulation/agent-provider:latest
+    imagePullPolicy: Never
+    env:
+    - name: NODEID_SERVER
+      value: :9000
+    - name: SYNEREX_SERVER
+      value: :10000
+    - name: AREA
+      value: '{"id":11, "name":"Unknown", "duplicate_area": [{"latitude":35.1624279,
+        "longitude":136.9698507},{"latitude":35.1512811, "longitude":136.9698507},{"latitude":35.1512811,
+        "longitude":136.9911543},{"latitude":35.1624279, "longitude":136.9911543}],
+        "control_area": [{"latitude":35.161499, "longitude":136.971626},{"latitude":35.15221,
+        "longitude":136.971626},{"latitude":35.15221, "longitude":136.989379},{"latitude":35.161499,
+        "longitude":136.989379}]}'
+    - name: PROVIDER_NAME
+      value: AgentProvider79
+  - name: agent-provider80
+    image: synerex-simulation/agent-provider:latest
+    imagePullPolicy: Never
+    env:
+    - name: NODEID_SERVER
+      value: :9000
+    - name: SYNEREX_SERVER
+      value: :10000
+    - name: AREA
+      value: '{"id":11, "name":"Unknown", "duplicate_area": [{"latitude":35.1624279,
+        "longitude":136.9698507},{"latitude":35.1512811, "longitude":136.9698507},{"latitude":35.1512811,
+        "longitude":136.9911543},{"latitude":35.1624279, "longitude":136.9911543}],
+        "control_area": [{"latitude":35.161499, "longitude":136.971626},{"latitude":35.15221,
+        "longitude":136.971626},{"latitude":35.15221, "longitude":136.989379},{"latitude":35.161499,
+        "longitude":136.989379}]}'
+    - name: PROVIDER_NAME
+      value: AgentProvider80
+  - name: agent-provider81
+    image: synerex-simulation/agent-provider:latest
+    imagePullPolicy: Never
+    env:
+    - name: NODEID_SERVER
+      value: :9000
+    - name: SYNEREX_SERVER
+      value: :10000
+    - name: AREA
+      value: '{"id":11, "name":"Unknown", "duplicate_area": [{"latitude":35.1624279,
+        "longitude":136.9698507},{"latitude":35.1512811, "longitude":136.9698507},{"latitude":35.1512811,
+        "longitude":136.9911543},{"latitude":35.1624279, "longitude":136.9911543}],
+        "control_area": [{"latitude":35.161499, "longitude":136.971626},{"latitude":35.15221,
+        "longitude":136.971626},{"latitude":35.15221, "longitude":136.989379},{"latitude":35.161499,
+        "longitude":136.989379}]}'
+    - name: PROVIDER_NAME
+      value: AgentProvider81
+  - name: agent-provider82
+    image: synerex-simulation/agent-provider:latest
+    imagePullPolicy: Never
+    env:
+    - name: NODEID_SERVER
+      value: :9000
+    - name: SYNEREX_SERVER
+      value: :10000
+    - name: AREA
+      value: '{"id":11, "name":"Unknown", "duplicate_area": [{"latitude":35.1624279,
+        "longitude":136.9698507},{"latitude":35.1512811, "longitude":136.9698507},{"latitude":35.1512811,
+        "longitude":136.9911543},{"latitude":35.1624279, "longitude":136.9911543}],
+        "control_area": [{"latitude":35.161499, "longitude":136.971626},{"latitude":35.15221,
+        "longitude":136.971626},{"latitude":35.15221, "longitude":136.989379},{"latitude":35.161499,
+        "longitude":136.989379}]}'
+    - name: PROVIDER_NAME
+      value: AgentProvider82
+  - name: agent-provider83
+    image: synerex-simulation/agent-provider:latest
+    imagePullPolicy: Never
+    env:
+    - name: NODEID_SERVER
+      value: :9000
+    - name: SYNEREX_SERVER
+      value: :10000
+    - name: AREA
+      value: '{"id":11, "name":"Unknown", "duplicate_area": [{"latitude":35.1624279,
+        "longitude":136.9698507},{"latitude":35.1512811, "longitude":136.9698507},{"latitude":35.1512811,
+        "longitude":136.9911543},{"latitude":35.1624279, "longitude":136.9911543}],
+        "control_area": [{"latitude":35.161499, "longitude":136.971626},{"latitude":35.15221,
+        "longitude":136.971626},{"latitude":35.15221, "longitude":136.989379},{"latitude":35.161499,
+        "longitude":136.989379}]}'
+    - name: PROVIDER_NAME
+      value: AgentProvider83
+  - name: agent-provider84
+    image: synerex-simulation/agent-provider:latest
+    imagePullPolicy: Never
+    env:
+    - name: NODEID_SERVER
+      value: :9000
+    - name: SYNEREX_SERVER
+      value: :10000
+    - name: AREA
+      value: '{"id":11, "name":"Unknown", "duplicate_area": [{"latitude":35.1624279,
+        "longitude":136.9698507},{"latitude":35.1512811, "longitude":136.9698507},{"latitude":35.1512811,
+        "longitude":136.9911543},{"latitude":35.1624279, "longitude":136.9911543}],
+        "control_area": [{"latitude":35.161499, "longitude":136.971626},{"latitude":35.15221,
+        "longitude":136.971626},{"latitude":35.15221, "longitude":136.989379},{"latitude":35.161499,
+        "longitude":136.989379}]}'
+    - name: PROVIDER_NAME
+      value: AgentProvider84
+  - name: agent-provider85
+    image: synerex-simulation/agent-provider:latest
+    imagePullPolicy: Never
+    env:
+    - name: NODEID_SERVER
+      value: :9000
+    - name: SYNEREX_SERVER
+      value: :10000
+    - name: AREA
+      value: '{"id":11, "name":"Unknown", "duplicate_area": [{"latitude":35.1624279,
+        "longitude":136.9698507},{"latitude":35.1512811, "longitude":136.9698507},{"latitude":35.1512811,
+        "longitude":136.9911543},{"latitude":35.1624279, "longitude":136.9911543}],
+        "control_area": [{"latitude":35.161499, "longitude":136.971626},{"latitude":35.15221,
+        "longitude":136.971626},{"latitude":35.15221, "longitude":136.989379},{"latitude":35.161499,
+        "longitude":136.989379}]}'
+    - name: PROVIDER_NAME
+      value: AgentProvider85
+  - name: agent-provider86
+    image: synerex-simulation/agent-provider:latest
+    imagePullPolicy: Never
+    env:
+    - name: NODEID_SERVER
+      value: :9000
+    - name: SYNEREX_SERVER
+      value: :10000
+    - name: AREA
+      value: '{"id":11, "name":"Unknown", "duplicate_area": [{"latitude":35.1624279,
+        "longitude":136.9698507},{"latitude":35.1512811, "longitude":136.9698507},{"latitude":35.1512811,
+        "longitude":136.9911543},{"latitude":35.1624279, "longitude":136.9911543}],
+        "control_area": [{"latitude":35.161499, "longitude":136.971626},{"latitude":35.15221,
+        "longitude":136.971626},{"latitude":35.15221, "longitude":136.989379},{"latitude":35.161499,
+        "longitude":136.989379}]}'
+    - name: PROVIDER_NAME
+      value: AgentProvider86
+  - name: agent-provider87
+    image: synerex-simulation/agent-provider:latest
+    imagePullPolicy: Never
+    env:
+    - name: NODEID_SERVER
+      value: :9000
+    - name: SYNEREX_SERVER
+      value: :10000
+    - name: AREA
+      value: '{"id":11, "name":"Unknown", "duplicate_area": [{"latitude":35.1624279,
+        "longitude":136.9698507},{"latitude":35.1512811, "longitude":136.9698507},{"latitude":35.1512811,
+        "longitude":136.9911543},{"latitude":35.1624279, "longitude":136.9911543}],
+        "control_area": [{"latitude":35.161499, "longitude":136.971626},{"latitude":35.15221,
+        "longitude":136.971626},{"latitude":35.15221, "longitude":136.989379},{"latitude":35.161499,
+        "longitude":136.989379}]}'
+    - name: PROVIDER_NAME
+      value: AgentProvider87
+  - name: agent-provider88
+    image: synerex-simulation/agent-provider:latest
+    imagePullPolicy: Never
+    env:
+    - name: NODEID_SERVER
+      value: :9000
+    - name: SYNEREX_SERVER
+      value: :10000
+    - name: AREA
+      value: '{"id":11, "name":"Unknown", "duplicate_area": [{"latitude":35.1624279,
+        "longitude":136.9698507},{"latitude":35.1512811, "longitude":136.9698507},{"latitude":35.1512811,
+        "longitude":136.9911543},{"latitude":35.1624279, "longitude":136.9911543}],
+        "control_area": [{"latitude":35.161499, "longitude":136.971626},{"latitude":35.15221,
+        "longitude":136.971626},{"latitude":35.15221, "longitude":136.989379},{"latitude":35.161499,
+        "longitude":136.989379}]}'
+    - name: PROVIDER_NAME
+      value: AgentProvider88
+  - name: agent-provider89
+    image: synerex-simulation/agent-provider:latest
+    imagePullPolicy: Never
+    env:
+    - name: NODEID_SERVER
+      value: :9000
+    - name: SYNEREX_SERVER
+      value: :10000
+    - name: AREA
+      value: '{"id":11, "name":"Unknown", "duplicate_area": [{"latitude":35.1624279,
+        "longitude":136.9698507},{"latitude":35.1512811, "longitude":136.9698507},{"latitude":35.1512811,
+        "longitude":136.9911543},{"latitude":35.1624279, "longitude":136.9911543}],
+        "control_area": [{"latitude":35.161499, "longitude":136.971626},{"latitude":35.15221,
+        "longitude":136.971626},{"latitude":35.15221, "longitude":136.989379},{"latitude":35.161499,
+        "longitude":136.989379}]}'
+    - name: PROVIDER_NAME
+      value: AgentProvider89
+  - name: agent-provider90
+    image: synerex-simulation/agent-provider:latest
+    imagePullPolicy: Never
+    env:
+    - name: NODEID_SERVER
+      value: :9000
+    - name: SYNEREX_SERVER
+      value: :10000
+    - name: AREA
+      value: '{"id":11, "name":"Unknown", "duplicate_area": [{"latitude":35.1624279,
+        "longitude":136.9698507},{"latitude":35.1512811, "longitude":136.9698507},{"latitude":35.1512811,
+        "longitude":136.9911543},{"latitude":35.1624279, "longitude":136.9911543}],
+        "control_area": [{"latitude":35.161499, "longitude":136.971626},{"latitude":35.15221,
+        "longitude":136.971626},{"latitude":35.15221, "longitude":136.989379},{"latitude":35.161499,
+        "longitude":136.989379}]}'
+    - name: PROVIDER_NAME
+      value: AgentProvider90
+  - name: agent-provider91
+    image: synerex-simulation/agent-provider:latest
+    imagePullPolicy: Never
+    env:
+    - name: NODEID_SERVER
+      value: :9000
+    - name: SYNEREX_SERVER
+      value: :10000
+    - name: AREA
+      value: '{"id":11, "name":"Unknown", "duplicate_area": [{"latitude":35.1624279,
+        "longitude":136.9698507},{"latitude":35.1512811, "longitude":136.9698507},{"latitude":35.1512811,
+        "longitude":136.9911543},{"latitude":35.1624279, "longitude":136.9911543}],
+        "control_area": [{"latitude":35.161499, "longitude":136.971626},{"latitude":35.15221,
+        "longitude":136.971626},{"latitude":35.15221, "longitude":136.989379},{"latitude":35.161499,
+        "longitude":136.989379}]}'
+    - name: PROVIDER_NAME
+      value: AgentProvider91
+  - name: agent-provider92
+    image: synerex-simulation/agent-provider:latest
+    imagePullPolicy: Never
+    env:
+    - name: NODEID_SERVER
+      value: :9000
+    - name: SYNEREX_SERVER
+      value: :10000
+    - name: AREA
+      value: '{"id":11, "name":"Unknown", "duplicate_area": [{"latitude":35.1624279,
+        "longitude":136.9698507},{"latitude":35.1512811, "longitude":136.9698507},{"latitude":35.1512811,
+        "longitude":136.9911543},{"latitude":35.1624279, "longitude":136.9911543}],
+        "control_area": [{"latitude":35.161499, "longitude":136.971626},{"latitude":35.15221,
+        "longitude":136.971626},{"latitude":35.15221, "longitude":136.989379},{"latitude":35.161499,
+        "longitude":136.989379}]}'
+    - name: PROVIDER_NAME
+      value: AgentProvider92
+  - name: agent-provider93
+    image: synerex-simulation/agent-provider:latest
+    imagePullPolicy: Never
+    env:
+    - name: NODEID_SERVER
+      value: :9000
+    - name: SYNEREX_SERVER
+      value: :10000
+    - name: AREA
+      value: '{"id":11, "name":"Unknown", "duplicate_area": [{"latitude":35.1624279,
+        "longitude":136.9698507},{"latitude":35.1512811, "longitude":136.9698507},{"latitude":35.1512811,
+        "longitude":136.9911543},{"latitude":35.1624279, "longitude":136.9911543}],
+        "control_area": [{"latitude":35.161499, "longitude":136.971626},{"latitude":35.15221,
+        "longitude":136.971626},{"latitude":35.15221, "longitude":136.989379},{"latitude":35.161499,
+        "longitude":136.989379}]}'
+    - name: PROVIDER_NAME
+      value: AgentProvider93
+  - name: agent-provider94
+    image: synerex-simulation/agent-provider:latest
+    imagePullPolicy: Never
+    env:
+    - name: NODEID_SERVER
+      value: :9000
+    - name: SYNEREX_SERVER
+      value: :10000
+    - name: AREA
+      value: '{"id":11, "name":"Unknown", "duplicate_area": [{"latitude":35.1624279,
+        "longitude":136.9698507},{"latitude":35.1512811, "longitude":136.9698507},{"latitude":35.1512811,
+        "longitude":136.9911543},{"latitude":35.1624279, "longitude":136.9911543}],
+        "control_area": [{"latitude":35.161499, "longitude":136.971626},{"latitude":35.15221,
+        "longitude":136.971626},{"latitude":35.15221, "longitude":136.989379},{"latitude":35.161499,
+        "longitude":136.989379}]}'
+    - name: PROVIDER_NAME
+      value: AgentProvider94
+  - name: agent-provider95
+    image: synerex-simulation/agent-provider:latest
+    imagePullPolicy: Never
+    env:
+    - name: NODEID_SERVER
+      value: :9000
+    - name: SYNEREX_SERVER
+      value: :10000
+    - name: AREA
+      value: '{"id":11, "name":"Unknown", "duplicate_area": [{"latitude":35.1624279,
+        "longitude":136.9698507},{"latitude":35.1512811, "longitude":136.9698507},{"latitude":35.1512811,
+        "longitude":136.9911543},{"latitude":35.1624279, "longitude":136.9911543}],
+        "control_area": [{"latitude":35.161499, "longitude":136.971626},{"latitude":35.15221,
+        "longitude":136.971626},{"latitude":35.15221, "longitude":136.989379},{"latitude":35.161499,
+        "longitude":136.989379}]}'
+    - name: PROVIDER_NAME
+      value: AgentProvider95
+  - name: agent-provider96
+    image: synerex-simulation/agent-provider:latest
+    imagePullPolicy: Never
+    env:
+    - name: NODEID_SERVER
+      value: :9000
+    - name: SYNEREX_SERVER
+      value: :10000
+    - name: AREA
+      value: '{"id":11, "name":"Unknown", "duplicate_area": [{"latitude":35.1624279,
+        "longitude":136.9698507},{"latitude":35.1512811, "longitude":136.9698507},{"latitude":35.1512811,
+        "longitude":136.9911543},{"latitude":35.1624279, "longitude":136.9911543}],
+        "control_area": [{"latitude":35.161499, "longitude":136.971626},{"latitude":35.15221,
+        "longitude":136.971626},{"latitude":35.15221, "longitude":136.989379},{"latitude":35.161499,
+        "longitude":136.989379}]}'
+    - name: PROVIDER_NAME
+      value: AgentProvider96
+  - name: agent-provider97
+    image: synerex-simulation/agent-provider:latest
+    imagePullPolicy: Never
+    env:
+    - name: NODEID_SERVER
+      value: :9000
+    - name: SYNEREX_SERVER
+      value: :10000
+    - name: AREA
+      value: '{"id":11, "name":"Unknown", "duplicate_area": [{"latitude":35.1624279,
+        "longitude":136.9698507},{"latitude":35.1512811, "longitude":136.9698507},{"latitude":35.1512811,
+        "longitude":136.9911543},{"latitude":35.1624279, "longitude":136.9911543}],
+        "control_area": [{"latitude":35.161499, "longitude":136.971626},{"latitude":35.15221,
+        "longitude":136.971626},{"latitude":35.15221, "longitude":136.989379},{"latitude":35.161499,
+        "longitude":136.989379}]}'
+    - name: PROVIDER_NAME
+      value: AgentProvider97
+  - name: agent-provider98
+    image: synerex-simulation/agent-provider:latest
+    imagePullPolicy: Never
+    env:
+    - name: NODEID_SERVER
+      value: :9000
+    - name: SYNEREX_SERVER
+      value: :10000
+    - name: AREA
+      value: '{"id":11, "name":"Unknown", "duplicate_area": [{"latitude":35.1624279,
+        "longitude":136.9698507},{"latitude":35.1512811, "longitude":136.9698507},{"latitude":35.1512811,
+        "longitude":136.9911543},{"latitude":35.1624279, "longitude":136.9911543}],
+        "control_area": [{"latitude":35.161499, "longitude":136.971626},{"latitude":35.15221,
+        "longitude":136.971626},{"latitude":35.15221, "longitude":136.989379},{"latitude":35.161499,
+        "longitude":136.989379}]}'
+    - name: PROVIDER_NAME
+      value: AgentProvider98
+  - name: agent-provider99
+    image: synerex-simulation/agent-provider:latest
+    imagePullPolicy: Never
+    env:
+    - name: NODEID_SERVER
+      value: :9000
+    - name: SYNEREX_SERVER
+      value: :10000
+    - name: AREA
+      value: '{"id":11, "name":"Unknown", "duplicate_area": [{"latitude":35.1624279,
+        "longitude":136.9698507},{"latitude":35.1512811, "longitude":136.9698507},{"latitude":35.1512811,
+        "longitude":136.9911543},{"latitude":35.1624279, "longitude":136.9911543}],
+        "control_area": [{"latitude":35.161499, "longitude":136.971626},{"latitude":35.15221,
+        "longitude":136.971626},{"latitude":35.15221, "longitude":136.989379},{"latitude":35.161499,
+        "longitude":136.989379}]}'
+    - name: PROVIDER_NAME
+      value: AgentProvider99
+  - name: agent-provider100
+    image: synerex-simulation/agent-provider:latest
+    imagePullPolicy: Never
+    env:
+    - name: NODEID_SERVER
+      value: :9000
+    - name: SYNEREX_SERVER
+      value: :10000
+    - name: AREA
+      value: '{"id":11, "name":"Unknown", "duplicate_area": [{"latitude":35.1624279,
+        "longitude":136.9698507},{"latitude":35.1512811, "longitude":136.9698507},{"latitude":35.1512811,
+        "longitude":136.9911543},{"latitude":35.1624279, "longitude":136.9911543}],
+        "control_area": [{"latitude":35.161499, "longitude":136.971626},{"latitude":35.15221,
+        "longitude":136.971626},{"latitude":35.15221, "longitude":136.989379},{"latitude":35.161499,
+        "longitude":136.989379}]}'
+    - name: PROVIDER_NAME
+      value: AgentProvider100
+  - name: agent-provider101
+    image: synerex-simulation/agent-provider:latest
+    imagePullPolicy: Never
+    env:
+    - name: NODEID_SERVER
+      value: :9000
+    - name: SYNEREX_SERVER
+      value: :10000
+    - name: AREA
+      value: '{"id":11, "name":"Unknown", "duplicate_area": [{"latitude":35.1624279,
+        "longitude":136.9698507},{"latitude":35.1512811, "longitude":136.9698507},{"latitude":35.1512811,
+        "longitude":136.9911543},{"latitude":35.1624279, "longitude":136.9911543}],
+        "control_area": [{"latitude":35.161499, "longitude":136.971626},{"latitude":35.15221,
+        "longitude":136.971626},{"latitude":35.15221, "longitude":136.989379},{"latitude":35.161499,
+        "longitude":136.989379}]}'
+    - name: PROVIDER_NAME
+      value: AgentProvider101
+  - name: agent-provider102
+    image: synerex-simulation/agent-provider:latest
+    imagePullPolicy: Never
+    env:
+    - name: NODEID_SERVER
+      value: :9000
+    - name: SYNEREX_SERVER
+      value: :10000
+    - name: AREA
+      value: '{"id":11, "name":"Unknown", "duplicate_area": [{"latitude":35.1624279,
+        "longitude":136.9698507},{"latitude":35.1512811, "longitude":136.9698507},{"latitude":35.1512811,
+        "longitude":136.9911543},{"latitude":35.1624279, "longitude":136.9911543}],
+        "control_area": [{"latitude":35.161499, "longitude":136.971626},{"latitude":35.15221,
+        "longitude":136.971626},{"latitude":35.15221, "longitude":136.989379},{"latitude":35.161499,
+        "longitude":136.989379}]}'
+    - name: PROVIDER_NAME
+      value: AgentProvider102
+  - name: agent-provider103
+    image: synerex-simulation/agent-provider:latest
+    imagePullPolicy: Never
+    env:
+    - name: NODEID_SERVER
+      value: :9000
+    - name: SYNEREX_SERVER
+      value: :10000
+    - name: AREA
+      value: '{"id":11, "name":"Unknown", "duplicate_area": [{"latitude":35.1624279,
+        "longitude":136.9698507},{"latitude":35.1512811, "longitude":136.9698507},{"latitude":35.1512811,
+        "longitude":136.9911543},{"latitude":35.1624279, "longitude":136.9911543}],
+        "control_area": [{"latitude":35.161499, "longitude":136.971626},{"latitude":35.15221,
+        "longitude":136.971626},{"latitude":35.15221, "longitude":136.989379},{"latitude":35.161499,
+        "longitude":136.989379}]}'
+    - name: PROVIDER_NAME
+      value: AgentProvider103
+  - name: agent-provider104
+    image: synerex-simulation/agent-provider:latest
+    imagePullPolicy: Never
+    env:
+    - name: NODEID_SERVER
+      value: :9000
+    - name: SYNEREX_SERVER
+      value: :10000
+    - name: AREA
+      value: '{"id":11, "name":"Unknown", "duplicate_area": [{"latitude":35.1624279,
+        "longitude":136.9698507},{"latitude":35.1512811, "longitude":136.9698507},{"latitude":35.1512811,
+        "longitude":136.9911543},{"latitude":35.1624279, "longitude":136.9911543}],
+        "control_area": [{"latitude":35.161499, "longitude":136.971626},{"latitude":35.15221,
+        "longitude":136.971626},{"latitude":35.15221, "longitude":136.989379},{"latitude":35.161499,
+        "longitude":136.989379}]}'
+    - name: PROVIDER_NAME
+      value: AgentProvider104
+  - name: agent-provider105
+    image: synerex-simulation/agent-provider:latest
+    imagePullPolicy: Never
+    env:
+    - name: NODEID_SERVER
+      value: :9000
+    - name: SYNEREX_SERVER
+      value: :10000
+    - name: AREA
+      value: '{"id":11, "name":"Unknown", "duplicate_area": [{"latitude":35.1624279,
+        "longitude":136.9698507},{"latitude":35.1512811, "longitude":136.9698507},{"latitude":35.1512811,
+        "longitude":136.9911543},{"latitude":35.1624279, "longitude":136.9911543}],
+        "control_area": [{"latitude":35.161499, "longitude":136.971626},{"latitude":35.15221,
+        "longitude":136.971626},{"latitude":35.15221, "longitude":136.989379},{"latitude":35.161499,
+        "longitude":136.989379}]}'
+    - name: PROVIDER_NAME
+      value: AgentProvider105
+  - name: agent-provider106
+    image: synerex-simulation/agent-provider:latest
+    imagePullPolicy: Never
+    env:
+    - name: NODEID_SERVER
+      value: :9000
+    - name: SYNEREX_SERVER
+      value: :10000
+    - name: AREA
+      value: '{"id":11, "name":"Unknown", "duplicate_area": [{"latitude":35.1624279,
+        "longitude":136.9698507},{"latitude":35.1512811, "longitude":136.9698507},{"latitude":35.1512811,
+        "longitude":136.9911543},{"latitude":35.1624279, "longitude":136.9911543}],
+        "control_area": [{"latitude":35.161499, "longitude":136.971626},{"latitude":35.15221,
+        "longitude":136.971626},{"latitude":35.15221, "longitude":136.989379},{"latitude":35.161499,
+        "longitude":136.989379}]}'
+    - name: PROVIDER_NAME
+      value: AgentProvider106
+  - name: agent-provider107
+    image: synerex-simulation/agent-provider:latest
+    imagePullPolicy: Never
+    env:
+    - name: NODEID_SERVER
+      value: :9000
+    - name: SYNEREX_SERVER
+      value: :10000
+    - name: AREA
+      value: '{"id":11, "name":"Unknown", "duplicate_area": [{"latitude":35.1624279,
+        "longitude":136.9698507},{"latitude":35.1512811, "longitude":136.9698507},{"latitude":35.1512811,
+        "longitude":136.9911543},{"latitude":35.1624279, "longitude":136.9911543}],
+        "control_area": [{"latitude":35.161499, "longitude":136.971626},{"latitude":35.15221,
+        "longitude":136.971626},{"latitude":35.15221, "longitude":136.989379},{"latitude":35.161499,
+        "longitude":136.989379}]}'
+    - name: PROVIDER_NAME
+      value: AgentProvider107
+  - name: agent-provider108
+    image: synerex-simulation/agent-provider:latest
+    imagePullPolicy: Never
+    env:
+    - name: NODEID_SERVER
+      value: :9000
+    - name: SYNEREX_SERVER
+      value: :10000
+    - name: AREA
+      value: '{"id":11, "name":"Unknown", "duplicate_area": [{"latitude":35.1624279,
+        "longitude":136.9698507},{"latitude":35.1512811, "longitude":136.9698507},{"latitude":35.1512811,
+        "longitude":136.9911543},{"latitude":35.1624279, "longitude":136.9911543}],
+        "control_area": [{"latitude":35.161499, "longitude":136.971626},{"latitude":35.15221,
+        "longitude":136.971626},{"latitude":35.15221, "longitude":136.989379},{"latitude":35.161499,
+        "longitude":136.989379}]}'
+    - name: PROVIDER_NAME
+      value: AgentProvider108
+  - name: agent-provider109
+    image: synerex-simulation/agent-provider:latest
+    imagePullPolicy: Never
+    env:
+    - name: NODEID_SERVER
+      value: :9000
+    - name: SYNEREX_SERVER
+      value: :10000
+    - name: AREA
+      value: '{"id":11, "name":"Unknown", "duplicate_area": [{"latitude":35.1624279,
+        "longitude":136.9698507},{"latitude":35.1512811, "longitude":136.9698507},{"latitude":35.1512811,
+        "longitude":136.9911543},{"latitude":35.1624279, "longitude":136.9911543}],
+        "control_area": [{"latitude":35.161499, "longitude":136.971626},{"latitude":35.15221,
+        "longitude":136.971626},{"latitude":35.15221, "longitude":136.989379},{"latitude":35.161499,
+        "longitude":136.989379}]}'
+    - name: PROVIDER_NAME
+      value: AgentProvider109
+  - name: agent-provider110
+    image: synerex-simulation/agent-provider:latest
+    imagePullPolicy: Never
+    env:
+    - name: NODEID_SERVER
+      value: :9000
+    - name: SYNEREX_SERVER
+      value: :10000
+    - name: AREA
+      value: '{"id":11, "name":"Unknown", "duplicate_area": [{"latitude":35.1624279,
+        "longitude":136.9698507},{"latitude":35.1512811, "longitude":136.9698507},{"latitude":35.1512811,
+        "longitude":136.9911543},{"latitude":35.1624279, "longitude":136.9911543}],
+        "control_area": [{"latitude":35.161499, "longitude":136.971626},{"latitude":35.15221,
+        "longitude":136.971626},{"latitude":35.15221, "longitude":136.989379},{"latitude":35.161499,
+        "longitude":136.989379}]}'
+    - name: PROVIDER_NAME
+      value: AgentProvider110
+
+---
