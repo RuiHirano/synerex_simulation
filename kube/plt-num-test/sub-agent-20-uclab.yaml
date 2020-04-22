@@ -115,14 +115,14 @@ metadata:
 spec:
   containers:
   - name: nodeid-server
-    image: synerex-simulation/nodeid-server:1.2
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/nodeid-server:1.2
     env:
     - name: NODEID_SERVER
       value: :9000
     ports:
     - containerPort: 9000
   - name: synerex-server
-    image: synerex-simulation/synerex-server:1.2
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/synerex-server:1.2
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -133,7 +133,7 @@ spec:
     ports:
     - containerPort: 10000
   - name: worker-provider
-    image: synerex-simulation/worker-provider:1.2
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/worker-provider:1.2
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -150,7 +150,7 @@ spec:
     ports:
     - containerPort: 9980
   - name: agent-provider11
-    image: synerex-simulation/agent-provider:1.2
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/agent-provider:1.2
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -166,7 +166,7 @@ spec:
     - name: PROVIDER_NAME
       value: AgentProvider11
   - name: agent-provider12
-    image: synerex-simulation/agent-provider:1.2
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/agent-provider:1.2
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -182,7 +182,7 @@ spec:
     - name: PROVIDER_NAME
       value: AgentProvider12
   - name: agent-provider13
-    image: synerex-simulation/agent-provider:1.2
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/agent-provider:1.2
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -198,7 +198,7 @@ spec:
     - name: PROVIDER_NAME
       value: AgentProvider13
   - name: agent-provider14
-    image: synerex-simulation/agent-provider:1.2
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/agent-provider:1.2
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -214,7 +214,7 @@ spec:
     - name: PROVIDER_NAME
       value: AgentProvider14
   - name: agent-provider15
-    image: synerex-simulation/agent-provider:1.2
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/agent-provider:1.2
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -230,7 +230,7 @@ spec:
     - name: PROVIDER_NAME
       value: AgentProvider15
   - name: agent-provider16
-    image: synerex-simulation/agent-provider:1.2
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/agent-provider:1.2
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -246,7 +246,7 @@ spec:
     - name: PROVIDER_NAME
       value: AgentProvider16
   - name: agent-provider17
-    image: synerex-simulation/agent-provider:1.2
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/agent-provider:1.2
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -262,7 +262,7 @@ spec:
     - name: PROVIDER_NAME
       value: AgentProvider17
   - name: agent-provider18
-    image: synerex-simulation/agent-provider:1.2
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/agent-provider:1.2
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -278,7 +278,7 @@ spec:
     - name: PROVIDER_NAME
       value: AgentProvider18
   - name: agent-provider19
-    image: synerex-simulation/agent-provider:1.2
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/agent-provider:1.2
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -294,7 +294,7 @@ spec:
     - name: PROVIDER_NAME
       value: AgentProvider19
   - name: agent-provider20
-    image: synerex-simulation/agent-provider:1.2
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/agent-provider:1.2
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -310,7 +310,7 @@ spec:
     - name: PROVIDER_NAME
       value: AgentProvider20
   - name: agent-provider21
-    image: synerex-simulation/agent-provider:1.2
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/agent-provider:1.2
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -326,7 +326,7 @@ spec:
     - name: PROVIDER_NAME
       value: AgentProvider21
   - name: agent-provider22
-    image: synerex-simulation/agent-provider:1.2
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/agent-provider:1.2
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -342,7 +342,7 @@ spec:
     - name: PROVIDER_NAME
       value: AgentProvider22
   - name: agent-provider23
-    image: synerex-simulation/agent-provider:1.2
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/agent-provider:1.2
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -358,7 +358,7 @@ spec:
     - name: PROVIDER_NAME
       value: AgentProvider23
   - name: agent-provider24
-    image: synerex-simulation/agent-provider:1.2
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/agent-provider:1.2
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -374,7 +374,7 @@ spec:
     - name: PROVIDER_NAME
       value: AgentProvider24
   - name: agent-provider25
-    image: synerex-simulation/agent-provider:1.2
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/agent-provider:1.2
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -390,7 +390,7 @@ spec:
     - name: PROVIDER_NAME
       value: AgentProvider25
   - name: agent-provider26
-    image: synerex-simulation/agent-provider:1.2
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/agent-provider:1.2
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -406,7 +406,7 @@ spec:
     - name: PROVIDER_NAME
       value: AgentProvider26
   - name: agent-provider27
-    image: synerex-simulation/agent-provider:1.2
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/agent-provider:1.2
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -422,7 +422,7 @@ spec:
     - name: PROVIDER_NAME
       value: AgentProvider27
   - name: agent-provider28
-    image: synerex-simulation/agent-provider:1.2
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/agent-provider:1.2
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -438,7 +438,7 @@ spec:
     - name: PROVIDER_NAME
       value: AgentProvider28
   - name: agent-provider29
-    image: synerex-simulation/agent-provider:1.2
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/agent-provider:1.2
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -454,7 +454,7 @@ spec:
     - name: PROVIDER_NAME
       value: AgentProvider29
   - name: agent-provider30
-    image: synerex-simulation/agent-provider:1.2
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/agent-provider:1.2
     env:
     - name: NODEID_SERVER
       value: :9000

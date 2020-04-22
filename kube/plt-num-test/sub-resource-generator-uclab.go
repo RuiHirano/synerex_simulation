@@ -151,7 +151,7 @@ func NewWorker(area Area, agentNum int) Resource {
 	containers := []Container{
 		{
 			Name:            "nodeid-server",
-			Image:           "synerex-simulation/nodeid-server:"+*version,
+			Image:           "ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/nodeid-server:"+*version,
 			
 			Env: []Env{
 				{
@@ -163,7 +163,7 @@ func NewWorker(area Area, agentNum int) Resource {
 		},
 		{
 			Name:            "synerex-server",
-			Image:           "synerex-simulation/synerex-server:"+*version,
+			Image:           "ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/synerex-server:"+*version,
 			
 			Env: []Env{
 				{
@@ -183,7 +183,7 @@ func NewWorker(area Area, agentNum int) Resource {
 		},
 		{
 			Name:            "worker-provider",
-			Image:           "synerex-simulation/worker-provider:"+*version,
+			Image:           "ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/worker-provider:"+*version,
 			
 			Env: []Env{
 				{
@@ -218,7 +218,7 @@ func NewWorker(area Area, agentNum int) Resource {
 	for i := 0; i < agentNum; i++ {
 		containers = append(containers, Container{
 				Name:            "agent-provider" + strconv.Itoa(area.Id+i) ,
-				Image:           "synerex-simulation/agent-provider:"+*version,
+				Image:           "ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/agent-provider:"+*version,
 				Env: []Env{
 					{
 						Name:  "NODEID_SERVER",
