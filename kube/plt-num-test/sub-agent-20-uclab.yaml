@@ -116,7 +116,6 @@ spec:
   containers:
   - name: nodeid-server
     image: synerex-simulation/nodeid-server:1.2
-    imagePullPolicy: Never
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -124,7 +123,6 @@ spec:
     - containerPort: 9000
   - name: synerex-server
     image: synerex-simulation/synerex-server:1.2
-    imagePullPolicy: Never
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -136,7 +134,6 @@ spec:
     - containerPort: 10000
   - name: worker-provider
     image: synerex-simulation/worker-provider:1.2
-    imagePullPolicy: Never
     env:
     - name: NODEID_SERVER
       value: :9000

@@ -152,7 +152,7 @@ func NewWorker(area Area, agentNum int) Resource {
 		{
 			Name:            "nodeid-server",
 			Image:           "synerex-simulation/nodeid-server:"+*version,
-			ImagePullPolicy: "Never",
+			
 			Env: []Env{
 				{
 					Name:  "NODEID_SERVER",
@@ -164,7 +164,7 @@ func NewWorker(area Area, agentNum int) Resource {
 		{
 			Name:            "synerex-server",
 			Image:           "synerex-simulation/synerex-server:"+*version,
-			ImagePullPolicy: "Never",
+			
 			Env: []Env{
 				{
 					Name:  "NODEID_SERVER",
@@ -184,7 +184,7 @@ func NewWorker(area Area, agentNum int) Resource {
 		{
 			Name:            "worker-provider",
 			Image:           "synerex-simulation/worker-provider:"+*version,
-			ImagePullPolicy: "Never",
+			
 			Env: []Env{
 				{
 					Name:  "NODEID_SERVER",
@@ -302,7 +302,7 @@ func NewMaster() Resource {
 				{
 					Name:  "nodeid-server",
 					Image: "ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/nodeid-server:" + *version,
-					//ImagePullPolicy: "Never",
+					//
 					Env: []Env{
 						{
 							Name:  "NODEID_SERVER",
@@ -314,7 +314,7 @@ func NewMaster() Resource {
 				{
 					Name:  "synerex-server",
 					Image: "ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/synerex-server:" + *version,
-					//ImagePullPolicy: "Never",
+					//
 					Env: []Env{
 						{
 							Name:  "NODEID_SERVER",
@@ -330,7 +330,7 @@ func NewMaster() Resource {
 				{
 					Name:  "master-provider",
 					Image: "ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/master-provider:" + *version,
-					//ImagePullPolicy: "Never",
+					//
 					Env: []Env{
 						{
 							Name:  "NODEID_SERVER",
@@ -391,7 +391,7 @@ func NewSimulator() Resource {
 				{
 					Name:  "simulator",
 					Image: "ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/simulator:" + *version,
-					//ImagePullPolicy: "Never",
+					//
 					Stdin: true,
 					Tty:   true,
 					Env: []Env{
@@ -430,7 +430,7 @@ func NewGateway(neiPair []int) Resource {
 				{
 					Name:  "gateway-provider",
 					Image: "ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/gateway-provider:" + *version,
-					//ImagePullPolicy: "Never",
+					//
 					Env: []Env{
 						{
 							Name:  "WORKER_SYNEREX_SERVER1",
