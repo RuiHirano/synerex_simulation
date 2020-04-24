@@ -186,7 +186,7 @@ func forwardClock() {
 	logger.Info("Finish: Clock Forwarded. AgentNum:  %v", len(nextControlAgents))
 	t2 := time.Now()
 	duration := t2.Sub(t1).Milliseconds()
-	comDuration := com2 - com1
+	comDuration := com2 + com1
 	lpDuration := duration-comDuration
 	logger.Info("Total: %v, ComDuration: %v, LpDuration: %v", duration, comDuration, lpDuration)
 }
