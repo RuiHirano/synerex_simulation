@@ -146,7 +146,7 @@ func NewWorkerService(area Area) Resource {
 	return service
 }
 
-func NewWorker(area Area, agentNum int) Resource {
+func NewWorker(area Area) Resource {
 	name := "worker" + strconv.Itoa(area.Id)
 	containers := []Container{
 		{
@@ -215,31 +215,6 @@ func NewWorker(area Area, agentNum int) Resource {
 		},
 	}
 
-	for i := 0; i < agentNum; i++ {
-		containers = append(containers, Container{
-				Name:            "agent-provider" + strconv.Itoa(area.Id+i) ,
-				Image:           "ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/agent-provider:"+*version,
-				Env: []Env{
-					{
-						Name:  "NODEID_SERVER",
-						Value: ":9000",
-					},
-					{
-						Name:  "SYNEREX_SERVER",
-						Value: ":10000",
-					},
-					{
-						Name:  "AREA",
-						Value: convertAreaToJson(area),
-					},
-					{
-						Name:  "PROVIDER_NAME",
-						Value: "AgentProvider" + strconv.Itoa(area.Id+i),
-					},
-				},
-			},
-		)
-	}
 	worker := Resource{
 		ApiVersion: "v1",
 		Kind:       "Pod",
@@ -249,6 +224,51 @@ func NewWorker(area Area, agentNum int) Resource {
 		},
 		Spec: Spec{
 			Containers: containers,
+			ImagePullSecrets: []ImagePullSecret{
+				{
+					Name: "ruirui-regcred",
+				},
+			},
+		},
+	}
+	return worker
+}
+
+func NewAgent(area Area, i int) Resource {
+	name := "agent" + strconv.Itoa(area.Id+i)
+
+	worker := Resource{
+		ApiVersion: "v1",
+		Kind:       "Pod",
+		Metadata: Metadata{
+			Name:   name,
+			Labels: Label{App: name},
+		},
+		Spec: Spec{
+			Containers: []Container{
+				{
+					Name:            name,
+					Image:           "ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/agent-provider:"+*version,
+					Env: []Env{
+						{
+							Name:  "NODEID_SERVER",
+							Value: ":9000",
+						},
+						{
+							Name:  "SYNEREX_SERVER",
+							Value: ":10000",
+						},
+						{
+							Name:  "AREA",
+							Value: convertAreaToJson(area),
+						},
+						{
+							Name:  "PROVIDER_NAME",
+							Value: "AgentProvider" + strconv.Itoa(area.Id+i),
+						},
+					},
+				},
+			},
 			ImagePullSecrets: []ImagePullSecret{
 				{
 					Name: "ruirui-regcred",
@@ -538,8 +558,14 @@ func createData(option Option) []Resource {
 	for _, area := range areas {
 		//rsrcs = append(rsrcs, NewVisMonitorService(area))
 		rsrcs = append(rsrcs, NewWorkerService(area))
-		rsrcs = append(rsrcs, NewWorker(area, 20))
+		rsrcs = append(rsrcs, NewWorker(area))
+		agentNum := 20
+		for i:=0; i<agentNum; i++{
+			rsrcs = append(rsrcs, NewAgent(area, i))
+		}
 	}
+
+	
 
 
 	return rsrcs

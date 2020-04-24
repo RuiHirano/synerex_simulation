@@ -149,7 +149,19 @@ spec:
       value: WorkerProvider11
     ports:
     - containerPort: 9980
-  - name: agent-provider11
+  imagePullSecrets:
+  - name: ruirui-regcred
+
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: agent11
+  labels:
+    app: agent11
+spec:
+  containers:
+  - name: agent11
     image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/agent-provider:1.2
     env:
     - name: NODEID_SERVER
@@ -165,7 +177,19 @@ spec:
         "longitude":136.989379}]}'
     - name: PROVIDER_NAME
       value: AgentProvider11
-  - name: agent-provider12
+  imagePullSecrets:
+  - name: ruirui-regcred
+
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: agent12
+  labels:
+    app: agent12
+spec:
+  containers:
+  - name: agent12
     image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/agent-provider:1.2
     env:
     - name: NODEID_SERVER
@@ -181,7 +205,19 @@ spec:
         "longitude":136.989379}]}'
     - name: PROVIDER_NAME
       value: AgentProvider12
-  - name: agent-provider13
+  imagePullSecrets:
+  - name: ruirui-regcred
+
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: agent13
+  labels:
+    app: agent13
+spec:
+  containers:
+  - name: agent13
     image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/agent-provider:1.2
     env:
     - name: NODEID_SERVER
@@ -197,7 +233,19 @@ spec:
         "longitude":136.989379}]}'
     - name: PROVIDER_NAME
       value: AgentProvider13
-  - name: agent-provider14
+  imagePullSecrets:
+  - name: ruirui-regcred
+
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: agent14
+  labels:
+    app: agent14
+spec:
+  containers:
+  - name: agent14
     image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/agent-provider:1.2
     env:
     - name: NODEID_SERVER
@@ -213,7 +261,19 @@ spec:
         "longitude":136.989379}]}'
     - name: PROVIDER_NAME
       value: AgentProvider14
-  - name: agent-provider15
+  imagePullSecrets:
+  - name: ruirui-regcred
+
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: agent15
+  labels:
+    app: agent15
+spec:
+  containers:
+  - name: agent15
     image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/agent-provider:1.2
     env:
     - name: NODEID_SERVER
@@ -229,7 +289,19 @@ spec:
         "longitude":136.989379}]}'
     - name: PROVIDER_NAME
       value: AgentProvider15
-  - name: agent-provider16
+  imagePullSecrets:
+  - name: ruirui-regcred
+
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: agent16
+  labels:
+    app: agent16
+spec:
+  containers:
+  - name: agent16
     image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/agent-provider:1.2
     env:
     - name: NODEID_SERVER
@@ -245,7 +317,19 @@ spec:
         "longitude":136.989379}]}'
     - name: PROVIDER_NAME
       value: AgentProvider16
-  - name: agent-provider17
+  imagePullSecrets:
+  - name: ruirui-regcred
+
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: agent17
+  labels:
+    app: agent17
+spec:
+  containers:
+  - name: agent17
     image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/agent-provider:1.2
     env:
     - name: NODEID_SERVER
@@ -261,7 +345,19 @@ spec:
         "longitude":136.989379}]}'
     - name: PROVIDER_NAME
       value: AgentProvider17
-  - name: agent-provider18
+  imagePullSecrets:
+  - name: ruirui-regcred
+
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: agent18
+  labels:
+    app: agent18
+spec:
+  containers:
+  - name: agent18
     image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/agent-provider:1.2
     env:
     - name: NODEID_SERVER
@@ -277,7 +373,19 @@ spec:
         "longitude":136.989379}]}'
     - name: PROVIDER_NAME
       value: AgentProvider18
-  - name: agent-provider19
+  imagePullSecrets:
+  - name: ruirui-regcred
+
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: agent19
+  labels:
+    app: agent19
+spec:
+  containers:
+  - name: agent19
     image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/agent-provider:1.2
     env:
     - name: NODEID_SERVER
@@ -293,7 +401,19 @@ spec:
         "longitude":136.989379}]}'
     - name: PROVIDER_NAME
       value: AgentProvider19
-  - name: agent-provider20
+  imagePullSecrets:
+  - name: ruirui-regcred
+
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: agent20
+  labels:
+    app: agent20
+spec:
+  containers:
+  - name: agent20
     image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/agent-provider:1.2
     env:
     - name: NODEID_SERVER
@@ -309,7 +429,19 @@ spec:
         "longitude":136.989379}]}'
     - name: PROVIDER_NAME
       value: AgentProvider20
-  - name: agent-provider21
+  imagePullSecrets:
+  - name: ruirui-regcred
+
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: agent21
+  labels:
+    app: agent21
+spec:
+  containers:
+  - name: agent21
     image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/agent-provider:1.2
     env:
     - name: NODEID_SERVER
@@ -325,7 +457,19 @@ spec:
         "longitude":136.989379}]}'
     - name: PROVIDER_NAME
       value: AgentProvider21
-  - name: agent-provider22
+  imagePullSecrets:
+  - name: ruirui-regcred
+
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: agent22
+  labels:
+    app: agent22
+spec:
+  containers:
+  - name: agent22
     image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/agent-provider:1.2
     env:
     - name: NODEID_SERVER
@@ -341,7 +485,19 @@ spec:
         "longitude":136.989379}]}'
     - name: PROVIDER_NAME
       value: AgentProvider22
-  - name: agent-provider23
+  imagePullSecrets:
+  - name: ruirui-regcred
+
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: agent23
+  labels:
+    app: agent23
+spec:
+  containers:
+  - name: agent23
     image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/agent-provider:1.2
     env:
     - name: NODEID_SERVER
@@ -357,7 +513,19 @@ spec:
         "longitude":136.989379}]}'
     - name: PROVIDER_NAME
       value: AgentProvider23
-  - name: agent-provider24
+  imagePullSecrets:
+  - name: ruirui-regcred
+
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: agent24
+  labels:
+    app: agent24
+spec:
+  containers:
+  - name: agent24
     image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/agent-provider:1.2
     env:
     - name: NODEID_SERVER
@@ -373,7 +541,19 @@ spec:
         "longitude":136.989379}]}'
     - name: PROVIDER_NAME
       value: AgentProvider24
-  - name: agent-provider25
+  imagePullSecrets:
+  - name: ruirui-regcred
+
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: agent25
+  labels:
+    app: agent25
+spec:
+  containers:
+  - name: agent25
     image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/agent-provider:1.2
     env:
     - name: NODEID_SERVER
@@ -389,7 +569,19 @@ spec:
         "longitude":136.989379}]}'
     - name: PROVIDER_NAME
       value: AgentProvider25
-  - name: agent-provider26
+  imagePullSecrets:
+  - name: ruirui-regcred
+
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: agent26
+  labels:
+    app: agent26
+spec:
+  containers:
+  - name: agent26
     image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/agent-provider:1.2
     env:
     - name: NODEID_SERVER
@@ -405,7 +597,19 @@ spec:
         "longitude":136.989379}]}'
     - name: PROVIDER_NAME
       value: AgentProvider26
-  - name: agent-provider27
+  imagePullSecrets:
+  - name: ruirui-regcred
+
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: agent27
+  labels:
+    app: agent27
+spec:
+  containers:
+  - name: agent27
     image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/agent-provider:1.2
     env:
     - name: NODEID_SERVER
@@ -421,7 +625,19 @@ spec:
         "longitude":136.989379}]}'
     - name: PROVIDER_NAME
       value: AgentProvider27
-  - name: agent-provider28
+  imagePullSecrets:
+  - name: ruirui-regcred
+
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: agent28
+  labels:
+    app: agent28
+spec:
+  containers:
+  - name: agent28
     image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/agent-provider:1.2
     env:
     - name: NODEID_SERVER
@@ -437,7 +653,19 @@ spec:
         "longitude":136.989379}]}'
     - name: PROVIDER_NAME
       value: AgentProvider28
-  - name: agent-provider29
+  imagePullSecrets:
+  - name: ruirui-regcred
+
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: agent29
+  labels:
+    app: agent29
+spec:
+  containers:
+  - name: agent29
     image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/agent-provider:1.2
     env:
     - name: NODEID_SERVER
@@ -453,7 +681,19 @@ spec:
         "longitude":136.989379}]}'
     - name: PROVIDER_NAME
       value: AgentProvider29
-  - name: agent-provider30
+  imagePullSecrets:
+  - name: ruirui-regcred
+
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: agent30
+  labels:
+    app: agent30
+spec:
+  containers:
+  - name: agent30
     image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/agent-provider:1.2
     env:
     - name: NODEID_SERVER
