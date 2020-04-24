@@ -93,10 +93,10 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: worker11
+  name: worker
 spec:
   selector:
-    app: worker11
+    app: worker
   ports:
   - name: synerex
     port: 700
@@ -109,9 +109,9 @@ spec:
 apiVersion: v1
 kind: Pod
 metadata:
-  name: worker11
+  name: worker
   labels:
-    app: worker11
+    app: worker
 spec:
   containers:
   - name: nodeid-server
@@ -165,9 +165,9 @@ spec:
     image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/agent-provider:1.2
     env:
     - name: NODEID_SERVER
-      value: :9000
+      value: worker:600
     - name: SYNEREX_SERVER
-      value: :10000
+      value: worker:700
     - name: AREA
       value: '{"id":11, "name":"Unknown", "duplicate_area": [{"latitude":35.1624279,
         "longitude":136.9698507},{"latitude":35.1512811, "longitude":136.9698507},{"latitude":35.1512811,
@@ -193,9 +193,9 @@ spec:
     image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/agent-provider:1.2
     env:
     - name: NODEID_SERVER
-      value: :9000
+      value: worker:600
     - name: SYNEREX_SERVER
-      value: :10000
+      value: worker:700
     - name: AREA
       value: '{"id":11, "name":"Unknown", "duplicate_area": [{"latitude":35.1624279,
         "longitude":136.9698507},{"latitude":35.1512811, "longitude":136.9698507},{"latitude":35.1512811,
@@ -221,9 +221,9 @@ spec:
     image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/agent-provider:1.2
     env:
     - name: NODEID_SERVER
-      value: :9000
+      value: worker:600
     - name: SYNEREX_SERVER
-      value: :10000
+      value: worker:700
     - name: AREA
       value: '{"id":11, "name":"Unknown", "duplicate_area": [{"latitude":35.1624279,
         "longitude":136.9698507},{"latitude":35.1512811, "longitude":136.9698507},{"latitude":35.1512811,
@@ -249,9 +249,9 @@ spec:
     image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/agent-provider:1.2
     env:
     - name: NODEID_SERVER
-      value: :9000
+      value: worker:600
     - name: SYNEREX_SERVER
-      value: :10000
+      value: worker:700
     - name: AREA
       value: '{"id":11, "name":"Unknown", "duplicate_area": [{"latitude":35.1624279,
         "longitude":136.9698507},{"latitude":35.1512811, "longitude":136.9698507},{"latitude":35.1512811,
@@ -277,9 +277,9 @@ spec:
     image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/agent-provider:1.2
     env:
     - name: NODEID_SERVER
-      value: :9000
+      value: worker:600
     - name: SYNEREX_SERVER
-      value: :10000
+      value: worker:700
     - name: AREA
       value: '{"id":11, "name":"Unknown", "duplicate_area": [{"latitude":35.1624279,
         "longitude":136.9698507},{"latitude":35.1512811, "longitude":136.9698507},{"latitude":35.1512811,
@@ -305,9 +305,9 @@ spec:
     image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/agent-provider:1.2
     env:
     - name: NODEID_SERVER
-      value: :9000
+      value: worker:600
     - name: SYNEREX_SERVER
-      value: :10000
+      value: worker:700
     - name: AREA
       value: '{"id":11, "name":"Unknown", "duplicate_area": [{"latitude":35.1624279,
         "longitude":136.9698507},{"latitude":35.1512811, "longitude":136.9698507},{"latitude":35.1512811,
@@ -333,9 +333,9 @@ spec:
     image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/agent-provider:1.2
     env:
     - name: NODEID_SERVER
-      value: :9000
+      value: worker:600
     - name: SYNEREX_SERVER
-      value: :10000
+      value: worker:700
     - name: AREA
       value: '{"id":11, "name":"Unknown", "duplicate_area": [{"latitude":35.1624279,
         "longitude":136.9698507},{"latitude":35.1512811, "longitude":136.9698507},{"latitude":35.1512811,
@@ -361,9 +361,9 @@ spec:
     image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/agent-provider:1.2
     env:
     - name: NODEID_SERVER
-      value: :9000
+      value: worker:600
     - name: SYNEREX_SERVER
-      value: :10000
+      value: worker:700
     - name: AREA
       value: '{"id":11, "name":"Unknown", "duplicate_area": [{"latitude":35.1624279,
         "longitude":136.9698507},{"latitude":35.1512811, "longitude":136.9698507},{"latitude":35.1512811,
@@ -389,9 +389,9 @@ spec:
     image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/agent-provider:1.2
     env:
     - name: NODEID_SERVER
-      value: :9000
+      value: worker:600
     - name: SYNEREX_SERVER
-      value: :10000
+      value: worker:700
     - name: AREA
       value: '{"id":11, "name":"Unknown", "duplicate_area": [{"latitude":35.1624279,
         "longitude":136.9698507},{"latitude":35.1512811, "longitude":136.9698507},{"latitude":35.1512811,
@@ -417,9 +417,9 @@ spec:
     image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/agent-provider:1.2
     env:
     - name: NODEID_SERVER
-      value: :9000
+      value: worker:600
     - name: SYNEREX_SERVER
-      value: :10000
+      value: worker:700
     - name: AREA
       value: '{"id":11, "name":"Unknown", "duplicate_area": [{"latitude":35.1624279,
         "longitude":136.9698507},{"latitude":35.1512811, "longitude":136.9698507},{"latitude":35.1512811,
@@ -445,9 +445,9 @@ spec:
     image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/agent-provider:1.2
     env:
     - name: NODEID_SERVER
-      value: :9000
+      value: worker:600
     - name: SYNEREX_SERVER
-      value: :10000
+      value: worker:700
     - name: AREA
       value: '{"id":11, "name":"Unknown", "duplicate_area": [{"latitude":35.1624279,
         "longitude":136.9698507},{"latitude":35.1512811, "longitude":136.9698507},{"latitude":35.1512811,
@@ -473,9 +473,9 @@ spec:
     image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/agent-provider:1.2
     env:
     - name: NODEID_SERVER
-      value: :9000
+      value: worker:600
     - name: SYNEREX_SERVER
-      value: :10000
+      value: worker:700
     - name: AREA
       value: '{"id":11, "name":"Unknown", "duplicate_area": [{"latitude":35.1624279,
         "longitude":136.9698507},{"latitude":35.1512811, "longitude":136.9698507},{"latitude":35.1512811,
@@ -501,9 +501,9 @@ spec:
     image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/agent-provider:1.2
     env:
     - name: NODEID_SERVER
-      value: :9000
+      value: worker:600
     - name: SYNEREX_SERVER
-      value: :10000
+      value: worker:700
     - name: AREA
       value: '{"id":11, "name":"Unknown", "duplicate_area": [{"latitude":35.1624279,
         "longitude":136.9698507},{"latitude":35.1512811, "longitude":136.9698507},{"latitude":35.1512811,
@@ -529,9 +529,9 @@ spec:
     image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/agent-provider:1.2
     env:
     - name: NODEID_SERVER
-      value: :9000
+      value: worker:600
     - name: SYNEREX_SERVER
-      value: :10000
+      value: worker:700
     - name: AREA
       value: '{"id":11, "name":"Unknown", "duplicate_area": [{"latitude":35.1624279,
         "longitude":136.9698507},{"latitude":35.1512811, "longitude":136.9698507},{"latitude":35.1512811,
@@ -557,9 +557,9 @@ spec:
     image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/agent-provider:1.2
     env:
     - name: NODEID_SERVER
-      value: :9000
+      value: worker:600
     - name: SYNEREX_SERVER
-      value: :10000
+      value: worker:700
     - name: AREA
       value: '{"id":11, "name":"Unknown", "duplicate_area": [{"latitude":35.1624279,
         "longitude":136.9698507},{"latitude":35.1512811, "longitude":136.9698507},{"latitude":35.1512811,
@@ -585,9 +585,9 @@ spec:
     image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/agent-provider:1.2
     env:
     - name: NODEID_SERVER
-      value: :9000
+      value: worker:600
     - name: SYNEREX_SERVER
-      value: :10000
+      value: worker:700
     - name: AREA
       value: '{"id":11, "name":"Unknown", "duplicate_area": [{"latitude":35.1624279,
         "longitude":136.9698507},{"latitude":35.1512811, "longitude":136.9698507},{"latitude":35.1512811,
@@ -613,9 +613,9 @@ spec:
     image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/agent-provider:1.2
     env:
     - name: NODEID_SERVER
-      value: :9000
+      value: worker:600
     - name: SYNEREX_SERVER
-      value: :10000
+      value: worker:700
     - name: AREA
       value: '{"id":11, "name":"Unknown", "duplicate_area": [{"latitude":35.1624279,
         "longitude":136.9698507},{"latitude":35.1512811, "longitude":136.9698507},{"latitude":35.1512811,
@@ -641,9 +641,9 @@ spec:
     image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/agent-provider:1.2
     env:
     - name: NODEID_SERVER
-      value: :9000
+      value: worker:600
     - name: SYNEREX_SERVER
-      value: :10000
+      value: worker:700
     - name: AREA
       value: '{"id":11, "name":"Unknown", "duplicate_area": [{"latitude":35.1624279,
         "longitude":136.9698507},{"latitude":35.1512811, "longitude":136.9698507},{"latitude":35.1512811,
@@ -669,9 +669,9 @@ spec:
     image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/agent-provider:1.2
     env:
     - name: NODEID_SERVER
-      value: :9000
+      value: worker:600
     - name: SYNEREX_SERVER
-      value: :10000
+      value: worker:700
     - name: AREA
       value: '{"id":11, "name":"Unknown", "duplicate_area": [{"latitude":35.1624279,
         "longitude":136.9698507},{"latitude":35.1512811, "longitude":136.9698507},{"latitude":35.1512811,
@@ -697,9 +697,9 @@ spec:
     image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/agent-provider:1.2
     env:
     - name: NODEID_SERVER
-      value: :9000
+      value: worker:600
     - name: SYNEREX_SERVER
-      value: :10000
+      value: worker:700
     - name: AREA
       value: '{"id":11, "name":"Unknown", "duplicate_area": [{"latitude":35.1624279,
         "longitude":136.9698507},{"latitude":35.1512811, "longitude":136.9698507},{"latitude":35.1512811,

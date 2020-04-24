@@ -122,7 +122,7 @@ func NewVisMonitorService(area Area) Resource {
 
 // worker
 func NewWorkerService(area Area) Resource {
-	name := "worker" + strconv.Itoa(area.Id)
+	name := "worker"
 	service := Resource{
 		ApiVersion: "v1",
 		Kind:       "Service",
@@ -147,7 +147,7 @@ func NewWorkerService(area Area) Resource {
 }
 
 func NewWorker(area Area) Resource {
-	name := "worker" + strconv.Itoa(area.Id)
+	name := "worker"
 	containers := []Container{
 		{
 			Name:            "nodeid-server",
@@ -252,11 +252,11 @@ func NewAgent(area Area, i int) Resource {
 					Env: []Env{
 						{
 							Name:  "NODEID_SERVER",
-							Value: ":9000",
+							Value: "worker:600",
 						},
 						{
 							Name:  "SYNEREX_SERVER",
-							Value: ":10000",
+							Value: "worker:700",
 						},
 						{
 							Name:  "AREA",
