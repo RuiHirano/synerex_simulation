@@ -5,21 +5,21 @@ kubectl get svc
 
 
 # master
-kubectl logs -f master-4xzb9 -c master-provider
-kubectl logs -f master-4xzb9 -c nodeid-server
-kubectl logs -f master-4xzb9 -c synerex-server
-kubectl describe pod master-4xzb9
+kubectl logs -f master -c master-provider
+kubectl logs -f master -c nodeid-server
+kubectl logs -f master -c synerex-server
+kubectl describe pod master
 
 # worker
-kubectl logs -f worker-4xzb9 -c worker-provider
-kubectl logs -f worker-4xzb9 -c nodeid-server
-kubectl logs -f worker-4xzb9 -c synerex-server
-kubectl logs -f worker-4xzb9 -c agent-provider
-kubectl logs -f worker-4xzb9 -c visualization-provider
-kubectl describe pod worker-4xzb9
+kubectl logs -f worker -c worker-provider
+kubectl logs -f worker -c nodeid-server
+kubectl logs -f worker -c synerex-server
+kubectl logs -f worker -c agent-provider
+kubectl logs -f worker -c visualization-provider
+kubectl describe pod worker
 
 # simulator
-kubectl exec -it simulator-bw29p -c simulator bash
+kubectl exec -it simulator -c simulator bash
 
 # pod-manager
 kubectl logs -f pod-manager-jgtrh -c pod-manager
@@ -42,3 +42,8 @@ kubectl apply -f https://raw.githubusercontent.com/kubernetes/dashboard/v2.0.0-b
 kubectl proxy
 kubectl -n kubernetes-dashboard get secret
 kubectl -n kubernetes-dashboard describe secret kubernetes-dashboard-token-xxxxx
+
+
+# drain
+kubectl drain lotus2.novalocal --ignore-daemonsets
+kubectl uncordon lotus2.novalocal

@@ -13,5 +13,6 @@ docker image build -t ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/gateway-p
 docker image build -t ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/simulator:${VERSION} -f cli/Dockerfile .
 
 docker image build -t ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/pod-manager:${VERSION} -f provider/pod-manager/Dockerfile .
+docker image build -t synerex-simulation/kube-util:latest -f kube/plt-num-test/Dockerfile .
 
 echo "build finished"

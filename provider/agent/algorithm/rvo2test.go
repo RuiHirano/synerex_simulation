@@ -169,7 +169,7 @@ func (rvo2route *RVO2Route2) CalcNextAgents() []*api.Agent {
 		}
 	}
 
-	return nextControlAgents
+	return currentAgents
 }
 
 // エージェントがエリアの中にいるかどうか

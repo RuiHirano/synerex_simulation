@@ -8,9 +8,12 @@ import (
 	"log"
 
 	//"math/rand"
+
+	//"math/rand"
 	"os"
 	"sync"
 
+	"math"
 	"time"
 
 	//"runtime"
@@ -187,8 +190,52 @@ func forwardClock() {
 	t2 := time.Now()
 	duration := t2.Sub(t1).Milliseconds()
 	comDuration := com2 + com1
-	lpDuration := duration-comDuration
+	lpDuration := duration - comDuration
 	logger.Info("Total: %v, ComDuration: %v, LpDuration: %v", duration, comDuration, lpDuration)
+}
+
+func GetTestAgents(num int) []*api.Agent {
+	agents := []*api.Agent{}
+	area := myProvider.GetAgentStatus().GetArea()
+	maxLat, maxLon, minLat, minLon := simutil.GetCoordRange(area.ControlArea)
+	firstLat := minLat + (maxLat-minLat)*0.01 // 初期配置
+	firstLon := minLon + (maxLon-minLon)*0.01
+
+	sideNum := int(math.Sqrt(float64(num)))
+	rowNum := 0 // 何列目か
+	for i := 0; i < num; i++ {
+		lineNum := int(i / sideNum) // 何行目か
+		position := &api.Coord{
+			Longitude: firstLon + float64(rowNum)*0.0001,
+			Latitude:  firstLat + float64(lineNum)*0.0001,
+		}
+
+		if rowNum >= sideNum {
+			rowNum = 0
+		} else {
+			rowNum++
+		}
+
+		// create agent
+		uid, _ := uuid.NewRandom()
+
+		//transitPoints := []*api.Coord{destination}
+		agents = append(agents, &api.Agent{
+			Type: api.AgentType_PEDESTRIAN,
+			Id:   uint64(uid.ID()),
+			Route: &api.Route{
+				Position:      position,
+				Direction:     0,
+				Speed:         0,
+				Departure:     position,
+				Destination:   position,
+				TransitPoints: []*api.Coord{position},
+				NextTransit:   position,
+			},
+		})
+	}
+
+	return agents
 }
 
 // callback for each Supply
@@ -227,10 +274,11 @@ func demandCallback(clt *api.SMServiceClient, dm *api.Demand) {
 
 	case api.DemandType_SET_AGENT_REQUEST:
 		// Agentをセットする
-		agents := dm.GetSimDemand().GetSetAgentRequest().GetAgents()
+		//agents := dm.GetSimDemand().GetSetAgentRequest().GetAgents()
 
+		agents := GetTestAgents(len(sim.Agents) + len(dm.GetSimDemand().GetSetAgentRequest().GetAgents()))
 		// Agent情報を追加する
-		sim.AddAgents(agents)
+		sim.SetAgents(agents)
 
 		// セット完了通知を送る
 		targets := []uint64{dm.GetSimDemand().GetSenderId()}
