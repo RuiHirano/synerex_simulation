@@ -1,0 +1,1 @@
+docker image build -t synerex-simulation/pot-test:latest -f kube/pod-test/Dockerfile .
