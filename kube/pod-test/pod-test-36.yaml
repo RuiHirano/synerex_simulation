@@ -20,7 +20,7 @@ metadata:
 spec:
   containers:
   - name: simulator
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/simulator:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/simulator:1.6
     stdin: true
     tty: true
     env:
@@ -60,14 +60,14 @@ metadata:
 spec:
   containers:
   - name: nodeid-server
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/nodeid-server:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/nodeid-server:1.6
     env:
     - name: NODEID_SERVER
       value: :9000
     ports:
     - containerPort: 9000
   - name: synerex-server
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/synerex-server:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/synerex-server:1.6
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -76,7 +76,7 @@ spec:
     ports:
     - containerPort: 10000
   - name: master-provider
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/master-provider:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/master-provider:1.6
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -129,14 +129,14 @@ metadata:
 spec:
   containers:
   - name: nodeid-server
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/nodeid-server:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/nodeid-server:1.6
     env:
     - name: NODEID_SERVER
       value: :9000
     ports:
     - containerPort: 9000
   - name: synerex-server
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/synerex-server:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/synerex-server:1.6
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -147,7 +147,7 @@ spec:
     ports:
     - containerPort: 10000
   - name: worker-provider
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/worker-provider:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/worker-provider:1.6
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -164,7 +164,7 @@ spec:
     ports:
     - containerPort: 9980
   - name: agent-provider
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/agent-provider:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/agent-provider:1.6
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -180,7 +180,7 @@ spec:
     - name: PROVIDER_NAME
       value: AgentProvider11
   - name: visualization-provider
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/visualization-provider:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/visualization-provider:1.6
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -233,14 +233,14 @@ metadata:
 spec:
   containers:
   - name: nodeid-server
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/nodeid-server:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/nodeid-server:1.6
     env:
     - name: NODEID_SERVER
       value: :9000
     ports:
     - containerPort: 9000
   - name: synerex-server
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/synerex-server:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/synerex-server:1.6
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -251,7 +251,7 @@ spec:
     ports:
     - containerPort: 10000
   - name: worker-provider
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/worker-provider:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/worker-provider:1.6
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -268,7 +268,7 @@ spec:
     ports:
     - containerPort: 9980
   - name: agent-provider
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/agent-provider:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/agent-provider:1.6
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -284,7 +284,7 @@ spec:
     - name: PROVIDER_NAME
       value: AgentProvider12
   - name: visualization-provider
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/visualization-provider:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/visualization-provider:1.6
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -337,14 +337,14 @@ metadata:
 spec:
   containers:
   - name: nodeid-server
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/nodeid-server:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/nodeid-server:1.6
     env:
     - name: NODEID_SERVER
       value: :9000
     ports:
     - containerPort: 9000
   - name: synerex-server
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/synerex-server:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/synerex-server:1.6
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -355,7 +355,7 @@ spec:
     ports:
     - containerPort: 10000
   - name: worker-provider
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/worker-provider:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/worker-provider:1.6
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -372,7 +372,7 @@ spec:
     ports:
     - containerPort: 9980
   - name: agent-provider
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/agent-provider:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/agent-provider:1.6
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -388,7 +388,7 @@ spec:
     - name: PROVIDER_NAME
       value: AgentProvider13
   - name: visualization-provider
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/visualization-provider:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/visualization-provider:1.6
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -441,14 +441,14 @@ metadata:
 spec:
   containers:
   - name: nodeid-server
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/nodeid-server:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/nodeid-server:1.6
     env:
     - name: NODEID_SERVER
       value: :9000
     ports:
     - containerPort: 9000
   - name: synerex-server
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/synerex-server:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/synerex-server:1.6
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -459,7 +459,7 @@ spec:
     ports:
     - containerPort: 10000
   - name: worker-provider
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/worker-provider:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/worker-provider:1.6
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -476,7 +476,7 @@ spec:
     ports:
     - containerPort: 9980
   - name: agent-provider
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/agent-provider:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/agent-provider:1.6
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -492,7 +492,7 @@ spec:
     - name: PROVIDER_NAME
       value: AgentProvider14
   - name: visualization-provider
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/visualization-provider:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/visualization-provider:1.6
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -545,14 +545,14 @@ metadata:
 spec:
   containers:
   - name: nodeid-server
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/nodeid-server:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/nodeid-server:1.6
     env:
     - name: NODEID_SERVER
       value: :9000
     ports:
     - containerPort: 9000
   - name: synerex-server
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/synerex-server:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/synerex-server:1.6
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -563,7 +563,7 @@ spec:
     ports:
     - containerPort: 10000
   - name: worker-provider
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/worker-provider:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/worker-provider:1.6
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -580,7 +580,7 @@ spec:
     ports:
     - containerPort: 9980
   - name: agent-provider
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/agent-provider:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/agent-provider:1.6
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -596,7 +596,7 @@ spec:
     - name: PROVIDER_NAME
       value: AgentProvider15
   - name: visualization-provider
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/visualization-provider:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/visualization-provider:1.6
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -649,14 +649,14 @@ metadata:
 spec:
   containers:
   - name: nodeid-server
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/nodeid-server:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/nodeid-server:1.6
     env:
     - name: NODEID_SERVER
       value: :9000
     ports:
     - containerPort: 9000
   - name: synerex-server
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/synerex-server:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/synerex-server:1.6
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -667,7 +667,7 @@ spec:
     ports:
     - containerPort: 10000
   - name: worker-provider
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/worker-provider:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/worker-provider:1.6
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -684,7 +684,7 @@ spec:
     ports:
     - containerPort: 9980
   - name: agent-provider
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/agent-provider:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/agent-provider:1.6
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -700,7 +700,7 @@ spec:
     - name: PROVIDER_NAME
       value: AgentProvider16
   - name: visualization-provider
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/visualization-provider:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/visualization-provider:1.6
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -753,14 +753,14 @@ metadata:
 spec:
   containers:
   - name: nodeid-server
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/nodeid-server:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/nodeid-server:1.6
     env:
     - name: NODEID_SERVER
       value: :9000
     ports:
     - containerPort: 9000
   - name: synerex-server
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/synerex-server:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/synerex-server:1.6
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -771,7 +771,7 @@ spec:
     ports:
     - containerPort: 10000
   - name: worker-provider
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/worker-provider:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/worker-provider:1.6
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -788,7 +788,7 @@ spec:
     ports:
     - containerPort: 9980
   - name: agent-provider
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/agent-provider:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/agent-provider:1.6
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -804,7 +804,7 @@ spec:
     - name: PROVIDER_NAME
       value: AgentProvider21
   - name: visualization-provider
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/visualization-provider:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/visualization-provider:1.6
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -857,14 +857,14 @@ metadata:
 spec:
   containers:
   - name: nodeid-server
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/nodeid-server:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/nodeid-server:1.6
     env:
     - name: NODEID_SERVER
       value: :9000
     ports:
     - containerPort: 9000
   - name: synerex-server
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/synerex-server:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/synerex-server:1.6
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -875,7 +875,7 @@ spec:
     ports:
     - containerPort: 10000
   - name: worker-provider
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/worker-provider:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/worker-provider:1.6
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -892,7 +892,7 @@ spec:
     ports:
     - containerPort: 9980
   - name: agent-provider
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/agent-provider:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/agent-provider:1.6
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -908,7 +908,7 @@ spec:
     - name: PROVIDER_NAME
       value: AgentProvider22
   - name: visualization-provider
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/visualization-provider:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/visualization-provider:1.6
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -961,14 +961,14 @@ metadata:
 spec:
   containers:
   - name: nodeid-server
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/nodeid-server:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/nodeid-server:1.6
     env:
     - name: NODEID_SERVER
       value: :9000
     ports:
     - containerPort: 9000
   - name: synerex-server
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/synerex-server:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/synerex-server:1.6
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -979,7 +979,7 @@ spec:
     ports:
     - containerPort: 10000
   - name: worker-provider
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/worker-provider:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/worker-provider:1.6
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -996,7 +996,7 @@ spec:
     ports:
     - containerPort: 9980
   - name: agent-provider
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/agent-provider:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/agent-provider:1.6
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -1012,7 +1012,7 @@ spec:
     - name: PROVIDER_NAME
       value: AgentProvider23
   - name: visualization-provider
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/visualization-provider:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/visualization-provider:1.6
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -1065,14 +1065,14 @@ metadata:
 spec:
   containers:
   - name: nodeid-server
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/nodeid-server:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/nodeid-server:1.6
     env:
     - name: NODEID_SERVER
       value: :9000
     ports:
     - containerPort: 9000
   - name: synerex-server
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/synerex-server:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/synerex-server:1.6
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -1083,7 +1083,7 @@ spec:
     ports:
     - containerPort: 10000
   - name: worker-provider
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/worker-provider:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/worker-provider:1.6
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -1100,7 +1100,7 @@ spec:
     ports:
     - containerPort: 9980
   - name: agent-provider
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/agent-provider:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/agent-provider:1.6
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -1116,7 +1116,7 @@ spec:
     - name: PROVIDER_NAME
       value: AgentProvider24
   - name: visualization-provider
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/visualization-provider:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/visualization-provider:1.6
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -1169,14 +1169,14 @@ metadata:
 spec:
   containers:
   - name: nodeid-server
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/nodeid-server:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/nodeid-server:1.6
     env:
     - name: NODEID_SERVER
       value: :9000
     ports:
     - containerPort: 9000
   - name: synerex-server
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/synerex-server:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/synerex-server:1.6
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -1187,7 +1187,7 @@ spec:
     ports:
     - containerPort: 10000
   - name: worker-provider
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/worker-provider:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/worker-provider:1.6
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -1204,7 +1204,7 @@ spec:
     ports:
     - containerPort: 9980
   - name: agent-provider
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/agent-provider:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/agent-provider:1.6
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -1220,7 +1220,7 @@ spec:
     - name: PROVIDER_NAME
       value: AgentProvider25
   - name: visualization-provider
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/visualization-provider:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/visualization-provider:1.6
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -1273,14 +1273,14 @@ metadata:
 spec:
   containers:
   - name: nodeid-server
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/nodeid-server:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/nodeid-server:1.6
     env:
     - name: NODEID_SERVER
       value: :9000
     ports:
     - containerPort: 9000
   - name: synerex-server
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/synerex-server:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/synerex-server:1.6
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -1291,7 +1291,7 @@ spec:
     ports:
     - containerPort: 10000
   - name: worker-provider
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/worker-provider:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/worker-provider:1.6
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -1308,7 +1308,7 @@ spec:
     ports:
     - containerPort: 9980
   - name: agent-provider
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/agent-provider:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/agent-provider:1.6
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -1324,7 +1324,7 @@ spec:
     - name: PROVIDER_NAME
       value: AgentProvider26
   - name: visualization-provider
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/visualization-provider:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/visualization-provider:1.6
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -1377,14 +1377,14 @@ metadata:
 spec:
   containers:
   - name: nodeid-server
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/nodeid-server:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/nodeid-server:1.6
     env:
     - name: NODEID_SERVER
       value: :9000
     ports:
     - containerPort: 9000
   - name: synerex-server
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/synerex-server:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/synerex-server:1.6
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -1395,7 +1395,7 @@ spec:
     ports:
     - containerPort: 10000
   - name: worker-provider
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/worker-provider:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/worker-provider:1.6
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -1412,7 +1412,7 @@ spec:
     ports:
     - containerPort: 9980
   - name: agent-provider
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/agent-provider:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/agent-provider:1.6
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -1428,7 +1428,7 @@ spec:
     - name: PROVIDER_NAME
       value: AgentProvider31
   - name: visualization-provider
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/visualization-provider:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/visualization-provider:1.6
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -1481,14 +1481,14 @@ metadata:
 spec:
   containers:
   - name: nodeid-server
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/nodeid-server:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/nodeid-server:1.6
     env:
     - name: NODEID_SERVER
       value: :9000
     ports:
     - containerPort: 9000
   - name: synerex-server
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/synerex-server:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/synerex-server:1.6
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -1499,7 +1499,7 @@ spec:
     ports:
     - containerPort: 10000
   - name: worker-provider
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/worker-provider:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/worker-provider:1.6
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -1516,7 +1516,7 @@ spec:
     ports:
     - containerPort: 9980
   - name: agent-provider
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/agent-provider:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/agent-provider:1.6
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -1532,7 +1532,7 @@ spec:
     - name: PROVIDER_NAME
       value: AgentProvider32
   - name: visualization-provider
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/visualization-provider:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/visualization-provider:1.6
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -1585,14 +1585,14 @@ metadata:
 spec:
   containers:
   - name: nodeid-server
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/nodeid-server:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/nodeid-server:1.6
     env:
     - name: NODEID_SERVER
       value: :9000
     ports:
     - containerPort: 9000
   - name: synerex-server
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/synerex-server:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/synerex-server:1.6
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -1603,7 +1603,7 @@ spec:
     ports:
     - containerPort: 10000
   - name: worker-provider
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/worker-provider:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/worker-provider:1.6
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -1620,7 +1620,7 @@ spec:
     ports:
     - containerPort: 9980
   - name: agent-provider
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/agent-provider:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/agent-provider:1.6
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -1636,7 +1636,7 @@ spec:
     - name: PROVIDER_NAME
       value: AgentProvider33
   - name: visualization-provider
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/visualization-provider:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/visualization-provider:1.6
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -1689,14 +1689,14 @@ metadata:
 spec:
   containers:
   - name: nodeid-server
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/nodeid-server:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/nodeid-server:1.6
     env:
     - name: NODEID_SERVER
       value: :9000
     ports:
     - containerPort: 9000
   - name: synerex-server
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/synerex-server:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/synerex-server:1.6
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -1707,7 +1707,7 @@ spec:
     ports:
     - containerPort: 10000
   - name: worker-provider
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/worker-provider:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/worker-provider:1.6
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -1724,7 +1724,7 @@ spec:
     ports:
     - containerPort: 9980
   - name: agent-provider
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/agent-provider:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/agent-provider:1.6
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -1740,7 +1740,7 @@ spec:
     - name: PROVIDER_NAME
       value: AgentProvider34
   - name: visualization-provider
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/visualization-provider:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/visualization-provider:1.6
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -1793,14 +1793,14 @@ metadata:
 spec:
   containers:
   - name: nodeid-server
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/nodeid-server:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/nodeid-server:1.6
     env:
     - name: NODEID_SERVER
       value: :9000
     ports:
     - containerPort: 9000
   - name: synerex-server
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/synerex-server:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/synerex-server:1.6
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -1811,7 +1811,7 @@ spec:
     ports:
     - containerPort: 10000
   - name: worker-provider
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/worker-provider:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/worker-provider:1.6
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -1828,7 +1828,7 @@ spec:
     ports:
     - containerPort: 9980
   - name: agent-provider
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/agent-provider:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/agent-provider:1.6
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -1844,7 +1844,7 @@ spec:
     - name: PROVIDER_NAME
       value: AgentProvider35
   - name: visualization-provider
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/visualization-provider:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/visualization-provider:1.6
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -1897,14 +1897,14 @@ metadata:
 spec:
   containers:
   - name: nodeid-server
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/nodeid-server:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/nodeid-server:1.6
     env:
     - name: NODEID_SERVER
       value: :9000
     ports:
     - containerPort: 9000
   - name: synerex-server
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/synerex-server:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/synerex-server:1.6
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -1915,7 +1915,7 @@ spec:
     ports:
     - containerPort: 10000
   - name: worker-provider
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/worker-provider:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/worker-provider:1.6
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -1932,7 +1932,7 @@ spec:
     ports:
     - containerPort: 9980
   - name: agent-provider
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/agent-provider:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/agent-provider:1.6
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -1948,7 +1948,7 @@ spec:
     - name: PROVIDER_NAME
       value: AgentProvider36
   - name: visualization-provider
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/visualization-provider:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/visualization-provider:1.6
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -2001,14 +2001,14 @@ metadata:
 spec:
   containers:
   - name: nodeid-server
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/nodeid-server:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/nodeid-server:1.6
     env:
     - name: NODEID_SERVER
       value: :9000
     ports:
     - containerPort: 9000
   - name: synerex-server
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/synerex-server:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/synerex-server:1.6
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -2019,7 +2019,7 @@ spec:
     ports:
     - containerPort: 10000
   - name: worker-provider
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/worker-provider:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/worker-provider:1.6
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -2036,7 +2036,7 @@ spec:
     ports:
     - containerPort: 9980
   - name: agent-provider
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/agent-provider:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/agent-provider:1.6
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -2052,7 +2052,7 @@ spec:
     - name: PROVIDER_NAME
       value: AgentProvider41
   - name: visualization-provider
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/visualization-provider:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/visualization-provider:1.6
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -2105,14 +2105,14 @@ metadata:
 spec:
   containers:
   - name: nodeid-server
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/nodeid-server:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/nodeid-server:1.6
     env:
     - name: NODEID_SERVER
       value: :9000
     ports:
     - containerPort: 9000
   - name: synerex-server
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/synerex-server:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/synerex-server:1.6
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -2123,7 +2123,7 @@ spec:
     ports:
     - containerPort: 10000
   - name: worker-provider
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/worker-provider:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/worker-provider:1.6
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -2140,7 +2140,7 @@ spec:
     ports:
     - containerPort: 9980
   - name: agent-provider
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/agent-provider:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/agent-provider:1.6
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -2156,7 +2156,7 @@ spec:
     - name: PROVIDER_NAME
       value: AgentProvider42
   - name: visualization-provider
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/visualization-provider:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/visualization-provider:1.6
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -2209,14 +2209,14 @@ metadata:
 spec:
   containers:
   - name: nodeid-server
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/nodeid-server:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/nodeid-server:1.6
     env:
     - name: NODEID_SERVER
       value: :9000
     ports:
     - containerPort: 9000
   - name: synerex-server
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/synerex-server:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/synerex-server:1.6
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -2227,7 +2227,7 @@ spec:
     ports:
     - containerPort: 10000
   - name: worker-provider
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/worker-provider:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/worker-provider:1.6
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -2244,7 +2244,7 @@ spec:
     ports:
     - containerPort: 9980
   - name: agent-provider
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/agent-provider:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/agent-provider:1.6
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -2260,7 +2260,7 @@ spec:
     - name: PROVIDER_NAME
       value: AgentProvider43
   - name: visualization-provider
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/visualization-provider:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/visualization-provider:1.6
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -2313,14 +2313,14 @@ metadata:
 spec:
   containers:
   - name: nodeid-server
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/nodeid-server:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/nodeid-server:1.6
     env:
     - name: NODEID_SERVER
       value: :9000
     ports:
     - containerPort: 9000
   - name: synerex-server
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/synerex-server:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/synerex-server:1.6
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -2331,7 +2331,7 @@ spec:
     ports:
     - containerPort: 10000
   - name: worker-provider
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/worker-provider:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/worker-provider:1.6
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -2348,7 +2348,7 @@ spec:
     ports:
     - containerPort: 9980
   - name: agent-provider
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/agent-provider:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/agent-provider:1.6
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -2364,7 +2364,7 @@ spec:
     - name: PROVIDER_NAME
       value: AgentProvider44
   - name: visualization-provider
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/visualization-provider:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/visualization-provider:1.6
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -2417,14 +2417,14 @@ metadata:
 spec:
   containers:
   - name: nodeid-server
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/nodeid-server:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/nodeid-server:1.6
     env:
     - name: NODEID_SERVER
       value: :9000
     ports:
     - containerPort: 9000
   - name: synerex-server
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/synerex-server:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/synerex-server:1.6
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -2435,7 +2435,7 @@ spec:
     ports:
     - containerPort: 10000
   - name: worker-provider
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/worker-provider:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/worker-provider:1.6
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -2452,7 +2452,7 @@ spec:
     ports:
     - containerPort: 9980
   - name: agent-provider
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/agent-provider:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/agent-provider:1.6
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -2468,7 +2468,7 @@ spec:
     - name: PROVIDER_NAME
       value: AgentProvider45
   - name: visualization-provider
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/visualization-provider:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/visualization-provider:1.6
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -2521,14 +2521,14 @@ metadata:
 spec:
   containers:
   - name: nodeid-server
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/nodeid-server:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/nodeid-server:1.6
     env:
     - name: NODEID_SERVER
       value: :9000
     ports:
     - containerPort: 9000
   - name: synerex-server
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/synerex-server:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/synerex-server:1.6
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -2539,7 +2539,7 @@ spec:
     ports:
     - containerPort: 10000
   - name: worker-provider
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/worker-provider:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/worker-provider:1.6
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -2556,7 +2556,7 @@ spec:
     ports:
     - containerPort: 9980
   - name: agent-provider
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/agent-provider:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/agent-provider:1.6
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -2572,7 +2572,7 @@ spec:
     - name: PROVIDER_NAME
       value: AgentProvider46
   - name: visualization-provider
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/visualization-provider:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/visualization-provider:1.6
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -2625,14 +2625,14 @@ metadata:
 spec:
   containers:
   - name: nodeid-server
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/nodeid-server:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/nodeid-server:1.6
     env:
     - name: NODEID_SERVER
       value: :9000
     ports:
     - containerPort: 9000
   - name: synerex-server
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/synerex-server:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/synerex-server:1.6
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -2643,7 +2643,7 @@ spec:
     ports:
     - containerPort: 10000
   - name: worker-provider
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/worker-provider:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/worker-provider:1.6
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -2660,7 +2660,7 @@ spec:
     ports:
     - containerPort: 9980
   - name: agent-provider
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/agent-provider:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/agent-provider:1.6
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -2676,7 +2676,7 @@ spec:
     - name: PROVIDER_NAME
       value: AgentProvider51
   - name: visualization-provider
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/visualization-provider:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/visualization-provider:1.6
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -2729,14 +2729,14 @@ metadata:
 spec:
   containers:
   - name: nodeid-server
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/nodeid-server:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/nodeid-server:1.6
     env:
     - name: NODEID_SERVER
       value: :9000
     ports:
     - containerPort: 9000
   - name: synerex-server
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/synerex-server:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/synerex-server:1.6
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -2747,7 +2747,7 @@ spec:
     ports:
     - containerPort: 10000
   - name: worker-provider
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/worker-provider:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/worker-provider:1.6
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -2764,7 +2764,7 @@ spec:
     ports:
     - containerPort: 9980
   - name: agent-provider
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/agent-provider:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/agent-provider:1.6
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -2780,7 +2780,7 @@ spec:
     - name: PROVIDER_NAME
       value: AgentProvider52
   - name: visualization-provider
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/visualization-provider:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/visualization-provider:1.6
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -2833,14 +2833,14 @@ metadata:
 spec:
   containers:
   - name: nodeid-server
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/nodeid-server:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/nodeid-server:1.6
     env:
     - name: NODEID_SERVER
       value: :9000
     ports:
     - containerPort: 9000
   - name: synerex-server
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/synerex-server:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/synerex-server:1.6
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -2851,7 +2851,7 @@ spec:
     ports:
     - containerPort: 10000
   - name: worker-provider
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/worker-provider:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/worker-provider:1.6
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -2868,7 +2868,7 @@ spec:
     ports:
     - containerPort: 9980
   - name: agent-provider
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/agent-provider:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/agent-provider:1.6
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -2884,7 +2884,7 @@ spec:
     - name: PROVIDER_NAME
       value: AgentProvider53
   - name: visualization-provider
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/visualization-provider:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/visualization-provider:1.6
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -2937,14 +2937,14 @@ metadata:
 spec:
   containers:
   - name: nodeid-server
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/nodeid-server:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/nodeid-server:1.6
     env:
     - name: NODEID_SERVER
       value: :9000
     ports:
     - containerPort: 9000
   - name: synerex-server
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/synerex-server:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/synerex-server:1.6
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -2955,7 +2955,7 @@ spec:
     ports:
     - containerPort: 10000
   - name: worker-provider
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/worker-provider:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/worker-provider:1.6
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -2972,7 +2972,7 @@ spec:
     ports:
     - containerPort: 9980
   - name: agent-provider
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/agent-provider:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/agent-provider:1.6
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -2988,7 +2988,7 @@ spec:
     - name: PROVIDER_NAME
       value: AgentProvider54
   - name: visualization-provider
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/visualization-provider:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/visualization-provider:1.6
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -3041,14 +3041,14 @@ metadata:
 spec:
   containers:
   - name: nodeid-server
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/nodeid-server:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/nodeid-server:1.6
     env:
     - name: NODEID_SERVER
       value: :9000
     ports:
     - containerPort: 9000
   - name: synerex-server
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/synerex-server:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/synerex-server:1.6
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -3059,7 +3059,7 @@ spec:
     ports:
     - containerPort: 10000
   - name: worker-provider
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/worker-provider:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/worker-provider:1.6
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -3076,7 +3076,7 @@ spec:
     ports:
     - containerPort: 9980
   - name: agent-provider
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/agent-provider:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/agent-provider:1.6
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -3092,7 +3092,7 @@ spec:
     - name: PROVIDER_NAME
       value: AgentProvider55
   - name: visualization-provider
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/visualization-provider:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/visualization-provider:1.6
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -3145,14 +3145,14 @@ metadata:
 spec:
   containers:
   - name: nodeid-server
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/nodeid-server:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/nodeid-server:1.6
     env:
     - name: NODEID_SERVER
       value: :9000
     ports:
     - containerPort: 9000
   - name: synerex-server
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/synerex-server:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/synerex-server:1.6
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -3163,7 +3163,7 @@ spec:
     ports:
     - containerPort: 10000
   - name: worker-provider
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/worker-provider:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/worker-provider:1.6
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -3180,7 +3180,7 @@ spec:
     ports:
     - containerPort: 9980
   - name: agent-provider
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/agent-provider:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/agent-provider:1.6
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -3196,7 +3196,7 @@ spec:
     - name: PROVIDER_NAME
       value: AgentProvider56
   - name: visualization-provider
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/visualization-provider:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/visualization-provider:1.6
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -3249,14 +3249,14 @@ metadata:
 spec:
   containers:
   - name: nodeid-server
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/nodeid-server:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/nodeid-server:1.6
     env:
     - name: NODEID_SERVER
       value: :9000
     ports:
     - containerPort: 9000
   - name: synerex-server
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/synerex-server:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/synerex-server:1.6
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -3267,7 +3267,7 @@ spec:
     ports:
     - containerPort: 10000
   - name: worker-provider
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/worker-provider:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/worker-provider:1.6
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -3284,7 +3284,7 @@ spec:
     ports:
     - containerPort: 9980
   - name: agent-provider
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/agent-provider:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/agent-provider:1.6
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -3300,7 +3300,7 @@ spec:
     - name: PROVIDER_NAME
       value: AgentProvider61
   - name: visualization-provider
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/visualization-provider:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/visualization-provider:1.6
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -3353,14 +3353,14 @@ metadata:
 spec:
   containers:
   - name: nodeid-server
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/nodeid-server:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/nodeid-server:1.6
     env:
     - name: NODEID_SERVER
       value: :9000
     ports:
     - containerPort: 9000
   - name: synerex-server
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/synerex-server:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/synerex-server:1.6
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -3371,7 +3371,7 @@ spec:
     ports:
     - containerPort: 10000
   - name: worker-provider
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/worker-provider:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/worker-provider:1.6
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -3388,7 +3388,7 @@ spec:
     ports:
     - containerPort: 9980
   - name: agent-provider
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/agent-provider:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/agent-provider:1.6
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -3404,7 +3404,7 @@ spec:
     - name: PROVIDER_NAME
       value: AgentProvider62
   - name: visualization-provider
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/visualization-provider:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/visualization-provider:1.6
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -3457,14 +3457,14 @@ metadata:
 spec:
   containers:
   - name: nodeid-server
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/nodeid-server:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/nodeid-server:1.6
     env:
     - name: NODEID_SERVER
       value: :9000
     ports:
     - containerPort: 9000
   - name: synerex-server
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/synerex-server:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/synerex-server:1.6
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -3475,7 +3475,7 @@ spec:
     ports:
     - containerPort: 10000
   - name: worker-provider
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/worker-provider:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/worker-provider:1.6
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -3492,7 +3492,7 @@ spec:
     ports:
     - containerPort: 9980
   - name: agent-provider
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/agent-provider:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/agent-provider:1.6
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -3508,7 +3508,7 @@ spec:
     - name: PROVIDER_NAME
       value: AgentProvider63
   - name: visualization-provider
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/visualization-provider:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/visualization-provider:1.6
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -3561,14 +3561,14 @@ metadata:
 spec:
   containers:
   - name: nodeid-server
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/nodeid-server:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/nodeid-server:1.6
     env:
     - name: NODEID_SERVER
       value: :9000
     ports:
     - containerPort: 9000
   - name: synerex-server
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/synerex-server:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/synerex-server:1.6
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -3579,7 +3579,7 @@ spec:
     ports:
     - containerPort: 10000
   - name: worker-provider
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/worker-provider:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/worker-provider:1.6
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -3596,7 +3596,7 @@ spec:
     ports:
     - containerPort: 9980
   - name: agent-provider
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/agent-provider:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/agent-provider:1.6
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -3612,7 +3612,7 @@ spec:
     - name: PROVIDER_NAME
       value: AgentProvider64
   - name: visualization-provider
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/visualization-provider:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/visualization-provider:1.6
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -3665,14 +3665,14 @@ metadata:
 spec:
   containers:
   - name: nodeid-server
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/nodeid-server:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/nodeid-server:1.6
     env:
     - name: NODEID_SERVER
       value: :9000
     ports:
     - containerPort: 9000
   - name: synerex-server
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/synerex-server:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/synerex-server:1.6
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -3683,7 +3683,7 @@ spec:
     ports:
     - containerPort: 10000
   - name: worker-provider
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/worker-provider:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/worker-provider:1.6
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -3700,7 +3700,7 @@ spec:
     ports:
     - containerPort: 9980
   - name: agent-provider
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/agent-provider:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/agent-provider:1.6
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -3716,7 +3716,7 @@ spec:
     - name: PROVIDER_NAME
       value: AgentProvider65
   - name: visualization-provider
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/visualization-provider:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/visualization-provider:1.6
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -3769,14 +3769,14 @@ metadata:
 spec:
   containers:
   - name: nodeid-server
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/nodeid-server:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/nodeid-server:1.6
     env:
     - name: NODEID_SERVER
       value: :9000
     ports:
     - containerPort: 9000
   - name: synerex-server
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/synerex-server:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/synerex-server:1.6
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -3787,7 +3787,7 @@ spec:
     ports:
     - containerPort: 10000
   - name: worker-provider
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/worker-provider:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/worker-provider:1.6
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -3804,7 +3804,7 @@ spec:
     ports:
     - containerPort: 9980
   - name: agent-provider
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/agent-provider:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/agent-provider:1.6
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -3820,7 +3820,7 @@ spec:
     - name: PROVIDER_NAME
       value: AgentProvider66
   - name: visualization-provider
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/visualization-provider:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/visualization-provider:1.6
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -3843,7 +3843,7 @@ metadata:
 spec:
   containers:
   - name: gateway-provider
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/gateway-provider:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/gateway-provider:1.6
     env:
     - name: WORKER_SYNEREX_SERVER1
       value: worker11:700
@@ -3870,7 +3870,7 @@ metadata:
 spec:
   containers:
   - name: gateway-provider
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/gateway-provider:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/gateway-provider:1.6
     env:
     - name: WORKER_SYNEREX_SERVER1
       value: worker11:700
@@ -3897,7 +3897,7 @@ metadata:
 spec:
   containers:
   - name: gateway-provider
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/gateway-provider:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/gateway-provider:1.6
     env:
     - name: WORKER_SYNEREX_SERVER1
       value: worker12:700
@@ -3924,7 +3924,7 @@ metadata:
 spec:
   containers:
   - name: gateway-provider
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/gateway-provider:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/gateway-provider:1.6
     env:
     - name: WORKER_SYNEREX_SERVER1
       value: worker12:700
@@ -3951,7 +3951,7 @@ metadata:
 spec:
   containers:
   - name: gateway-provider
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/gateway-provider:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/gateway-provider:1.6
     env:
     - name: WORKER_SYNEREX_SERVER1
       value: worker13:700
@@ -3978,7 +3978,7 @@ metadata:
 spec:
   containers:
   - name: gateway-provider
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/gateway-provider:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/gateway-provider:1.6
     env:
     - name: WORKER_SYNEREX_SERVER1
       value: worker13:700
@@ -4005,7 +4005,7 @@ metadata:
 spec:
   containers:
   - name: gateway-provider
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/gateway-provider:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/gateway-provider:1.6
     env:
     - name: WORKER_SYNEREX_SERVER1
       value: worker14:700
@@ -4032,7 +4032,7 @@ metadata:
 spec:
   containers:
   - name: gateway-provider
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/gateway-provider:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/gateway-provider:1.6
     env:
     - name: WORKER_SYNEREX_SERVER1
       value: worker14:700
@@ -4059,7 +4059,7 @@ metadata:
 spec:
   containers:
   - name: gateway-provider
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/gateway-provider:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/gateway-provider:1.6
     env:
     - name: WORKER_SYNEREX_SERVER1
       value: worker15:700
@@ -4086,7 +4086,7 @@ metadata:
 spec:
   containers:
   - name: gateway-provider
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/gateway-provider:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/gateway-provider:1.6
     env:
     - name: WORKER_SYNEREX_SERVER1
       value: worker15:700
@@ -4113,7 +4113,7 @@ metadata:
 spec:
   containers:
   - name: gateway-provider
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/gateway-provider:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/gateway-provider:1.6
     env:
     - name: WORKER_SYNEREX_SERVER1
       value: worker16:700
@@ -4140,7 +4140,7 @@ metadata:
 spec:
   containers:
   - name: gateway-provider
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/gateway-provider:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/gateway-provider:1.6
     env:
     - name: WORKER_SYNEREX_SERVER1
       value: worker21:700
@@ -4167,7 +4167,7 @@ metadata:
 spec:
   containers:
   - name: gateway-provider
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/gateway-provider:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/gateway-provider:1.6
     env:
     - name: WORKER_SYNEREX_SERVER1
       value: worker21:700
@@ -4194,7 +4194,7 @@ metadata:
 spec:
   containers:
   - name: gateway-provider
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/gateway-provider:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/gateway-provider:1.6
     env:
     - name: WORKER_SYNEREX_SERVER1
       value: worker22:700
@@ -4221,7 +4221,7 @@ metadata:
 spec:
   containers:
   - name: gateway-provider
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/gateway-provider:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/gateway-provider:1.6
     env:
     - name: WORKER_SYNEREX_SERVER1
       value: worker22:700
@@ -4248,7 +4248,7 @@ metadata:
 spec:
   containers:
   - name: gateway-provider
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/gateway-provider:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/gateway-provider:1.6
     env:
     - name: WORKER_SYNEREX_SERVER1
       value: worker23:700
@@ -4275,7 +4275,7 @@ metadata:
 spec:
   containers:
   - name: gateway-provider
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/gateway-provider:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/gateway-provider:1.6
     env:
     - name: WORKER_SYNEREX_SERVER1
       value: worker23:700
@@ -4302,7 +4302,7 @@ metadata:
 spec:
   containers:
   - name: gateway-provider
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/gateway-provider:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/gateway-provider:1.6
     env:
     - name: WORKER_SYNEREX_SERVER1
       value: worker24:700
@@ -4329,7 +4329,7 @@ metadata:
 spec:
   containers:
   - name: gateway-provider
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/gateway-provider:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/gateway-provider:1.6
     env:
     - name: WORKER_SYNEREX_SERVER1
       value: worker24:700
@@ -4356,7 +4356,7 @@ metadata:
 spec:
   containers:
   - name: gateway-provider
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/gateway-provider:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/gateway-provider:1.6
     env:
     - name: WORKER_SYNEREX_SERVER1
       value: worker25:700
@@ -4383,7 +4383,7 @@ metadata:
 spec:
   containers:
   - name: gateway-provider
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/gateway-provider:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/gateway-provider:1.6
     env:
     - name: WORKER_SYNEREX_SERVER1
       value: worker25:700
@@ -4410,7 +4410,7 @@ metadata:
 spec:
   containers:
   - name: gateway-provider
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/gateway-provider:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/gateway-provider:1.6
     env:
     - name: WORKER_SYNEREX_SERVER1
       value: worker26:700
@@ -4437,7 +4437,7 @@ metadata:
 spec:
   containers:
   - name: gateway-provider
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/gateway-provider:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/gateway-provider:1.6
     env:
     - name: WORKER_SYNEREX_SERVER1
       value: worker31:700
@@ -4464,7 +4464,7 @@ metadata:
 spec:
   containers:
   - name: gateway-provider
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/gateway-provider:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/gateway-provider:1.6
     env:
     - name: WORKER_SYNEREX_SERVER1
       value: worker31:700
@@ -4491,7 +4491,7 @@ metadata:
 spec:
   containers:
   - name: gateway-provider
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/gateway-provider:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/gateway-provider:1.6
     env:
     - name: WORKER_SYNEREX_SERVER1
       value: worker32:700
@@ -4518,7 +4518,7 @@ metadata:
 spec:
   containers:
   - name: gateway-provider
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/gateway-provider:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/gateway-provider:1.6
     env:
     - name: WORKER_SYNEREX_SERVER1
       value: worker32:700
@@ -4545,7 +4545,7 @@ metadata:
 spec:
   containers:
   - name: gateway-provider
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/gateway-provider:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/gateway-provider:1.6
     env:
     - name: WORKER_SYNEREX_SERVER1
       value: worker33:700
@@ -4572,7 +4572,7 @@ metadata:
 spec:
   containers:
   - name: gateway-provider
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/gateway-provider:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/gateway-provider:1.6
     env:
     - name: WORKER_SYNEREX_SERVER1
       value: worker33:700
@@ -4599,7 +4599,7 @@ metadata:
 spec:
   containers:
   - name: gateway-provider
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/gateway-provider:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/gateway-provider:1.6
     env:
     - name: WORKER_SYNEREX_SERVER1
       value: worker34:700
@@ -4626,7 +4626,7 @@ metadata:
 spec:
   containers:
   - name: gateway-provider
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/gateway-provider:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/gateway-provider:1.6
     env:
     - name: WORKER_SYNEREX_SERVER1
       value: worker34:700
@@ -4653,7 +4653,7 @@ metadata:
 spec:
   containers:
   - name: gateway-provider
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/gateway-provider:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/gateway-provider:1.6
     env:
     - name: WORKER_SYNEREX_SERVER1
       value: worker35:700
@@ -4680,7 +4680,7 @@ metadata:
 spec:
   containers:
   - name: gateway-provider
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/gateway-provider:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/gateway-provider:1.6
     env:
     - name: WORKER_SYNEREX_SERVER1
       value: worker35:700
@@ -4707,7 +4707,7 @@ metadata:
 spec:
   containers:
   - name: gateway-provider
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/gateway-provider:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/gateway-provider:1.6
     env:
     - name: WORKER_SYNEREX_SERVER1
       value: worker36:700
@@ -4734,7 +4734,7 @@ metadata:
 spec:
   containers:
   - name: gateway-provider
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/gateway-provider:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/gateway-provider:1.6
     env:
     - name: WORKER_SYNEREX_SERVER1
       value: worker41:700
@@ -4761,7 +4761,7 @@ metadata:
 spec:
   containers:
   - name: gateway-provider
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/gateway-provider:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/gateway-provider:1.6
     env:
     - name: WORKER_SYNEREX_SERVER1
       value: worker41:700
@@ -4788,7 +4788,7 @@ metadata:
 spec:
   containers:
   - name: gateway-provider
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/gateway-provider:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/gateway-provider:1.6
     env:
     - name: WORKER_SYNEREX_SERVER1
       value: worker42:700
@@ -4815,7 +4815,7 @@ metadata:
 spec:
   containers:
   - name: gateway-provider
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/gateway-provider:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/gateway-provider:1.6
     env:
     - name: WORKER_SYNEREX_SERVER1
       value: worker42:700
@@ -4842,7 +4842,7 @@ metadata:
 spec:
   containers:
   - name: gateway-provider
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/gateway-provider:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/gateway-provider:1.6
     env:
     - name: WORKER_SYNEREX_SERVER1
       value: worker43:700
@@ -4869,7 +4869,7 @@ metadata:
 spec:
   containers:
   - name: gateway-provider
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/gateway-provider:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/gateway-provider:1.6
     env:
     - name: WORKER_SYNEREX_SERVER1
       value: worker43:700
@@ -4896,7 +4896,7 @@ metadata:
 spec:
   containers:
   - name: gateway-provider
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/gateway-provider:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/gateway-provider:1.6
     env:
     - name: WORKER_SYNEREX_SERVER1
       value: worker44:700
@@ -4923,7 +4923,7 @@ metadata:
 spec:
   containers:
   - name: gateway-provider
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/gateway-provider:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/gateway-provider:1.6
     env:
     - name: WORKER_SYNEREX_SERVER1
       value: worker44:700
@@ -4950,7 +4950,7 @@ metadata:
 spec:
   containers:
   - name: gateway-provider
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/gateway-provider:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/gateway-provider:1.6
     env:
     - name: WORKER_SYNEREX_SERVER1
       value: worker45:700
@@ -4977,7 +4977,7 @@ metadata:
 spec:
   containers:
   - name: gateway-provider
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/gateway-provider:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/gateway-provider:1.6
     env:
     - name: WORKER_SYNEREX_SERVER1
       value: worker45:700
@@ -5004,7 +5004,7 @@ metadata:
 spec:
   containers:
   - name: gateway-provider
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/gateway-provider:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/gateway-provider:1.6
     env:
     - name: WORKER_SYNEREX_SERVER1
       value: worker46:700
@@ -5031,7 +5031,7 @@ metadata:
 spec:
   containers:
   - name: gateway-provider
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/gateway-provider:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/gateway-provider:1.6
     env:
     - name: WORKER_SYNEREX_SERVER1
       value: worker51:700
@@ -5058,7 +5058,7 @@ metadata:
 spec:
   containers:
   - name: gateway-provider
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/gateway-provider:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/gateway-provider:1.6
     env:
     - name: WORKER_SYNEREX_SERVER1
       value: worker51:700
@@ -5085,7 +5085,7 @@ metadata:
 spec:
   containers:
   - name: gateway-provider
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/gateway-provider:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/gateway-provider:1.6
     env:
     - name: WORKER_SYNEREX_SERVER1
       value: worker52:700
@@ -5112,7 +5112,7 @@ metadata:
 spec:
   containers:
   - name: gateway-provider
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/gateway-provider:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/gateway-provider:1.6
     env:
     - name: WORKER_SYNEREX_SERVER1
       value: worker52:700
@@ -5139,7 +5139,7 @@ metadata:
 spec:
   containers:
   - name: gateway-provider
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/gateway-provider:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/gateway-provider:1.6
     env:
     - name: WORKER_SYNEREX_SERVER1
       value: worker53:700
@@ -5166,7 +5166,7 @@ metadata:
 spec:
   containers:
   - name: gateway-provider
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/gateway-provider:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/gateway-provider:1.6
     env:
     - name: WORKER_SYNEREX_SERVER1
       value: worker53:700
@@ -5193,7 +5193,7 @@ metadata:
 spec:
   containers:
   - name: gateway-provider
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/gateway-provider:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/gateway-provider:1.6
     env:
     - name: WORKER_SYNEREX_SERVER1
       value: worker54:700
@@ -5220,7 +5220,7 @@ metadata:
 spec:
   containers:
   - name: gateway-provider
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/gateway-provider:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/gateway-provider:1.6
     env:
     - name: WORKER_SYNEREX_SERVER1
       value: worker54:700
@@ -5247,7 +5247,7 @@ metadata:
 spec:
   containers:
   - name: gateway-provider
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/gateway-provider:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/gateway-provider:1.6
     env:
     - name: WORKER_SYNEREX_SERVER1
       value: worker55:700
@@ -5274,7 +5274,7 @@ metadata:
 spec:
   containers:
   - name: gateway-provider
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/gateway-provider:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/gateway-provider:1.6
     env:
     - name: WORKER_SYNEREX_SERVER1
       value: worker55:700
@@ -5301,7 +5301,7 @@ metadata:
 spec:
   containers:
   - name: gateway-provider
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/gateway-provider:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/gateway-provider:1.6
     env:
     - name: WORKER_SYNEREX_SERVER1
       value: worker56:700
@@ -5328,7 +5328,7 @@ metadata:
 spec:
   containers:
   - name: gateway-provider
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/gateway-provider:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/gateway-provider:1.6
     env:
     - name: WORKER_SYNEREX_SERVER1
       value: worker61:700
@@ -5355,7 +5355,7 @@ metadata:
 spec:
   containers:
   - name: gateway-provider
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/gateway-provider:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/gateway-provider:1.6
     env:
     - name: WORKER_SYNEREX_SERVER1
       value: worker62:700
@@ -5382,7 +5382,7 @@ metadata:
 spec:
   containers:
   - name: gateway-provider
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/gateway-provider:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/gateway-provider:1.6
     env:
     - name: WORKER_SYNEREX_SERVER1
       value: worker63:700
@@ -5409,7 +5409,7 @@ metadata:
 spec:
   containers:
   - name: gateway-provider
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/gateway-provider:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/gateway-provider:1.6
     env:
     - name: WORKER_SYNEREX_SERVER1
       value: worker64:700
@@ -5436,7 +5436,7 @@ metadata:
 spec:
   containers:
   - name: gateway-provider
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/gateway-provider:1.5
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/gateway-provider:1.6
     env:
     - name: WORKER_SYNEREX_SERVER1
       value: worker65:700
