@@ -177,9 +177,11 @@ func forwardClock() {
 
 	logger.Debug("4: エージェントを更新")
 	// [4. Update Agents]重複エリアのエージェントを更新する
-	nextAgents := sim.UpdateDuplicateAgents(nextControlAgents, neighborAgents)
+	//nextAgents := sim.UpdateDuplicateAgents(nextControlAgents, neighborAgents)
+	sim.UpdateDuplicateAgents(nextControlAgents, neighborAgents)
 	// Agentsをセットする
-	sim.SetAgents(nextAgents)
+	//sim.SetAgents(nextAgents)
+	sim.SetAgents(nextControlAgents)
 
 	// [5. Forward Clock]クロックを進める
 	//logger.Debug("6: クロックを進める")
