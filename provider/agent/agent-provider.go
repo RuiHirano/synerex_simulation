@@ -9,7 +9,7 @@ import (
 
 	//"math/rand"
 
-	//"math/rand"
+	"math/rand"
 	"os"
 	"sync"
 
@@ -200,16 +200,20 @@ func GetTestAgents(num int) []*api.Agent {
 	agents := []*api.Agent{}
 	area := myProvider.GetAgentStatus().GetArea()
 	maxLat, maxLon, minLat, minLon := simutil.GetCoordRange(area.ControlArea)
-	firstLat := minLat + (maxLat-minLat)*0.01 // 初期配置
-	firstLon := minLon + (maxLon-minLon)*0.01
+	//firstLat := minLat + (maxLat-minLat)*0.01 // 初期配置
+	//firstLon := minLon + (maxLon-minLon)*0.01
 
 	sideNum := int(math.Sqrt(float64(num)))
 	rowNum := 0 // 何列目か
 	for i := 0; i < num; i++ {
-		lineNum := int(i / sideNum) // 何行目か
+		//lineNum := int(i / sideNum) // 何行目か
 		position := &api.Coord{
-			Longitude: firstLon + float64(rowNum)*0.0001,
-			Latitude:  firstLat + float64(lineNum)*0.0001,
+			Longitude: minLon + (maxLon-minLon)*rand.Float64()*0.5,
+			Latitude:  minLat + (maxLat-minLat)*rand.Float64()*0.5,
+		}
+		destination := &api.Coord{
+			Longitude: minLon + (maxLon-minLon)*rand.Float64(),
+			Latitude:  minLat + (maxLat-minLat)*rand.Float64(),
 		}
 
 		if rowNum >= sideNum {
@@ -230,9 +234,9 @@ func GetTestAgents(num int) []*api.Agent {
 				Direction:     0,
 				Speed:         0,
 				Departure:     position,
-				Destination:   position,
-				TransitPoints: []*api.Coord{position},
-				NextTransit:   position,
+				Destination:   destination,
+				TransitPoints: []*api.Coord{destination},
+				NextTransit:   destination,
 			},
 		})
 	}
