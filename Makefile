@@ -18,6 +18,15 @@ simulator:
 worker:
 		kubectl logs -f worker${arg} -c worker-provider
 
+agent:
+		kubectl logs -f worker${arg} -c agent-provider
+
+vis:
+		kubectl logs -f worker${arg} -c visualization-provider
+
+gateway:
+		kubectl logs -f gateway${arg} -c gateway-provider
+
 apply:
 		cd kube && bash kube_apply.sh
 
