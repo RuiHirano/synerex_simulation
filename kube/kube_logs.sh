@@ -1,9 +1,8 @@
-
 #!/bin/sh
 
 function ConfirmExecution() {
 
-  echo "Please input version"
+  echo "Please select "
   echo "ex. latest"
   read version
 
@@ -76,6 +75,7 @@ function ConfirmExecution() {
   done
 
 }
+echo arg is $@
 
 ConfirmExecution
 

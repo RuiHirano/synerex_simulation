@@ -124,6 +124,7 @@ func (m *Message) Get() []*api.Agent {
 
 func forwardClock() {
 	//senderId := myProvider.Id
+	var com1, com2 int64
 	t1 := time.Now()
 	logger.Debug("1: 同エリアエージェント取得")
 	targets := pm.GetProviderIds([]simutil.IDType{
@@ -132,8 +133,11 @@ func forwardClock() {
 	sameAgents := []*api.Agent{}
 	if len(targets) != 0 {
 		senderId := myProvider.Id
+		comt1 := time.Now()
 		sps, _ := simapi.GetAgentRequest(senderId, targets)
-		logger.Debug("1: targets %v\n", targets)
+		comt2 := time.Now()
+		com1 = comt2.Sub(comt1).Milliseconds()
+		//logger.Debug("1: targets %v\n", targets)
 		//sps, _ := waiter.WaitSp(msgId, targets, 1000)
 		for _, sp := range sps {
 			agents := sp.GetSimSupply().GetGetAgentResponse().GetAgents()
@@ -156,8 +160,12 @@ func forwardClock() {
 	neighborAgents := []*api.Agent{}
 	if len(targets) != 0 {
 		senderId := myProvider.Id
+		comt1 := time.Now()
 		sps, _ := simapi.GetAgentRequest(senderId, targets)
-		logger.Debug("3: targets %v\n", targets)
+		comt2 := time.Now()
+		com2 = comt2.Sub(comt1).Milliseconds()
+
+		//logger.Debug("3: targets %v\n", targets)
 		//sps, _ := waiter.WaitSp(msgId, targets, 1000)
 		for _, sp := range sps {
 			agents := sp.GetSimSupply().GetGetAgentResponse().GetAgents()
@@ -179,7 +187,10 @@ func forwardClock() {
 	logger.Info("Finish: Clock Forwarded. AgentNum:  %v", len(nextControlAgents))
 	t2 := time.Now()
 	duration := t2.Sub(t1).Milliseconds()
-	logger.Info("Duration: %v, PID: %v", duration, myProvider.Id)
+	comDuration := com2 + com1
+	lpDuration := duration - comDuration
+	logger.Info("Total: %v, ComDuration: %v, LpDuration: %v", duration, comDuration, lpDuration)
+
 }
 
 // callback for each Supply
