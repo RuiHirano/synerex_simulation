@@ -19,10 +19,10 @@ worker:
 		kubectl logs -f worker${arg} -c worker-provider
 
 apply:
-		bash ./kube/kube_apply.sh
+		cd kube && bash kube_apply.sh
 
 delete:
-		bash ./kube/kube_delete.sh
+		cd kube && bash ./kube_delete.sh
 
 gen-rsc:
 		bash ./kube/util/gen-rsc.sh
