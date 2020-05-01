@@ -1,6 +1,18 @@
 #!/bin/sh
 
-kubectl apply -f master.yaml
-kubectl apply -f worker.yaml
-kubectl apply -f worker2.yaml
-kubectl apply -f gateway.yaml
+files="./pod-test/*.yaml"
+array=($files)
+
+i=0
+for filepath in $files; do
+  echo $i: $filepath
+  let i++
+done
+
+echo "Please select target"
+read ti
+
+echo file is ${array[ti]}
+kubectl apply -f ${array[ti]}
+
+
