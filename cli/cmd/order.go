@@ -50,7 +50,7 @@ func init() {
 ////////////////////////////////////////////////
 
 type AgentOptions struct {
-	Num int `validate:"required,min=0,max=1000", json:"num"`
+	Num int `validate:"required,min=0,max=100000", json:"num"`
 }
 
 type ClockOptions struct {

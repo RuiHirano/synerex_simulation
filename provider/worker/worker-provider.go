@@ -261,9 +261,7 @@ func workerDemandCallback(clt *api.SMServiceClient, dm *api.Demand) {
 		})
 		providers := pm.GetProviders()
 		workerapi.UpdateProvidersRequest(senderId, targets, providers)
-		logger.Debug("Wait response from &v\n", targets)
-		// waiter.WaitSp(msgId, targets, 1000)
-		logger.Info("Update Providers! \n")
+		logger.Info("Update Providers! Provider Num %v \n", len(targets))
 
 	}
 }

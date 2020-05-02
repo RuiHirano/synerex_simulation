@@ -191,7 +191,7 @@ func demandCallback(clt *api.SMServiceClient, dm *api.Demand) {
 		})
 		simapi.UpdateProvidersRequest(senderInfo, targets, pm.GetProviders())
 
-		logger.Info("Success Update Providers", targets)
+		logger.Info("Success Update Providers! Worker Num: ", len(targets))
 
 	}
 }
@@ -201,28 +201,30 @@ func setAgents(agentNum uint64) (bool, error) {
 
 	agents := make([]*api.Agent, 0)
 
+	minLon, maxLon, minLat, maxLat := 136.971626, 136.989379, 35.152210, 35.161499
 	for i := 0; i < int(agentNum); i++ {
 		uid, _ := uuid.NewRandom()
-		departure := &api.Coord{
+		position := &api.Coord{
+			Longitude: minLon + (maxLon-minLon)*rand.Float64(),
+			Latitude:  minLat + (maxLat-minLat)*rand.Float64(),
+		}
+		/*departure := &api.Coord{
 			Longitude: 136.975685 + rand.Float64()*0.001,
 			Latitude:  35.154533 + rand.Float64()*0.001,
-		}
+		}*/
 		destination := &api.Coord{
-			Longitude: 136.90525 + rand.Float64()*0.01,
-			Latitude:  35.164533 + rand.Float64()*0.01,
+			Longitude: minLon + (maxLon-minLon)*rand.Float64(),
+			Latitude:  minLat + (maxLat-minLat)*rand.Float64(),
 		}
 		transitPoints := []*api.Coord{destination}
 		agents = append(agents, &api.Agent{
 			Type: api.AgentType_PEDESTRIAN,
 			Id:   uint64(uid.ID()),
 			Route: &api.Route{
-				Position: &api.Coord{
-					Longitude: 136.97285 + rand.Float64()*0.01,
-					Latitude:  35.15333 + rand.Float64()*0.01,
-				},
+				Position:      position,
 				Direction:     30,
 				Speed:         60,
-				Departure:     departure,
+				Departure:     position,
 				Destination:   destination,
 				TransitPoints: transitPoints,
 				NextTransit:   destination,
