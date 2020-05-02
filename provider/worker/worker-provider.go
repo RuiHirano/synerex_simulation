@@ -10,6 +10,7 @@ import (
 	"sync"
 
 	"encoding/json"
+	"runtime"
 	"time"
 
 	"github.com/google/uuid"
@@ -348,6 +349,8 @@ func registToMaster() {
 }
 
 func main() {
+	fmt.Printf("NumCPU=%d\n", runtime.NumCPU())
+	runtime.GOMAXPROCS(runtime.NumCPU())
 
 	// ProviderManager
 	uid, _ := uuid.NewRandom()

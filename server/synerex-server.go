@@ -18,6 +18,7 @@ import (
 	"time"
 
 	"os"
+	"runtime"
 	"strconv"
 
 	"github.com/sirupsen/logrus"
@@ -797,6 +798,8 @@ func prepareGrpcServer(s *synerexServerInfo, opts ...grpc.ServerOption) *grpc.Se
 }
 
 func main() {
+	fmt.Printf("NumCPU=%d\n", runtime.NumCPU())
+	runtime.GOMAXPROCS(runtime.NumCPU())
 	flag.Parse()
 	nodeapi = napi.NewNodeAPI()
 	for {

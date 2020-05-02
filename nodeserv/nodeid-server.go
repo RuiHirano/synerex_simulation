@@ -9,6 +9,7 @@ import (
 	"math/rand"
 	"net"
 	"os"
+	"runtime"
 	"sort"
 	"sync"
 	"time"
@@ -255,6 +256,8 @@ func prepareGrpcServer(opts ...grpc.ServerOption) *grpc.Server {
 }
 
 func main() {
+	fmt.Printf("NumCPU=%d\n", runtime.NumCPU())
+	runtime.GOMAXPROCS(runtime.NumCPU())
 	if gerr := agent.Listen(agent.Options{}); gerr != nil {
 		log.Fatal(gerr)
 	}

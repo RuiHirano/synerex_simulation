@@ -15,6 +15,7 @@ import (
 
 	//"runtime"
 	"encoding/json"
+	"runtime"
 
 	"github.com/google/uuid"
 	api "github.com/synerex/synerex_alpha/api"
@@ -371,6 +372,8 @@ func registToWorker() {
 
 func main() {
 	logger.Info("StartUp Provider")
+	fmt.Printf("NumCPU=%d\n", runtime.NumCPU())
+	runtime.GOMAXPROCS(runtime.NumCPU())
 
 	// ProviderManager
 	uid, _ := uuid.NewRandom()

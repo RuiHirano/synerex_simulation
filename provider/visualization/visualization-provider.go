@@ -10,6 +10,8 @@ import (
 	"sync"
 
 	//"github.com/golang/protobuf/jsonpb"
+	"runtime"
+
 	api "github.com/synerex/synerex_alpha/api"
 	napi "github.com/synerex/synerex_alpha/nodeapi"
 	"github.com/synerex/synerex_alpha/provider/simutil"
@@ -343,6 +345,8 @@ func registToWorker() {
 
 func main() {
 	logger.Info("StartUp Provider %v, %v", synerexAddr, myProvider)
+	fmt.Printf("NumCPU=%d\n", runtime.NumCPU())
+	runtime.GOMAXPROCS(runtime.NumCPU())
 	// Provider
 	uid, _ := uuid.NewRandom()
 	myProvider = &api.Provider{

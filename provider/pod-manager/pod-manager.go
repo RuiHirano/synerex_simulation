@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"runtime"
 	"sync"
 	"time"
 
@@ -96,6 +97,8 @@ func demandCallback(clt *api.SMServiceClient, dm *api.Demand) {
 }
 
 func main() {
+	fmt.Printf("NumCPU=%d\n", runtime.NumCPU())
+	runtime.GOMAXPROCS(runtime.NumCPU())
 
 	// ProviderManager
 	uid, _ := uuid.NewRandom()

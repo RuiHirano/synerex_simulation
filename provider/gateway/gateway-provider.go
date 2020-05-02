@@ -10,6 +10,7 @@ import (
 	"os"
 
 	//"strings"
+	"runtime"
 	"sync"
 	"time"
 
@@ -461,6 +462,8 @@ func registToWorker() {
 
 func main() {
 	logger.Info("StartUp Provider")
+	fmt.Printf("NumCPU=%d\n", runtime.NumCPU())
+	runtime.GOMAXPROCS(runtime.NumCPU())
 
 	// ProviderManager
 	uid, _ := uuid.NewRandom()

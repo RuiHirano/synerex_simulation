@@ -7,6 +7,7 @@ import (
 	"math/rand"
 	"net/http"
 	"os"
+	"runtime"
 	"sync"
 	"time"
 
@@ -352,6 +353,8 @@ func startSimulatorServer() {
 }
 
 func main() {
+	fmt.Printf("NumCPU=%d\n", runtime.NumCPU())
+	runtime.GOMAXPROCS(runtime.NumCPU())
 
 	// ProviderManager
 	uid, _ := uuid.NewRandom()
