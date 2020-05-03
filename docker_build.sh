@@ -59,14 +59,14 @@ function ConfirmExecution() {
 
     elif [ $input = '9' ] ; then
         echo "building all"
-        docker image build -t ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/nodeid-server:${version} -f nodeserv/Dockerfile .
-        docker image build -t ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/synerex-server:${version} -f server/Dockerfile .
-        docker image build -t ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/master-provider:${version} -f provider/master/Dockerfile .
-        docker image build -t ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/worker-provider:${version} -f provider/worker/Dockerfile .
-        docker image build -t ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/agent-provider:${version} -f provider/agent/Dockerfile .
-        docker image build -t ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/visualization-provider:${version} -f provider/visualization/Dockerfile .
-        docker image build -t ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/gateway-provider:${version} -f provider/gateway/Dockerfile .
-        docker image build -t ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/simulator:${version} -f cli/Dockerfile .
+        docker image build -t synerex-simulation/nodeid-server:${version} -f nodeserv/Dockerfile .
+        docker image build -t synerex-simulation/synerex-server:${version} -f server/Dockerfile .
+        docker image build -t synerex-simulation/master-provider:${version} -f provider/master/Dockerfile .
+        docker image build -t synerex-simulation/worker-provider:${version} -f provider/worker/Dockerfile .
+        docker image build -t synerex-simulation/agent-provider:${version} -f provider/agent/Dockerfile .
+        docker image build -t synerex-simulation/visualization-provider:${version} -f provider/visualization/Dockerfile .
+        docker image build -t synerex-simulation/gateway-provider:${version} -f provider/gateway/Dockerfile .
+        docker image build -t synerex-simulation/simulator:${version} -f cli/Dockerfile .
     else
         echo "unknown number ${input}"
 
