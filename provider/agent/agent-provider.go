@@ -32,10 +32,9 @@ var (
 	myProvider     *api.Provider
 	workerProvider *api.Provider
 	pm             *simutil.ProviderManager
-	waiter         *api.Waiter
 	simapi         *api.SimAPI
 	//com                  *simutil.Communicator
-	sim *Simulator2
+	sim *Simulator
 	//providerManager      *simutil.ProviderManager
 	logger        *util.Logger
 	mu            sync.Mutex
@@ -47,9 +46,6 @@ var (
 func init() {
 	flag.Parse()
 	logger = util.NewLogger()
-	waiter = api.NewWaiter()
-	//myProvider = flagToProviderInfo(*providerJson)
-	//scenarioProvider = flagToProviderInfo(*scenarioProviderJson)
 	agentsMessage = NewMessage()
 
 	synerexAddr = os.Getenv("SYNEREX_SERVER")
@@ -68,7 +64,6 @@ func init() {
 
 	areaJson := os.Getenv("AREA")
 	bytes := []byte(areaJson)
-	//var area *api.Area
 	json.Unmarshal(bytes, &myArea)
 	fmt.Printf("myArea: %v\n", myArea)
 
@@ -135,7 +130,6 @@ func forwardClock() {
 		senderId := myProvider.Id
 		sps, _ := simapi.GetAgentRequest(senderId, targets)
 		logger.Debug("1: targets %v\n", targets)
-		//sps, _ := waiter.WaitSp(msgId, targets, 1000)
 		for _, sp := range sps {
 			agents := sp.GetSimSupply().GetGetAgentResponse().GetAgents()
 			sameAgents = append(sameAgents, agents...)
@@ -159,7 +153,6 @@ func forwardClock() {
 		senderId := myProvider.Id
 		sps, _ := simapi.GetAgentRequest(senderId, targets)
 		logger.Debug("3: targets %v\n", targets)
-		//sps, _ := waiter.WaitSp(msgId, targets, 1000)
 		for _, sp := range sps {
 			agents := sp.GetSimSupply().GetGetAgentResponse().GetAgents()
 			neighborAgents = append(neighborAgents, agents...)
@@ -172,11 +165,6 @@ func forwardClock() {
 	// Agentsをセットする
 	sim.SetAgents(nextAgents)
 
-	// [5. Forward Clock]クロックを進める
-	//logger.Debug("6: クロックを進める")
-	//agentsMessage = NewMessage()
-	//sim.ForwardClock()
-
 	logger.Info("Finish: Clock Forwarded. AgentNum:  %v", len(nextControlAgents))
 	t2 := time.Now()
 	duration := t2.Sub(t1).Milliseconds()
@@ -186,22 +174,6 @@ func forwardClock() {
 // callback for each Supply
 func demandCallback(clt *api.SMServiceClient, dm *api.Demand) {
 	switch dm.GetSimDemand().GetType() {
-	case api.DemandType_READY_PROVIDER_REQUEST:
-		/*provider := dm.GetSimDemand().GetReadyProviderRequest().GetProvider()
-		//pm.SetProviders(providers)
-
-		// workerへ登録
-		senderId := myProvider.Id
-		targets := []uint64{provider.GetId()}
-		simapi.RegistProviderRequest(senderId, targets, myProvider)
-		//waiter.WaitSp(msgId, targets, 1000)
-
-		// response
-		targets = []uint64{dm.GetSimDemand().GetSenderId()}
-		senderId = myProvider.Id
-		msgId := dm.GetSimDemand().GetMsgId()
-		simapi.ReadyProviderResponse(senderId, targets, msgId)
-		logger.Info("Finish: Regist Provider from ready ")*/
 
 	case api.DemandType_UPDATE_PROVIDERS_REQUEST:
 		providers := dm.GetSimDemand().GetUpdateProvidersRequest().GetProviders()
@@ -303,52 +275,6 @@ func supplyCallback(clt *api.SMServiceClient, sp *api.Supply) {
 	}
 }
 
-///////////////////////////
-/////    test      ////////
-///////////////////////////
-/*var mockAgents []*api.Agent
-
-func init() {
-	mockAgents = []*api.Agent{}
-	for i := 0; i < 100; i++ {
-		uid, _ := uuid.NewRandom()
-		departure := &api.Coord{
-			Longitude: 136.87285 + rand.Float64()*0.01,
-			Latitude:  35.17333 + rand.Float64()*0.01,
-		}
-		destination := &api.Coord{
-			Longitude: 136.92285 + rand.Float64()*0.01,
-			Latitude:  35.19333 + rand.Float64()*0.01,
-		}
-		transitPoints := []*api.Coord{destination}
-		mockAgents = append(mockAgents, &api.Agent{
-			Type: api.AgentType_PEDESTRIAN,
-			Id:   uint64(uid.ID()),
-			Route: &api.Route{
-				Position: &api.Coord{
-					Longitude: 136.97285 + rand.Float64()*0.01,
-					Latitude:  35.15333 + rand.Float64()*0.01,
-				},
-				Direction:     0,
-				Speed:         0,
-				Departure:     departure,
-				Destination:   destination,
-				TransitPoints: transitPoints,
-				NextTransit:   destination,
-			},
-		})
-	}
-}
-
-func forward() {
-	sim.AddAgents(mockAgents)
-	for {
-		time.Sleep(1 * time.Second)
-		fmt.Printf("send agents")
-		forwardClock()
-	}
-}*/
-
 func registToWorker() {
 	// workerへ登録
 	senderId := myProvider.Id
@@ -417,13 +343,7 @@ func main() {
 	argJson := fmt.Sprintf("{Client:Agent}")
 
 	// Simulator
-	//clockInfo := &api.Clock{GlobalTime: 0}
-	//areaInfo := myProvider.GetAgentStatus().GetArea()
-	//agentType := api.AgentType_PEDESTRIAN
-	//sim = NewSimulator(clockInfo, areaInfo, agentType)
-	sim = NewSimulator2(myArea, api.AgentType_PEDESTRIAN)
-
-	time.Sleep(5 * time.Second)
+	sim = NewSimulator(myArea, api.AgentType_PEDESTRIAN)
 
 	// WorkerAPI作成
 	simapi = api.NewSimAPI()
@@ -434,15 +354,6 @@ func main() {
 
 	registToWorker()
 
-	// workerへ登録
-	/*logger.Debug("regist to worker")
-	senderId := myProvider.Id
-	targets := make([]uint64, 0)
-	simapi.RegistProviderRequest(senderId, targets, myProvider)*/
-	//sps := waiter.WaitSp(msgId, targets, 1000)
-
-	// test
-	//forward()
 	// プロバイダのsetup
 	wg := sync.WaitGroup{}
 	wg.Add(1)

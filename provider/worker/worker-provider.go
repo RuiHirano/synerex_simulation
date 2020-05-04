@@ -33,18 +33,15 @@ var (
 	masterapi         *api.SimAPI
 	workerapi         *api.SimAPI
 	workerClock       int
-	providerHosts     []string
 	logger            *util.Logger
-	//providerManager   *Manager
-	pm     *simutil.ProviderManager
-	waiter *api.Waiter
+	pm                *simutil.ProviderManager
+	waiter            *api.Waiter
 )
 
 const MAX_AGENTS_NUM = 1000
 
 func init() {
 	workerClock = 0
-	providerHosts = make([]string, 0)
 	logger = util.NewLogger()
 	logger.SetPrefix("Scenario")
 	flag.Parse()
@@ -117,8 +114,6 @@ func (m *Manager) GetProviderIds() []uint64 {
 
 // Supplyのコールバック関数
 func masterSupplyCallback(clt *api.SMServiceClient, sp *api.Supply) {
-	// 自分宛かどうか
-	// check if supply is match with my demand.
 	switch sp.GetSimSupply().GetType() {
 	case api.SupplyType_REGIST_PROVIDER_RESPONSE:
 		mu.Lock()
@@ -133,22 +128,6 @@ func masterSupplyCallback(clt *api.SMServiceClient, sp *api.Supply) {
 func masterDemandCallback(clt *api.SMServiceClient, dm *api.Demand) {
 	senderId := myProvider.Id
 	switch dm.GetSimDemand().GetType() {
-	case api.DemandType_READY_PROVIDER_REQUEST:
-		/*provider := dm.GetSimDemand().GetReadyProviderRequest().GetProvider()
-		//pm.SetProviders(providers)
-
-		// workerへ登録
-		senderId := myProvider.Id
-		targets := []uint64{provider.GetId()}
-		masterapi.RegistProviderRequest(senderId, targets, myProvider)
-		//waiter.WaitSp(msgId, targets, 1000)
-
-		// response
-		targets = []uint64{dm.GetSimDemand().GetSenderId()}
-		senderId = myProvider.Id
-		msgId := dm.GetSimDemand().GetMsgId()
-		masterapi.ReadyProviderResponse(senderId, targets, msgId)
-		logger.Info("Finish: Regist Provider from ready ")*/
 
 	case api.DemandType_FORWARD_CLOCK_REQUEST:
 		fmt.Printf("get forwardClockRequest")
@@ -162,11 +141,9 @@ func masterDemandCallback(clt *api.SMServiceClient, dm *api.Demand) {
 
 		// init
 		workerapi.ForwardClockInitRequest(senderId, targets)
-		//waiter.WaitSp(msgId, targets, 1000)
 
 		// forward
 		workerapi.ForwardClockRequest(senderId, targets)
-		//waiter.WaitSp(msgId, targets, 1000)
 
 		t2 := time.Now()
 		duration := t2.Sub(t1).Milliseconds()
@@ -185,7 +162,6 @@ func masterDemandCallback(clt *api.SMServiceClient, dm *api.Demand) {
 			simutil.IDType_AGENT,
 		})
 		workerapi.SetAgentRequest(senderId, targets, agents)
-		//waiter.WaitSp(msgId, targets, 1000)
 
 		// response to master
 		targets = []uint64{dm.GetSimDemand().GetSenderId()}
@@ -215,24 +191,14 @@ func workerSupplyCallback(clt *api.SMServiceClient, sp *api.Supply) {
 	// check if supply is match with my demand.
 	switch sp.GetSimSupply().GetType() {
 	case api.SupplyType_UPDATE_PROVIDERS_RESPONSE:
-		//logger.Info("get sp: %v\n", sp)
-		//time.Sleep(10 * time.Millisecond)
 		workerapi.SendSpToWait(sp)
 	case api.SupplyType_SET_CLOCK_RESPONSE:
-		//logger.Info("get sp: %v\n", sp)
-		//time.Sleep(10 * time.Millisecond)
 		workerapi.SendSpToWait(sp)
 	case api.SupplyType_SET_AGENT_RESPONSE:
-		//logger.Info("get sp: %v\n", sp)
-		//time.Sleep(10 * time.Millisecond)
 		workerapi.SendSpToWait(sp)
 	case api.SupplyType_FORWARD_CLOCK_RESPONSE:
-		//logger.Info("get sp: %v\n", sp)
-		//time.Sleep(10 * time.Millisecond)
 		workerapi.SendSpToWait(sp)
 	case api.SupplyType_FORWARD_CLOCK_INIT_RESPONSE:
-		//logger.Info("get sp: %v\n", sp)
-		//time.Sleep(10 * time.Millisecond)
 		workerapi.SendSpToWait(sp)
 	}
 }
@@ -254,7 +220,6 @@ func workerDemandCallback(clt *api.SMServiceClient, dm *api.Demand) {
 		logger.Info("Success Regist Agent or Vis Providers", targets)
 
 		// 参加プロバイダの更新命令
-		// request to worker providers
 		targets = pm.GetProviderIds([]simutil.IDType{
 			simutil.IDType_GATEWAY,
 			simutil.IDType_AGENT,
@@ -266,66 +231,6 @@ func workerDemandCallback(clt *api.SMServiceClient, dm *api.Demand) {
 
 	}
 }
-
-///////////////////////////
-/////    test      ////////
-///////////////////////////
-/*var mockAgents []*api.Agent
-
-func init() {
-	mockAgents = []*api.Agent{}
-	for i := 0; i < 100; i++ {
-		uid, _ := uuid.NewRandom()
-		departure := &api.Coord{
-			Longitude: 136.87285 + rand.Float64()*0.01,
-			Latitude:  35.17333 + rand.Float64()*0.01,
-		}
-		destination := &api.Coord{
-			Longitude: 136.92285 + rand.Float64()*0.01,
-			Latitude:  35.19333 + rand.Float64()*0.01,
-		}
-		transitPoints := []*api.Coord{destination}
-		mockAgents = append(mockAgents, &api.Agent{
-			Type: api.AgentType_PEDESTRIAN,
-			Id:   uint64(uid.ID()),
-			Route: &api.Route{
-				Position: &api.Coord{
-					Longitude: 136.97285 + rand.Float64()*0.01,
-					Latitude:  35.15333 + rand.Float64()*0.01,
-				},
-				Direction:     30,
-				Speed:         60,
-				Departure:     departure,
-				Destination:   destination,
-				TransitPoints: transitPoints,
-				NextTransit:   destination,
-			},
-		})
-	}
-}
-
-func forwardCLock() {
-	time.Sleep(5 * time.Second) // 5s以内にregist providerすること
-	senderId := myProvider.Id
-	agents := mockAgents
-	targets := pm.GetProviderIds([]simutil.IDType{
-		simutil.IDType_AGENT,
-	})
-	msgId := workerapi.SetAgentRequest(senderId, targets, agents)
-	waiter.WaitSp(msgId, targets, 1000)
-	fmt.Printf("finish set agents")
-	for {
-		time.Sleep(1 * time.Second)
-		// request to worker providers
-		targets := pm.GetProviderIds([]simutil.IDType{
-			simutil.IDType_AGENT,
-			simutil.IDType_VISUALIZATION,
-		})
-		msgId := workerapi.ForwardClockRequest(senderId, targets)
-		waiter.WaitSp(msgId, targets, 1000)
-		fmt.Printf("finish forward clock")
-	}
-}*/
 
 func registToMaster() {
 	// masterへ登録
@@ -414,8 +319,6 @@ func main() {
 	wclient := api.NewSynerexClient(wconn)
 	wargJson := fmt.Sprintf("{Client:Worker}")
 
-	time.Sleep(3 * time.Second)
-
 	// Communicator
 	masterapi = api.NewSimAPI()
 	masterapi.RegistClients(client, myProvider.Id, argJson)            // channelごとのClientを作成
@@ -430,13 +333,6 @@ func main() {
 
 	registToMaster()
 
-	// ready provider request
-	//senderId = myProvider.Id
-	//targets = make([]uint64, 0)
-	//workerapi.ReadyProviderRequest(senderId, targets, myProvider)
-
-	// test
-	//go forwardCLock()
 	wg := sync.WaitGroup{}
 	wg.Add(1)
 	wg.Wait()

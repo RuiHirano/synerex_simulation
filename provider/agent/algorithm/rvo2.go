@@ -1,41 +1,37 @@
 package algorithm
 
-/*var (
-	sim *rvo.RVOSimulator
-	fcs *geojson.FeatureCollection
+import (
+	//"fmt"
+	"math"
+
+	//"github.com/paulmach/orb"
+	//"github.com/paulmach/orb/geojson"
+
+	//monitor "github.com/RuiHirano/rvo2-go/monitor"
+
+	//"io/ioutil"
+	//"log"
+
+	rvo "github.com/RuiHirano/rvo2-go/src/rvosimulator"
+	"github.com/synerex/synerex_alpha/api"
 )
 
-func loadGeoJson(fname string) *geojson.FeatureCollection {
+var (
+	sim *rvo.RVOSimulator
 
-	bytes, err := ioutil.ReadFile(fname)
-	if err != nil {
-		log.Print("Can't read file:", err)
-		panic("load json")
-	}
-	fc, _ := geojson.UnmarshalFeatureCollection(bytes)
-
-	return fc
-}
+//fcs *geojson.FeatureCollection
+)
 
 type RVO2Route struct {
-	TimeStep   float64
-	GlobalTime float64
-	Area       *api.Area
-	Agents     []*api.Agent
-	AgentType  api.AgentType
+	Agents []*api.Agent
+	Area   *api.Area
 }
 
-func NewRVO2Route(timeStep float64, globalTime float64, area *api.Area, agentsInfo []*api.Agent, agentType api.AgentType) *RVO2Route {
-
-	// set obstacle
-	fcs = loadGeoJson("higashiyama.geojson")
+func NewRVO2Route(agents []*api.Agent, area *api.Area) *RVO2Route {
 
 	r := &RVO2Route{
-		TimeStep:   timeStep,
-		GlobalTime: globalTime,
-		Area:       area,
-		Agents:     agentsInfo,
-		AgentType:  agentType,
+		Agents: agents,
+		Area:   area,
 	}
 	return r
 }
@@ -88,7 +84,6 @@ func (rvo2route *RVO2Route) DecideNextTransit(nextTransit *api.Coord, transitPoi
 
 // SetupScenario: Scenarioを設定する関数
 func (rvo2route *RVO2Route) SetupScenario() {
-
 	// Set Agent
 	for _, agentInfo := range rvo2route.Agents {
 
@@ -106,43 +101,19 @@ func (rvo2route *RVO2Route) SetupScenario() {
 		sim.SetAgentPrefVelocity(id, goalVector)
 		//sim.SetAgentMaxSpeed(id, float64(api.MaxSpeed))
 	}
-
-	// Set Obstacle
-	for _, feature := range fcs.Features {
-		multiPosition := feature.Geometry.(orb.MultiLineString)[0]
-		//fmt.Printf("geometry: ", multiPosition)
-		rvoObstacle := []*rvo.Vector2{}
-
-		for _, positionArray := range multiPosition {
-			position := &rvo.Vector2{
-				X: positionArray[0],
-				Y: positionArray[1],
-			}
-
-			rvoObstacle = append(rvoObstacle, position)
-		}
-
-		sim.AddObstacle(rvoObstacle)
-	}
-
-	sim.ProcessObstacles()
-
-	//fmt.Printf("Simulation has %v agents and %v obstacle vertices in it.\n", sim.GetNumAgents(), sim.GetNumObstacleVertices())
-	//fmt.Printf("Running Simulation..\n\n")
 }
 
 func (rvo2route *RVO2Route) CalcNextAgents() []*api.Agent {
 
-	nextControlAgents := make([]*api.Agent, 0)
 	currentAgents := rvo2route.Agents
 
-	timeStep := rvo2route.TimeStep
+	timeStep := 0.1
 	neighborDist := 0.00008 // どのくらいの距離の相手をNeighborと認識するか?Neighborとの距離をどのくらいに保つか？ぶつかったと認識する距離？
 	maxneighbors := 10      // 周り何体を計算対象とするか
 	timeHorizon := 1.0
 	timeHorizonObst := 1.0
-	radius := 0.00001   // エージェントの半径
-	maxSpeed := 0.00004 // エージェントの最大スピード
+	radius := 0.00001  // エージェントの半径
+	maxSpeed := 0.0004 // エージェントの最大スピード
 	sim = rvo.NewRVOSimulator(timeStep, neighborDist, maxneighbors, timeHorizon, timeHorizonObst, radius, maxSpeed, &rvo.Vector2{X: 0, Y: 0})
 
 	// scenario設定
@@ -152,9 +123,9 @@ func (rvo2route *RVO2Route) CalcNextAgents() []*api.Agent {
 	sim.DoStep()
 
 	// 管理エリアのエージェントのみを抽出
+	nextControlAgents := make([]*api.Agent, 0)
 	for rvoId, agentInfo := range currentAgents {
-		//nextRVOAgent := sim.GetAgent(int(agentInfo.Id))
-		// 計算する前に自エリアにいる場合、次のルートを計算する
+		// 管理エリア内のエージェントのみ抽出
 		position := agentInfo.Route.Position
 		if IsAgentInArea(position, rvo2route.Area.ControlArea) {
 			destination := agentInfo.Route.Destination
@@ -168,14 +139,18 @@ func (rvo2route *RVO2Route) CalcNextAgents() []*api.Agent {
 			}
 
 			// 現在の位置とゴールとの距離と角度を求める (度, m))
-			direction, distance := rvo2route.CalcDirectionAndDistance(nextCoord, agentInfo.Route.NextTransit)
+			//direction, distance := rvo2route.CalcDirectionAndDistance(nextCoord, agentInfo.Route.NextTransit)
 			// 次の経由地nextTransitを求める
-			nextTransit := rvo2route.DecideNextTransit(agentInfo.Route.NextTransit, agentInfo.Route.TransitPoints, distance, destination)
+			//nextTransit := rvo2route.DecideNextTransit(agentInfo.Route.NextTransit, agentInfo.Route.TransitPoints, distance, destination)
+			nextTransit := agentInfo.Route.NextTransit
+			goalVector := sim.GetAgentGoalVector(int(rvoId))
+			direction := math.Atan2(goalVector.Y, goalVector.X)
+			speed := agentInfo.Route.Speed
 
 			nextRoute := &api.Route{
 				Position:      nextCoord,
 				Direction:     direction,
-				Speed:         distance,
+				Speed:         speed,
 				Destination:   destination,
 				Departure:     agentInfo.Route.Departure,
 				TransitPoints: agentInfo.Route.TransitPoints,
@@ -196,4 +171,35 @@ func (rvo2route *RVO2Route) CalcNextAgents() []*api.Agent {
 
 	return nextControlAgents
 }
-*/
+
+// エージェントがエリアの中にいるかどうか
+func IsAgentInArea(position *api.Coord, areaCoords []*api.Coord) bool {
+	lat := position.Latitude
+	lon := position.Longitude
+	maxLat, maxLon, minLat, minLon := GetCoordRange(areaCoords)
+	if minLat < lat && lat < maxLat && minLon < lon && lon < maxLon {
+		return true
+	} else {
+		return false
+	}
+}
+
+func GetCoordRange(coords []*api.Coord) (float64, float64, float64, float64) {
+	maxLon, maxLat := math.Inf(-1), math.Inf(-1)
+	minLon, minLat := math.Inf(0), math.Inf(0)
+	for _, coord := range coords {
+		if coord.Latitude > maxLat {
+			maxLat = coord.Latitude
+		}
+		if coord.Longitude > maxLon {
+			maxLon = coord.Longitude
+		}
+		if coord.Latitude < minLat {
+			minLat = coord.Latitude
+		}
+		if coord.Longitude < minLon {
+			minLon = coord.Longitude
+		}
+	}
+	return maxLat, maxLon, minLat, minLon
+}

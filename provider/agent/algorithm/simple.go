@@ -1,21 +1,19 @@
 package algorithm
 
-/*type SimpleRoute struct {
-	TimeStep       float64
-	GlobalTime     float64
-	Area           *api.Area
-	Agents         []*api.Agent
-	AgentType      api.AgentType
-	SameAreaAgents []*api.Agent
+import (
+	"fmt"
+	"math"
+
+	"github.com/synerex/synerex_alpha/api"
+)
+
+type SimpleRoute struct {
+	Agents []*api.Agent
 }
 
-func NewSimpleRoute(timeStep float64, globalTime float64, area *api.Area, agents []*api.Agent, agentType api.AgentType) *SimpleRoute {
+func NewSimpleRoute(agents []*api.Agent) *SimpleRoute {
 	r := &SimpleRoute{
-		TimeStep:   timeStep,
-		GlobalTime: globalTime,
-		Area:       area,
-		Agents:     agents,
-		AgentType:  agentType,
+		Agents: agents,
 	}
 	return r
 }
@@ -87,7 +85,7 @@ func (simple *SimpleRoute) DecideNextTransit(nextTransit *api.Coord, transitPoin
 }
 
 // CalcNextRoute：次の時刻のRouteを計算する関数
-func (simple *SimpleRoute) CalcNextRoute(agentInfo *api.Agent, sameAreaAgents []*api.Agent) *api.Route {
+func (simple *SimpleRoute) CalcNextRoute(agentInfo *api.Agent) *api.Route {
 
 	route := agentInfo.Route
 	speed := route.Speed
@@ -137,8 +135,18 @@ func (simple *SimpleRoute) CalcNextAgents() []*api.Agent {
 	nextControlAgents := make([]*api.Agent, 0)
 
 	for _, agentInfo := range simple.Agents {
+		// 次の時刻のRouteを計算
+		nextRoute := simple.CalcNextRoute(agentInfo)
+
+		nextControlAgent := &api.Agent{
+			Id:    agentInfo.Id,
+			Type:  agentInfo.Type,
+			Route: nextRoute,
+		}
+		// Agent追加
+		nextControlAgents = append(nextControlAgents, nextControlAgent)
 		// 自エリアにいる場合、次のルートを計算する
-		if IsAgentInArea(agentInfo.Route.Position, simple.Area.ControlArea) {
+		/*if IsAgentInArea(agentInfo.Route.Position, simple.Area.ControlArea) {
 
 			// 次の時刻のRouteを計算
 			nextRoute := simple.CalcNextRoute(agentInfo, simple.SameAreaAgents)
@@ -150,13 +158,13 @@ func (simple *SimpleRoute) CalcNextAgents() []*api.Agent {
 			}
 			// Agent追加
 			nextControlAgents = append(nextControlAgents, nextControlAgent)
-		}
+		}*/
 	}
 	return nextControlAgents
 }
 
 // エージェントがエリアの中にいるかどうか
-func IsAgentInArea(position *api.Coord, areaCoords []*api.Coord) bool {
+/*func IsAgentInArea(position *api.Coord, areaCoords []*api.Coord) bool {
 	lat := position.Latitude
 	lon := position.Longitude
 	maxLat, maxLon, minLat, minLon := simutil.GetCoordRange(areaCoords)
@@ -165,5 +173,4 @@ func IsAgentInArea(position *api.Coord, areaCoords []*api.Coord) bool {
 	} else {
 		return false
 	}
-}
-*/
+}*/
