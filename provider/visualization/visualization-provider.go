@@ -182,8 +182,6 @@ func sendToHarmowareVis(agents []*api.Agent) {
 
 // callbackForwardClockRequest: クロックを進める関数
 func forwardClock(dm *api.Demand) {
-	//log.Printf("\x1b[30m\x1b[47m \n Start: Clock forwarded \n Time:  %v \x1b[0m\n", sim.Clock.GlobalTime)
-	//senderId := myProvider.Id
 	t1 := time.Now()
 	// エージェントからの可視化リクエスト待ち
 	targets := pm.GetProviderIds([]simutil.IDType{
@@ -200,9 +198,6 @@ func forwardClock(dm *api.Demand) {
 		allAgents = append(allAgents, agents...)
 	}
 
-	//targets := []uint64{}
-	//_, sameAreaAgents := simapi.GetAgentRequest(senderId, targets)
-	//agents := []*api.Agent{}
 	// Harmowareに送る
 	sendToHarmowareVis(allAgents)
 
@@ -214,22 +209,6 @@ func forwardClock(dm *api.Demand) {
 // callback for each Supply
 func demandCallback(clt *api.SMServiceClient, dm *api.Demand) {
 	switch dm.GetSimDemand().GetType() {
-	case api.DemandType_READY_PROVIDER_REQUEST:
-		/*provider := dm.GetSimDemand().GetReadyProviderRequest().GetProvider()
-		//pm.SetProviders(providers)
-
-		// workerへ登録
-		senderId := myProvider.Id
-		targets := []uint64{provider.GetId()}
-		simapi.RegistProviderRequest(senderId, targets, myProvider)
-		//waiter.WaitSp(msgId, targets, 1000)
-
-		// response
-		targets = []uint64{dm.GetSimDemand().GetSenderId()}
-		senderId = myProvider.Id
-		msgId := dm.GetSimDemand().GetMsgId()
-		simapi.ReadyProviderResponse(senderId, targets, msgId)
-		logger.Info("Finish: Regist Provider from ready ")*/
 
 	case api.DemandType_UPDATE_PROVIDERS_REQUEST:
 		providers := dm.GetSimDemand().GetUpdateProvidersRequest().GetProviders()
@@ -252,16 +231,7 @@ func demandCallback(clt *api.SMServiceClient, dm *api.Demand) {
 		msgId := dm.GetSimDemand().GetMsgId()
 		simapi.ForwardClockResponse(senderId, targets, msgId)
 		logger.Info("Finish: Forward Clock")
-		/*case api.DemandType_SET_AGENT_REQUEST:
 
-		//waiter.SendDmToWait(msgId)
-
-		// セット完了通知を送る
-		targets := []uint64{dm.GetSimDemand().GetSenderId()}
-		senderId := myProvider.Id
-		msgId := dm.GetSimDemand().GetMsgId()
-		simapi.SetAgentResponse(senderId, targets, msgId)
-		logger.Info("Finish: Set Agents Add ")*/
 	case api.DemandType_FORWARD_CLOCK_INIT_REQUEST:
 
 		// response
@@ -289,38 +259,6 @@ func supplyCallback(clt *api.SMServiceClient, sp *api.Supply) {
 		fmt.Printf("resist provider response")
 	}
 }
-
-///////////////////////////
-/////    test      ////////
-///////////////////////////
-/*var mockAgents []*api.Agent
-
-func init() {
-	mockAgents = []*api.Agent{}
-	for i := 0; i < 100; i++ {
-		uid, _ := uuid.NewRandom()
-		mockAgents = append(mockAgents, &api.Agent{
-			Type: api.AgentType_PEDESTRIAN,
-			Id:   uint64(uid.ID()),
-			Route: &api.Route{
-				Position: &api.Coord{
-					Longitude: 136.97285 + rand.Float64()*0.01,
-					Latitude:  35.15333 + rand.Float64()*0.01,
-				},
-				Direction: 0,
-				Speed:     0,
-			},
-		})
-	}
-}
-
-func sendAgents() {
-	for {
-		time.Sleep(1 * time.Second)
-		fmt.Printf("send agents")
-		sendToHarmowareVis(mockAgents)
-	}
-}*/
 
 func registToWorker() {
 	// workerへ登録
@@ -382,8 +320,6 @@ func main() {
 	client := api.NewSynerexClient(conn)
 	argJson := fmt.Sprintf("{Client:Visualization}")
 
-	time.Sleep(5 * time.Second)
-
 	// WorkerAPI作成
 	simapi = api.NewSimAPI()
 	simapi.RegistClients(client, myProvider.Id, argJson) // channelごとのClientを作成
@@ -392,14 +328,6 @@ func main() {
 	time.Sleep(5 * time.Second)
 
 	registToWorker()
-
-	// workerへ登録
-	/*senderId := myProvider.Id
-	targets := make([]uint64, 0)
-	simapi.RegistProviderRequest(senderId, targets, myProvider)*/
-
-	// test
-	//go sendAgents()
 
 	// Run HarmowareVis Monitor
 	ioserv = runServer()
