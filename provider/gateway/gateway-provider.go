@@ -244,24 +244,6 @@ func supplyCallback1(clt *api.SMServiceClient, sp *api.Supply) {
 func demandCallback1(clt *api.SMServiceClient, dm *api.Demand) {
 
 	switch dm.GetSimDemand().GetType() {
-	case api.DemandType_READY_PROVIDER_REQUEST:
-		logger.Debug("ready provider request\n")
-		/*provider := dm.GetSimDemand().GetReadyProviderRequest().GetProvider()
-		//pm.SetProviders(providers)
-
-		// workerへ登録
-		// ここでIdをゲットできてない？
-		senderId := myProvider.Id
-		targets := []uint64{provider.GetId()}
-		worker1api.RegistProviderRequest(senderId, targets, myProvider)
-		//waiter.WaitSp(msgId, targets, 1000)
-
-		// response
-		targets = []uint64{dm.GetSimDemand().GetSenderId()}
-		senderId = myProvider.Id
-		msgId := dm.GetSimDemand().GetMsgId()
-		worker1api.ReadyProviderResponse(senderId, targets, msgId)
-		logger.Info("Finish: Regist Provider from ready ")*/
 
 	case api.DemandType_GET_AGENT_REQUEST:
 		logger.Debug("get agent request\n")
@@ -274,11 +256,6 @@ func demandCallback1(clt *api.SMServiceClient, dm *api.Demand) {
 		targets2 := []uint64{agentProvider2.Id}
 		sps, _ := worker2api.GetAgentRequest(senderId, targets2)
 
-		// test
-		//targets2 := []uint64{agentProvider1.Id}
-		//sps, _ := worker1api.GetAgentRequest(senderId, targets2)
-		//logger.Debug("Get Agent Request to Worker2 %v %v %v\n", targets2, msgId2, dm)
-		//sps, _ := waiter.WaitSp(msgId2, targets2, 1000)
 		for _, sp := range sps {
 			ags := sp.GetSimSupply().GetGetAgentResponse().GetAgents()
 			agents = append(agents, ags...)
@@ -296,9 +273,6 @@ func demandCallback1(clt *api.SMServiceClient, dm *api.Demand) {
 	case api.DemandType_UPDATE_PROVIDERS_REQUEST:
 		logger.Debug("update providers request\n")
 		ps1 := dm.GetSimDemand().GetUpdateProvidersRequest().GetProviders()
-		//apm.SetProviders1(ps1)
-		//apm.SetProvider1(ps1)
-		//pm.SetProviders(providers)
 
 		//test
 		for _, p := range ps1 {
@@ -327,10 +301,7 @@ func demandCallback1(clt *api.SMServiceClient, dm *api.Demand) {
 func supplyCallback2(clt *api.SMServiceClient, sp *api.Supply) {
 	switch sp.GetSimSupply().GetType() {
 	case api.SupplyType_GET_AGENT_RESPONSE:
-		//fmt.Printf("Get Sp from Worker2%v\n", sp)
-		//time.Sleep(10 * time.Millisecond)
 		worker2api.SendSpToWait(sp)
-		// send to worker1 agent-provider
 
 	case api.SupplyType_REGIST_PROVIDER_RESPONSE:
 		mu.Lock()
@@ -348,23 +319,6 @@ func supplyCallback2(clt *api.SMServiceClient, sp *api.Supply) {
 // Demandのコールバック関数
 func demandCallback2(clt *api.SMServiceClient, dm *api.Demand) {
 	switch dm.GetSimDemand().GetType() {
-	case api.DemandType_READY_PROVIDER_REQUEST:
-		logger.Debug("ready provider request\n")
-		/*provider := dm.GetSimDemand().GetReadyProviderRequest().GetProvider()
-		//pm.SetProviders(providers)
-
-		// workerへ登録
-		senderId := myProvider.Id
-		targets := []uint64{provider.GetId()}
-		worker2api.RegistProviderRequest(senderId, targets, myProvider)
-		//waiter.WaitSp(msgId, targets, 1000)
-
-		// response
-		targets = []uint64{dm.GetSimDemand().GetSenderId()}
-		senderId = myProvider.Id
-		msgId := dm.GetSimDemand().GetMsgId()
-		worker2api.ReadyProviderResponse(senderId, targets, msgId)
-		logger.Info("Finish: Regist Provider from ready ")*/
 
 	case api.DemandType_GET_AGENT_REQUEST:
 		logger.Debug("get agent request\n")
@@ -377,11 +331,6 @@ func demandCallback2(clt *api.SMServiceClient, dm *api.Demand) {
 		targets1 := []uint64{agentProvider1.Id}
 		sps, _ := worker1api.GetAgentRequest(senderId, targets1)
 
-		// test
-		//targets1 := []uint64{agentProvider2.Id}
-		//sps, _ := worker2api.GetAgentRequest(senderId, targets1)
-		//logger.Debug("Get Agent Request to Worker1 %v %v %v\n", targets1, msgId1, dm)
-		//sps, _ := waiter.WaitSp(msgId1, targets1, 1000)
 		for _, sp := range sps {
 			ags := sp.GetSimSupply().GetGetAgentResponse().GetAgents()
 			agents = append(agents, ags...)
@@ -400,9 +349,6 @@ func demandCallback2(clt *api.SMServiceClient, dm *api.Demand) {
 	case api.DemandType_UPDATE_PROVIDERS_REQUEST:
 		logger.Debug("update providers request\n")
 		ps2 := dm.GetSimDemand().GetUpdateProvidersRequest().GetProviders()
-		//apm.SetProviders2(ps2)
-		//apm.SetProvider2(ps2)
-		//pm.SetProviders(providers)
 
 		//test
 		for _, p := range ps2 {
@@ -472,8 +418,6 @@ func main() {
 		Name: providerName,
 		Type: api.ProviderType_GATEWAY,
 	}
-	//pm1 = simutil.NewProviderManager(myProvider)
-	//pm2 = simutil.NewProviderManager(myProvider)
 
 	//////////////////////////////////////////////////
 	//////////           worker1             ////////
