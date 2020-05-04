@@ -89,57 +89,6 @@ func (m *Manager) GetProviderIds() []uint64 {
 }
 
 ////////////////////////////////////////////////////////////
-//////////////////        Util          ///////////////////
-///////////////////////////////////////////////////////////
-
-/*func createRandomCoord(areaCoords []*api.Coord) *api.Coord {
-
-	maxLat, maxLon, minLat, minLon := simutil.GetCoordRange(areaCoords)
-	longitude := minLon + (maxLon-minLon)*rand.Float64()
-	latitude := minLat + (maxLat-minLat)*rand.Float64()
-	coord := &api.Coord{
-		Longitude: longitude,
-		Latitude:  latitude,
-	}
-
-	return coord
-}*/
-
-// Agentオブジェクトの変換
-func calcRoute() *api.Route {
-
-	//departure := createRandomCoord(mockAreaInfos[*areaId].ControlArea)
-	departure := &api.Coord{Latitude: 35.00, Longitude: 136.234}
-	//destAreaId := rand.Intn(3)
-	destination := &api.Coord{Latitude: 35.00, Longitude: 136.234}
-	//destination := createRandomCoord(mockAreaInfos[uint64(destAreaId)].ControlArea)
-
-	/*departure = &api.Coord{
-		Latitude:  35.1542,
-		Longitude: 136.975231,
-	}
-	destination = &api.Coord{
-		Latitude:  35.1542,
-		Longitude: 136.975231,
-	}*/
-
-	transitPoints := make([]*api.Coord, 0)
-	transitPoints = append(transitPoints, destination)
-
-	route := &api.Route{
-		Position:      departure,
-		Direction:     0.0001 * rand.Float64(),
-		Speed:         10 + 10*rand.Float64(),
-		Departure:     departure,
-		Destination:   destination,
-		TransitPoints: transitPoints,
-		NextTransit:   destination,
-	}
-
-	return route
-}
-
-////////////////////////////////////////////////////////////
 ////////////     Demand Supply Callback     ////////////////
 ///////////////////////////////////////////////////////////
 
@@ -149,28 +98,19 @@ func supplyCallback(clt *api.SMServiceClient, sp *api.Supply) {
 	// check if supply is match with my demand.
 	switch sp.GetSimSupply().GetType() {
 	case api.SupplyType_SET_CLOCK_RESPONSE:
-		//logger.Info("get sp: %v\n", sp)
-		//time.Sleep(10 * time.Millisecond)
 		simapi.SendSpToWait(sp)
 	case api.SupplyType_SET_AGENT_RESPONSE:
-		//logger.Info("get sp: %v\n", sp)
-		//time.Sleep(10 * time.Millisecond)
 		simapi.SendSpToWait(sp)
 	case api.SupplyType_FORWARD_CLOCK_RESPONSE:
-		//logger.Info("get sp: %v\n", sp)
-		//time.Sleep(10 * time.Millisecond)
 		simapi.SendSpToWait(sp)
 	case api.SupplyType_UPDATE_PROVIDERS_RESPONSE:
-		//logger.Info("get sp: %v\n", sp)
-		//time.Sleep(10 * time.Millisecond)
 		simapi.SendSpToWait(sp)
 	}
 }
 
 // Demandのコールバック関数
 func demandCallback(clt *api.SMServiceClient, dm *api.Demand) {
-	//tid := dm.GetSimDemand().GetSenderId()
-	//pid := myProvider.Id
+
 	// check if supply is match with my demand.
 	switch dm.GetSimDemand().GetType() {
 	case api.DemandType_REGIST_PROVIDER_REQUEST:
@@ -209,10 +149,6 @@ func setAgents(agentNum uint64) (bool, error) {
 			Longitude: minLon + (maxLon-minLon)*rand.Float64(),
 			Latitude:  minLat + (maxLat-minLat)*rand.Float64(),
 		}
-		/*departure := &api.Coord{
-			Longitude: 136.975685 + rand.Float64()*0.001,
-			Latitude:  35.154533 + rand.Float64()*0.001,
-		}*/
 		destination := &api.Coord{
 			Longitude: minLon + (maxLon-minLon)*rand.Float64(),
 			Latitude:  minLat + (maxLat-minLat)*rand.Float64(),
@@ -239,7 +175,6 @@ func setAgents(agentNum uint64) (bool, error) {
 		simutil.IDType_WORKER,
 	})
 	simapi.SetAgentRequest(senderId, targets, agents)
-	//waiter.WaitSp(msgId, targets, 1000)
 
 	logger.Info("Finish Setting Agents \n Add: %v", len(agents))
 	return true, nil
@@ -255,7 +190,6 @@ func startClock() {
 	})
 	logger.Debug("Next Cycle! \n%v\n", targets)
 	simapi.ForwardClockRequest(senderId, targets)
-	//waiter.WaitSp(msgId, targets, 1000)
 
 	// calc next time
 	masterClock++
@@ -394,19 +328,11 @@ func main() {
 	client := api.NewSynerexClient(conn)
 	argJson := fmt.Sprintf("{Client:Master}")
 
-	time.Sleep(3 * time.Second)
-
 	// api
 	fmt.Printf("client: %v\n", client)
 	simapi = api.NewSimAPI()
 	simapi.RegistClients(client, myProvider.Id, argJson) // channelごとのClientを作成
 	simapi.SubscribeAll(demandCallback, supplyCallback)  // ChannelにSubscribe*/
-	//logger.Info("Connected Synerex Server!\n")
-
-	// ready provider request
-	//senderId := myProvider.Id
-	//targets := make([]uint64, 0)
-	//simapi.ReadyProviderRequest(senderId, targets, myProvider)
 
 	wg := sync.WaitGroup{}
 	wg.Add(1)

@@ -479,8 +479,6 @@ func main() {
 	client2 := api.NewSynerexClient(conn2)
 	argJson2 := fmt.Sprintf("{Client:Gateway}")
 
-	time.Sleep(5 * time.Second)
-
 	// Communicator
 	worker1api = api.NewSimAPI()
 	worker1api.RegistClients(client, myProvider.Id, argJson)  // channelごとのClientを作成
