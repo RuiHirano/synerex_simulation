@@ -33,5 +33,5 @@ RUN cd provider/agent && \
 # expose port
 #EXPOSE 10000
 WORKDIR /synerex_simulation/provider/agent
-RUN go build agent-provider.go simulator2.go
+RUN go build agent-provider.go simulator.go
 ENTRYPOINT [ "./entrypoint.sh" ]
