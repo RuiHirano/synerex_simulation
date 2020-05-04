@@ -152,6 +152,7 @@ func (s *SimAPI) SendSyncDemand(sclient *SMServiceClient, simDemand *SimDemand) 
 	if len(targets) != 0 {
 		msgId := simDemand.GetMsgId()
 		sps, err = s.Waiter.WaitSp(msgId, targets, 1000)
+		s.Waiter = NewWaiter()
 	}
 
 	return sps, err
