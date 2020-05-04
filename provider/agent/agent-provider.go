@@ -33,14 +33,12 @@ var (
 	workerProvider *api.Provider
 	pm             *simutil.ProviderManager
 	simapi         *api.SimAPI
-	//com                  *simutil.Communicator
-	sim *Simulator
-	//providerManager      *simutil.ProviderManager
-	logger        *util.Logger
-	mu            sync.Mutex
-	agentsMessage *Message
-	myArea        *api.Area
-	agentType     api.AgentType
+	sim            *Simulator
+	logger         *util.Logger
+	mu             sync.Mutex
+	agentsMessage  *Message
+	myArea         *api.Area
+	agentType      api.AgentType
 )
 
 func init() {
