@@ -92,7 +92,6 @@ func (s *synerexServerInfo) RegisterDemand(c context.Context, dm *api.Demand) (r
 }
 
 func (s *synerexServerInfo) RegisterSupply(c context.Context, sp *api.Supply) (r *api.Response, e error) {
-	//fmt.Printf("Register Supply!!!")
 	okFlag := true
 	okMsg := ""
 	str := ""
@@ -111,7 +110,6 @@ func (s *synerexServerInfo) RegisterSupply(c context.Context, sp *api.Supply) (r
 
 	}
 	s.smu.RUnlock()
-	//fmt.Printf("RS: %d, %s:", len(chs), str)
 	r = &api.Response{Ok: okFlag, Err: okMsg}
 	return r, nil
 }
@@ -681,12 +679,7 @@ func unaryServerInterceptor(logger *logrus.Logger, s *synerexServerInfo) grpc.Un
 			srcId = dm.SenderId
 			tgtId = dm.TargetId
 			mid = dm.Id
-			//			args = "Type:" + strconv.Itoa(int(dm.Type)) + ":" + strconv.FormatUint(dm.Id, 16) + ":" + idToNode(dm.SenderId) + "->" + strconv.FormatUint(dm.TargetId, 16)
-			//args = idToNode(dm.SenderId) + "->" + idToNode(dm.TargetId)
-			// 変更
 			cdm := dm // copy
-			//cdm.GetSimDemand().Data = &simapi.SimDemand_GetAgentsRequest{&agent.GetAgentsRequest{}}
-			//logger.Info("dm: %v\n", cdm.GetSimDemand())
 			dm_json, _ := json.Marshal(cdm)
 			args = string(dm_json)
 			// Supply
@@ -696,11 +689,7 @@ func unaryServerInterceptor(logger *logrus.Logger, s *synerexServerInfo) grpc.Un
 			srcId = sp.SenderId
 			tgtId = sp.TargetId
 			mid = sp.Id
-			//			args = "Type:" + strconv.Itoa(int(sp.Type)) + ":" + strconv.FormatUint(sp.Id, 16) + ":" + idToNode(sp.SenderId) + "->" + strconv.FormatUint(sp.TargetId, 16)
-			//args = idToNode(sp.SenderId) + "->" + idToNode(sp.TargetId)
-			csp := sp // copy
-			//csp.GetSimSupply().Data = &simapi.SimSupply_SetAgentsResponse{&agent.SetAgentsResponse{}}
-			//logger.Info("sp: %v\n", csp.GetSimSupply())
+			csp := sp
 			sp_json, _ := json.Marshal(csp)
 			args = string(sp_json)
 		// Target
@@ -711,7 +700,6 @@ func unaryServerInterceptor(logger *logrus.Logger, s *synerexServerInfo) grpc.Un
 			srcId = tg.SenderId
 			tgtId = tg.TargetId
 			args = idToNode(tg.SenderId) + "->" + idToNode(tg.TargetId)
-			//			args = "Type:" + strconv.Itoa(int(tg.Type)) + ":" + strconv.FormatUint(tg.Id, 16) + ":" + idToNode(tg.Id) + "->" + strconv.FormatUint(tg.TargetId, 16)
 		case "SendMsg":
 			msg := req.(*api.MbusMsg)
 			msgType = int(msg.MsgType)
