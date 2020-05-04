@@ -44,3 +44,4 @@ push-lab:
 
 build-lab:
 		bash ./docker_build_uclab.sh
+
