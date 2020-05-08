@@ -15,6 +15,8 @@ import (
 
 	//"runtime"
 	"encoding/json"
+	"net/http"
+	_ "net/http/pprof"
 	"runtime"
 
 	"github.com/google/uuid"
@@ -305,6 +307,9 @@ func registToWorker() {
 }
 
 func main() {
+	go func() {
+		log.Println(http.ListenAndServe("localhost:6060", nil))
+	}()
 	logger.Info("StartUp Provider")
 	fmt.Printf("NumCPU=%d\n", runtime.NumCPU())
 	runtime.GOMAXPROCS(runtime.NumCPU())
