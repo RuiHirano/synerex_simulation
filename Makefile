@@ -27,6 +27,15 @@ vis:
 gateway:
 		kubectl logs -f gateway${arg} -c gateway-provider
 
+log:
+		cd kube && bash kube_log.sh
+
+exec:
+		cd kube && bash kube_exec.sh
+
+desc:
+		cd kube && bash kube_describe.sh
+
 apply:
 		cd kube && bash kube_apply.sh
 
