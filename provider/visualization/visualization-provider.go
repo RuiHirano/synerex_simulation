@@ -19,6 +19,7 @@ import (
 
 	"fmt"
 	"net/http"
+	_ "net/http/pprof"
 	"os"
 
 	"path/filepath"
@@ -282,6 +283,10 @@ func registToWorker() {
 }
 
 func main() {
+
+	go func() {
+		log.Println(http.ListenAndServe("localhost:6060", nil))
+	}()
 	logger.Info("StartUp Provider %v, %v", synerexAddr, myProvider)
 	fmt.Printf("NumCPU=%d\n", runtime.NumCPU())
 	runtime.GOMAXPROCS(runtime.NumCPU())
