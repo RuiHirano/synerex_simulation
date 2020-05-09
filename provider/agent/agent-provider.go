@@ -254,7 +254,6 @@ func demandCallback(clt *api.SMServiceClient, dm *api.Demand) {
 			agents = sim.Agents
 		} else if util.Contains(neighborAreaIds, senderId) {
 			// 隣接エリアのエージェントプロバイダの場合
-			logger.Debug("Get Agent Request from \n%v\n", dm)
 			agents = agentsMessage.Get()
 		} else if util.Contains(visIds, senderId) {
 			// Visプロバイダの場合
