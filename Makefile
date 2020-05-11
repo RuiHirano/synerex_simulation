@@ -36,6 +36,9 @@ exec:
 desc:
 		cd kube && bash kube_describe.sh
 
+top:
+		cd kube && bash kube_top_node.sh
+
 apply:
 		cd kube && bash kube_apply.sh
 

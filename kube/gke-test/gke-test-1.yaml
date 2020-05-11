@@ -21,6 +21,7 @@ spec:
   containers:
   - name: simulator
     image: gcr.io/synerex-simulation/simulator:latest
+    imagePullPolicy: Always
     stdin: true
     tty: true
     env:
@@ -28,8 +29,6 @@ spec:
       value: http://master:800
     ports:
     - containerPort: 8000
-  imagePullSecrets:
-  - name: ruirui-regcred
 
 ---
 apiVersion: v1
@@ -61,6 +60,7 @@ spec:
   containers:
   - name: nodeid-server
     image: gcr.io/synerex-simulation/nodeid-server:latest
+    imagePullPolicy: Always
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -68,6 +68,7 @@ spec:
     - containerPort: 9000
   - name: synerex-server
     image: gcr.io/synerex-simulation/synerex-server:latest
+    imagePullPolicy: Always
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -77,6 +78,7 @@ spec:
     - containerPort: 10000
   - name: master-provider
     image: gcr.io/synerex-simulation/master-provider:latest
+    imagePullPolicy: Always
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -86,8 +88,6 @@ spec:
       value: "9990"
     ports:
     - containerPort: 9990
-  imagePullSecrets:
-  - name: ruirui-regcred
 
 ---
 apiVersion: v1
@@ -130,6 +130,7 @@ spec:
   containers:
   - name: nodeid-server
     image: gcr.io/synerex-simulation/nodeid-server:latest
+    imagePullPolicy: Always
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -137,6 +138,7 @@ spec:
     - containerPort: 9000
   - name: synerex-server
     image: gcr.io/synerex-simulation/synerex-server:latest
+    imagePullPolicy: Always
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -148,6 +150,7 @@ spec:
     - containerPort: 10000
   - name: worker-provider
     image: gcr.io/synerex-simulation/worker-provider:latest
+    imagePullPolicy: Always
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -165,6 +168,7 @@ spec:
     - containerPort: 9980
   - name: agent-provider
     image: gcr.io/synerex-simulation/agent-provider:latest
+    imagePullPolicy: Always
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -181,6 +185,7 @@ spec:
       value: AgentProvider11
   - name: visualization-provider
     image: gcr.io/synerex-simulation/visualization-provider:latest
+    imagePullPolicy: Always
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -190,7 +195,5 @@ spec:
       value: :9500
     - name: PROVIDER_NAME
       value: VisProvider11
-  imagePullSecrets:
-  - name: ruirui-regcred
 
 ---

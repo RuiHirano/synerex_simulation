@@ -164,9 +164,9 @@ func NewWorker(area Area) Resource {
 		Spec: Spec{
 			Containers: []Container{
 				{
-					Name:  "nodeid-server",
-					Image: "gcr.io/" + *projectID + "/nodeid-server:" + *version,
-					//ImagePullPolicy: "Never",
+					Name:            "nodeid-server",
+					Image:           "gcr.io/" + *projectID + "/nodeid-server:" + *version,
+					ImagePullPolicy: "Always",
 					Env: []Env{
 						{
 							Name:  "NODEID_SERVER",
@@ -176,9 +176,9 @@ func NewWorker(area Area) Resource {
 					Ports: []Port{{ContainerPort: 9000}},
 				},
 				{
-					Name:  "synerex-server",
-					Image: "gcr.io/" + *projectID + "/synerex-server:" + *version,
-					//ImagePullPolicy: "Never",
+					Name:            "synerex-server",
+					Image:           "gcr.io/" + *projectID + "/synerex-server:" + *version,
+					ImagePullPolicy: "Always",
 					Env: []Env{
 						{
 							Name:  "NODEID_SERVER",
@@ -196,9 +196,9 @@ func NewWorker(area Area) Resource {
 					Ports: []Port{{ContainerPort: 10000}},
 				},
 				{
-					Name:  "worker-provider",
-					Image: "gcr.io/" + *projectID + "/worker-provider:" + *version,
-					//ImagePullPolicy: "Never",
+					Name:            "worker-provider",
+					Image:           "gcr.io/" + *projectID + "/worker-provider:" + *version,
+					ImagePullPolicy: "Always",
 					Env: []Env{
 						{
 							Name:  "NODEID_SERVER",
@@ -228,9 +228,9 @@ func NewWorker(area Area) Resource {
 					Ports: []Port{{ContainerPort: 9980}},
 				},
 				{
-					Name:  "agent-provider",
-					Image: "gcr.io/" + *projectID + "/agent-provider:" + *version,
-					//ImagePullPolicy: "Never",
+					Name:            "agent-provider",
+					Image:           "gcr.io/" + *projectID + "/agent-provider:" + *version,
+					ImagePullPolicy: "Always",
 					Env: []Env{
 						{
 							Name:  "NODEID_SERVER",
@@ -251,9 +251,9 @@ func NewWorker(area Area) Resource {
 					},
 				},
 				{
-					Name:  "visualization-provider",
-					Image: "gcr.io/" + *projectID + "/visualization-provider:" + *version,
-					//ImagePullPolicy: "Never",
+					Name:            "visualization-provider",
+					Image:           "gcr.io/" + *projectID + "/visualization-provider:" + *version,
+					ImagePullPolicy: "Always",
 					Env: []Env{
 						{
 							Name:  "NODEID_SERVER",
@@ -272,11 +272,6 @@ func NewWorker(area Area) Resource {
 							Value: "VisProvider" + strconv.Itoa(area.Id),
 						},
 					},
-				},
-			},
-			ImagePullSecrets: []ImagePullSecret{
-				{
-					Name: "ruirui-regcred",
 				},
 			},
 		},
@@ -325,9 +320,9 @@ func NewMaster() Resource {
 		Spec: Spec{
 			Containers: []Container{
 				{
-					Name:  "nodeid-server",
-					Image: "gcr.io/" + *projectID + "/nodeid-server:" + *version,
-					//ImagePullPolicy: "Never",
+					Name:            "nodeid-server",
+					Image:           "gcr.io/" + *projectID + "/nodeid-server:" + *version,
+					ImagePullPolicy: "Always",
 					Env: []Env{
 						{
 							Name:  "NODEID_SERVER",
@@ -337,9 +332,9 @@ func NewMaster() Resource {
 					Ports: []Port{{ContainerPort: 9000}},
 				},
 				{
-					Name:  "synerex-server",
-					Image: "gcr.io/" + *projectID + "/synerex-server:" + *version,
-					//ImagePullPolicy: "Never",
+					Name:            "synerex-server",
+					Image:           "gcr.io/" + *projectID + "/synerex-server:" + *version,
+					ImagePullPolicy: "Always",
 					Env: []Env{
 						{
 							Name:  "NODEID_SERVER",
@@ -353,9 +348,9 @@ func NewMaster() Resource {
 					Ports: []Port{{ContainerPort: 10000}},
 				},
 				{
-					Name:  "master-provider",
-					Image: "gcr.io/" + *projectID + "/master-provider:" + *version,
-					//ImagePullPolicy: "Never",
+					Name:            "master-provider",
+					Image:           "gcr.io/" + *projectID + "/master-provider:" + *version,
+					ImagePullPolicy: "Always",
 					Env: []Env{
 						{
 							Name:  "NODEID_SERVER",
@@ -371,11 +366,6 @@ func NewMaster() Resource {
 						},
 					},
 					Ports: []Port{{ContainerPort: 9990}},
-				},
-			},
-			ImagePullSecrets: []ImagePullSecret{
-				{
-					Name: "ruirui-regcred",
 				},
 			},
 		},
@@ -414,11 +404,11 @@ func NewSimulator() Resource {
 		Spec: Spec{
 			Containers: []Container{
 				{
-					Name:  "simulator",
-					Image: "gcr.io/" + *projectID + "/simulator:" + *version,
-					//ImagePullPolicy: "Never",
-					Stdin: true,
-					Tty:   true,
+					Name:            "simulator",
+					Image:           "gcr.io/" + *projectID + "/simulator:" + *version,
+					ImagePullPolicy: "Always",
+					Stdin:           true,
+					Tty:             true,
 					Env: []Env{
 						{
 							Name:  "MASTER_ADDRESS",
@@ -426,11 +416,6 @@ func NewSimulator() Resource {
 						},
 					},
 					Ports: []Port{{ContainerPort: 8000}},
-				},
-			},
-			ImagePullSecrets: []ImagePullSecret{
-				{
-					Name: "ruirui-regcred",
 				},
 			},
 		},
@@ -453,9 +438,9 @@ func NewGateway(neiPair []int) Resource {
 		Spec: Spec{
 			Containers: []Container{
 				{
-					Name:  "gateway-provider",
-					Image: "gcr.io/" + *projectID + "/gateway-provider:" + *version,
-					//ImagePullPolicy: "Never",
+					Name:            "gateway-provider",
+					Image:           "gcr.io/" + *projectID + "/gateway-provider:" + *version,
+					ImagePullPolicy: "Always",
 					Env: []Env{
 						{
 							Name:  "WORKER_SYNEREX_SERVER1",
@@ -479,11 +464,6 @@ func NewGateway(neiPair []int) Resource {
 						},
 					},
 					Ports: []Port{{ContainerPort: 9980}},
-				},
-			},
-			ImagePullSecrets: []ImagePullSecret{
-				{
-					Name: "ruirui-regcred",
 				},
 			},
 		},
@@ -525,14 +505,14 @@ func convertAreaToJson(area Area) string {
 func main() {
 
 	option := Option{
-		FileName: "gke-test-1.yaml",
+		FileName: "gke-test-9.yaml",
 		AreaCoords: []Coord{
 			{Longitude: 136.971626, Latitude: 35.161499},
 			{Longitude: 136.971626, Latitude: 35.152210},
 			{Longitude: 136.989379, Latitude: 35.152210},
 			{Longitude: 136.989379, Latitude: 35.161499},
 		},
-		DevideSquareNum: 1,   // 2*2 = 4 areas
+		DevideSquareNum: 3,   // 2*2 = 4 areas
 		DuplicateRate:   0.1, // 10% of each area
 	}
 
