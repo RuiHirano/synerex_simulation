@@ -15,7 +15,8 @@ function ConfirmExecution() {
   echo "6. visualization-provider"
   echo "7. gateway-provider"
   echo "8. simulator"
-  echo "9. all"
+  echo "9. database"
+  echo "10. all"
   echo "----------------------------"
   echo "Please select build targets"
   echo "ex. 1 2 5 is nodeid, synerex, agent"
@@ -45,7 +46,7 @@ function ConfirmExecution() {
         echo "building agent provider..."
         docker image build -t synerex-simulation/agent-provider:${version} -f provider/agent/Dockerfile .
 
-        elif [ $input = '6' ] ; then
+    elif [ $input = '6' ] ; then
         echo "building visualization provider..."
         docker image build -t synerex-simulation/visualization-provider:${version} -f provider/visualization/Dockerfile .
 
@@ -58,6 +59,10 @@ function ConfirmExecution() {
         docker image build -t synerex-simulation/simulator:${version} -f cli/Dockerfile .
 
     elif [ $input = '9' ] ; then
+        echo "building database provider..."
+        docker image build -t synerex-simulation/database-provider:${version} -f provider/database/Dockerfile .
+
+    elif [ $input = '10' ] ; then
         echo "building all"
         docker image build -t synerex-simulation/nodeid-server:${version} -f nodeserv/Dockerfile .
         docker image build -t synerex-simulation/synerex-server:${version} -f server/Dockerfile .

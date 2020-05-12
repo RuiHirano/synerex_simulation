@@ -142,6 +142,47 @@ func NewVis(area Area) Resource {
 	return vis
 }
 
+func NewDatabase(area Area) Resource {
+	workerName := "worker" + strconv.Itoa(area.Id)
+	databaseName := "database" + strconv.Itoa(area.Id)
+	database := Resource{
+		ApiVersion: "v1",
+		Kind:       "Pod",
+		Metadata: Metadata{
+			Name:   databaseName,
+			Labels: Label{App: databaseName},
+		},
+		Spec: Spec{
+			Containers: []Container{
+				{
+					Name:            "database-provider",
+					Image:           "synerex-simulation/database-provider:latest",
+					ImagePullPolicy: "Never",
+					Env: []Env{
+						{
+							Name:  "NODEID_SERVER",
+							Value: workerName + ":600",
+						},
+						{
+							Name:  "SYNEREX_SERVER",
+							Value: workerName + ":700",
+						},
+						{
+							Name:  "VIS_ADDRESS",
+							Value: ":9500",
+						},
+						{
+							Name:  "PROVIDER_NAME",
+							Value: "DatabaseProvider" + strconv.Itoa(area.Id),
+						},
+					},
+				},
+			},
+		},
+	}
+	return database
+}
+
 func NewAgent(area Area) Resource {
 	workerName := "worker" + strconv.Itoa(area.Id)
 	agentName := "agent" + strconv.Itoa(area.Id)
@@ -556,7 +597,7 @@ func createData(option Option) []Resource {
 		rsrcs = append(rsrcs, NewWorkerService(area))
 		rsrcs = append(rsrcs, NewWorker(area))
 		rsrcs = append(rsrcs, NewAgent(area))
-		rsrcs = append(rsrcs, NewVis(area))
+		rsrcs = append(rsrcs, NewDatabase(area))
 	}
 
 	for _, neiPair := range neighbors {
