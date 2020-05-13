@@ -244,7 +244,7 @@ func NewWorker(area Area) Resource {
 						},
 					},
 				},
-				{
+				/*{
 					Name:  "visualization-provider",
 					Image: "ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/visualization-provider:" + *version,
 					//ImagePullPolicy: "Never",
@@ -266,7 +266,7 @@ func NewWorker(area Area) Resource {
 							Value: "VisProvider" + strconv.Itoa(area.Id),
 						},
 					},
-				},
+				},*/
 			},
 			ImagePullSecrets: []ImagePullSecret{
 				{
@@ -555,7 +555,7 @@ func createData(option Option) []Resource {
 	//fmt.Printf("areas: %v\n", areas)
 
 	for _, area := range areas {
-		rsrcs = append(rsrcs, NewVisMonitorService(area))
+		//rsrcs = append(rsrcs, NewVisMonitorService(area))
 		rsrcs = append(rsrcs, NewWorkerService(area))
 		rsrcs = append(rsrcs, NewWorker(area))
 	}
