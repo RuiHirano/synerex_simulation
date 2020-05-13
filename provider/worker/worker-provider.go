@@ -136,7 +136,7 @@ func masterDemandCallback(clt *api.SMServiceClient, dm *api.Demand) {
 		// request to worker providers
 		targets := pm.GetProviderIds([]simutil.IDType{
 			simutil.IDType_AGENT,
-			simutil.IDType_VISUALIZATION,
+			simutil.IDType_DATABASE,
 		})
 
 		// init
@@ -223,7 +223,7 @@ func workerDemandCallback(clt *api.SMServiceClient, dm *api.Demand) {
 		targets = pm.GetProviderIds([]simutil.IDType{
 			simutil.IDType_GATEWAY,
 			simutil.IDType_AGENT,
-			simutil.IDType_VISUALIZATION,
+			simutil.IDType_DATABASE,
 		})
 		providers := pm.GetProviders()
 		workerapi.UpdateProvidersRequest(senderId, targets, providers)

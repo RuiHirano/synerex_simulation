@@ -229,6 +229,7 @@ enum ProviderType {
 	AGENT = 2;
 	VISUALIZATION = 3;
 	GATEWAY = 4;
+    DATABASE = 5;
 }
 
 message Clock {

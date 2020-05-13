@@ -29,19 +29,23 @@ import (
 )
 
 var (
-	synerexAddr    string
-	nodeIdAddr     string
-	visAddr        string
-	providerName   string
-	myProvider     *api.Provider
-	workerProvider *api.Provider
-	pm             *simutil.ProviderManager
-	mu             sync.Mutex
-	assetsDir      http.FileSystem
-	ioserv         *gosocketio.Server
-	logger         *util.Logger
-	simapi         *api.SimAPI
-	waiter         *api.Waiter
+	synerexAddr       string
+	nodeIdAddr        string
+	masterNodeIdAddr  string
+	masterSynerexAddr string
+	visAddr           string
+	providerName      string
+	myProvider        *api.Provider
+	masterProvider    *api.Provider
+	pm                *simutil.ProviderManager
+	mu                sync.Mutex
+	masterapi         *api.SimAPI
+	visapi            *api.SimAPI
+	assetsDir         http.FileSystem
+	ioserv            *gosocketio.Server
+	logger            *util.Logger
+	simapi            *api.SimAPI
+	waiter            *api.Waiter
 )
 
 func init() {
@@ -54,6 +58,14 @@ func init() {
 	nodeIdAddr = os.Getenv("NODEID_SERVER")
 	if nodeIdAddr == "" {
 		nodeIdAddr = "127.0.0.1:9000"
+	}
+	masterSynerexAddr = os.Getenv("MASTER_SYNEREX_SERVER")
+	if masterSynerexAddr == "" {
+		masterSynerexAddr = "127.0.0.1:10000"
+	}
+	masterNodeIdAddr = os.Getenv("MASTER_NODEID_SERVER")
+	if masterNodeIdAddr == "" {
+		masterNodeIdAddr = "127.0.0.1:9000"
 	}
 	visAddr = os.Getenv("VIS_ADDRESS")
 	if visAddr == "" {
@@ -185,11 +197,11 @@ func forwardClock(dm *api.Demand) {
 	t1 := time.Now()
 	// エージェントからの可視化リクエスト待ち
 	targets := pm.GetProviderIds([]simutil.IDType{
-		simutil.IDType_AGENT,
+		simutil.IDType_DATABASE,
 	})
 	//uid, _ := uuid.NewRandom()
 	senderId := myProvider.Id
-	sps, _ := simapi.GetAgentRequest(senderId, targets)
+	sps, _ := visapi.GetAgentRequest(senderId, targets)
 	//sps, _ := waiter.WaitSp(msgId, targets, 1000)
 
 	allAgents := []*api.Agent{}
@@ -210,36 +222,19 @@ func forwardClock(dm *api.Demand) {
 func demandCallback(clt *api.SMServiceClient, dm *api.Demand) {
 	switch dm.GetSimDemand().GetType() {
 
-	case api.DemandType_UPDATE_PROVIDERS_REQUEST:
-		providers := dm.GetSimDemand().GetUpdateProvidersRequest().GetProviders()
-		pm.SetProviders(providers)
-
-		// response
-		targets := []uint64{dm.GetSimDemand().GetSenderId()}
+	case api.DemandType_REGIST_PROVIDER_REQUEST:
+		// providerを追加する
+		p := dm.GetSimDemand().GetRegistProviderRequest().GetProvider()
+		pm.AddProvider(p)
+		fmt.Printf("regist request from agent of vis provider! %v\n", p)
+		// 登録完了通知
 		senderId := myProvider.Id
+		targets := []uint64{p.GetId()}
 		msgId := dm.GetSimDemand().GetMsgId()
-		simapi.UpdateProvidersResponse(senderId, targets, msgId)
-		logger.Info("Finish: Update Providers num: %v\n", len(providers))
+		visapi.RegistProviderResponse(senderId, targets, msgId, myProvider)
 
-	case api.DemandType_FORWARD_CLOCK_REQUEST:
-		// クロックを進める
-		forwardClock(dm)
+		logger.Info("Success Regist Agent or Vis Providers", targets)
 
-		// response
-		senderId := myProvider.Id
-		targets := []uint64{dm.GetSimDemand().GetSenderId()}
-		msgId := dm.GetSimDemand().GetMsgId()
-		simapi.ForwardClockResponse(senderId, targets, msgId)
-		logger.Info("Finish: Forward Clock")
-
-	case api.DemandType_FORWARD_CLOCK_INIT_REQUEST:
-
-		// response
-		senderId := myProvider.Id
-		targets := []uint64{dm.GetSimDemand().GetSenderId()}
-		msgId := dm.GetSimDemand().GetMsgId()
-		simapi.ForwardClockInitResponse(senderId, targets, msgId)
-		logger.Info("Finish: Forward Clock Init")
 	}
 
 }
@@ -251,31 +246,69 @@ func supplyCallback(clt *api.SMServiceClient, sp *api.Supply) {
 		//time.Sleep(10 * time.Millisecond)
 		fmt.Printf("get agents response")
 		simapi.SendSpToWait(sp)
-	case api.SupplyType_REGIST_PROVIDER_RESPONSE:
-
-		mu.Lock()
-		workerProvider = sp.GetSimSupply().GetRegistProviderResponse().GetProvider()
-		mu.Unlock()
-		fmt.Printf("resist provider response")
 	}
 }
 
-func registToWorker() {
-	// workerへ登録
+////////////////////////////////////////////////////////////
+////////////     Demand Supply Callback     ////////////////
+///////////////////////////////////////////////////////////
+
+// Supplyのコールバック関数
+func masterSupplyCallback(clt *api.SMServiceClient, sp *api.Supply) {
+	switch sp.GetSimSupply().GetType() {
+	case api.SupplyType_REGIST_PROVIDER_RESPONSE:
+		mu.Lock()
+		masterProvider = sp.GetSimSupply().GetRegistProviderResponse().GetProvider()
+		mu.Unlock()
+		fmt.Printf("regist provider to Master Provider!\n")
+
+	}
+}
+
+// Demandのコールバック関数
+func masterDemandCallback(clt *api.SMServiceClient, dm *api.Demand) {
+	senderId := myProvider.Id
+	switch dm.GetSimDemand().GetType() {
+
+	case api.DemandType_FORWARD_CLOCK_REQUEST:
+		fmt.Printf("get forwardClockRequest")
+
+		forwardClock()
+		// response to master
+		targets = []uint64{dm.GetSimDemand().GetSenderId()}
+		msgId := dm.GetSimDemand().GetMsgId()
+		logger.Debug("Response to master pid %v, msgId%v\n", myProvider.Id, msgId)
+		masterapi.ForwardClockResponse(senderId, targets, msgId)
+
+	case api.DemandType_UPDATE_PROVIDERS_REQUEST:
+		providers := dm.GetSimDemand().GetUpdateProvidersRequest().GetProviders()
+		//pm.SetProviders(providers)
+
+		// response
+		targets := []uint64{dm.GetSimDemand().GetSenderId()}
+		senderId := myProvider.Id
+		msgId := dm.GetSimDemand().GetMsgId()
+		masterapi.UpdateProvidersResponse(senderId, targets, msgId)
+		logger.Info("Finish: Update Workers num: %v\n", len(providers))
+	}
+}
+
+func registToMaster() {
+	// masterへ登録
 	senderId := myProvider.Id
 	targets := make([]uint64, 0)
-	simapi.RegistProviderRequest(senderId, targets, myProvider)
+	masterapi.RegistProviderRequest(senderId, targets, myProvider)
 
 	go func() {
 		for {
-			if workerProvider != nil {
-				logger.Debug("Regist Success to Worker!")
+			if masterProvider != nil {
+				logger.Debug("Regist Success to Master!")
 				return
 			} else {
-				logger.Debug("Couldn't Regist Worker...Retry...\n")
+				logger.Debug("Couldn't Regist Master...Retry...\n")
 				time.Sleep(2 * time.Second)
-				// workerへ登録
-				simapi.RegistProviderRequest(senderId, targets, myProvider)
+				// masterへ登録
+				masterapi.RegistProviderRequest(senderId, targets, myProvider)
 			}
 		}
 	}()
@@ -294,14 +327,30 @@ func main() {
 	}
 	pm = simutil.NewProviderManager(myProvider)
 
+	// For Master
 	// Connect to Node Server
-	nodeapi := napi.NewNodeAPI()
+	nodeapi1 := napi.NewNodeAPI()
 	for {
-		err := nodeapi.RegisterNodeName(nodeIdAddr, providerName, false)
+		err := nodeapi1.RegisterNodeName(masterNodeIdAddr, providerName, false)
 		if err == nil {
 			logger.Info("connected NodeID server!")
-			go nodeapi.HandleSigInt()
-			nodeapi.RegisterDeferFunction(nodeapi.UnRegisterNode)
+			go nodeapi1.HandleSigInt()
+			nodeapi1.RegisterDeferFunction(nodeapi1.UnRegisterNode)
+			break
+		} else {
+			logger.Warn("NodeID Error... reconnecting...")
+			time.Sleep(2 * time.Second)
+		}
+	}
+
+	// Connect to Node Server
+	nodeapi2 := napi.NewNodeAPI()
+	for {
+		err := nodeapi2.RegisterNodeName(nodeIdAddr, providerName, false)
+		if err == nil {
+			logger.Info("connected NodeID server!")
+			go nodeapi2.HandleSigInt()
+			nodeapi2.RegisterDeferFunction(nodeapi2.UnRegisterNode)
 			break
 		} else {
 			logger.Warn("NodeID Error... reconnecting...")
@@ -312,22 +361,38 @@ func main() {
 	// Connect to Synerex Server
 	var opts []grpc.DialOption
 	opts = append(opts, grpc.WithInsecure())
-	conn, err := grpc.Dial(synerexAddr, opts...)
+	conn, err := grpc.Dial(masterSynerexAddr, opts...)
 	if err != nil {
 		log.Fatalf("fail to dial: %v", err)
 	}
-	nodeapi.RegisterDeferFunction(func() { conn.Close() })
+	nodeapi1.RegisterDeferFunction(func() { conn.Close() })
 	client := api.NewSynerexClient(conn)
 	argJson := fmt.Sprintf("{Client:Visualization}")
 
-	// WorkerAPI作成
-	simapi = api.NewSimAPI()
-	simapi.RegistClients(client, myProvider.Id, argJson) // channelごとのClientを作成
-	simapi.SubscribeAll(demandCallback, supplyCallback)  // ChannelにSubscribe
+	// Connect to Synerex Server
+	var wopts []grpc.DialOption
+	wopts = append(wopts, grpc.WithInsecure())
+	wconn, werr := grpc.Dial(synerexAddr, wopts...)
+	if werr != nil {
+		log.Fatalf("fail to dial: %v", werr)
+	}
+	nodeapi2.RegisterDeferFunction(func() { wconn.Close() })
+	wclient := api.NewSynerexClient(wconn)
+	wargJson := fmt.Sprintf("{Client:Visualization}")
+
+	// Communicator
+	masterapi = api.NewSimAPI()
+	masterapi.RegistClients(client, myProvider.Id, argJson)            // channelごとのClientを作成
+	masterapi.SubscribeAll(masterDemandCallback, masterSupplyCallback) // ChannelにSubscribe
+
+	// Communicator
+	visapi = api.NewSimAPI()
+	visapi.RegistClients(wclient, myProvider.Id, wargJson) // channelごとのClientを作成
+	visapi.SubscribeAll(demandCallback, supplyCallback)    // ChannelにSubscribe
 
 	time.Sleep(5 * time.Second)
 
-	registToWorker()
+	registToMaster()
 
 	// Run HarmowareVis Monitor
 	ioserv = runServer()
@@ -348,5 +413,6 @@ func main() {
 	wg := sync.WaitGroup{}
 	wg.Add(1)
 	wg.Wait()
-	nodeapi.CallDeferFunctions() // cleanup!
+	nodeapi1.CallDeferFunctions() // cleanup!
+	nodeapi2.CallDeferFunctions() // cleanup!
 }

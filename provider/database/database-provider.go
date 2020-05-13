@@ -213,7 +213,7 @@ func main() {
 	myProvider = &api.Provider{
 		Id:   uint64(uid.ID()),
 		Name: providerName,
-		Type: api.ProviderType_VISUALIZATION,
+		Type: api.ProviderType_DATABASE,
 	}
 	pm = simutil.NewProviderManager(myProvider)
 
