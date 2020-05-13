@@ -133,37 +133,15 @@ func demandCallback(clt *api.SMServiceClient, dm *api.Demand) {
 		msgId := dm.GetSimDemand().GetMsgId()
 		simapi.GetAgentResponse(pId, targets, msgId, agents)
 
-	case api.DemandType_UPDATE_PROVIDERS_REQUEST:
-		providers := dm.GetSimDemand().GetUpdateProvidersRequest().GetProviders()
-		pm.SetProviders(providers)
-
+	case api.DemandType_SET_AGENT_REQUEST:
+		
+		agents := sp.GetSimSupply().GetSetAgentResponse().GetAgents()
+		db.Push(allAgents)
 		// response
-		targets := []uint64{dm.GetSimDemand().GetSenderId()}
-		senderId := myProvider.Id
-		msgId := dm.GetSimDemand().GetMsgId()
-		simapi.UpdateProvidersResponse(senderId, targets, msgId)
-		logger.Info("Finish: Update Providers num: %v\n", len(providers))
-
-	case api.DemandType_FORWARD_CLOCK_REQUEST:
-		// クロックを進める
-		forwardClock(dm)
-
-		// response
-		senderId := myProvider.Id
+		pId := myProvider.Id
 		targets := []uint64{dm.GetSimDemand().GetSenderId()}
 		msgId := dm.GetSimDemand().GetMsgId()
-		simapi.ForwardClockResponse(senderId, targets, msgId)
-		logger.Info("Finish: Forward Clock")
-
-	case api.DemandType_FORWARD_CLOCK_INIT_REQUEST:
-
-		// response
-		senderId := myProvider.Id
-		targets := []uint64{dm.GetSimDemand().GetSenderId()}
-		msgId := dm.GetSimDemand().GetMsgId()
-		simapi.ForwardClockInitResponse(senderId, targets, msgId)
-		logger.Info("Finish: Forward Clock Init")
-	}
+		simapi.SetAgentResponse(pId, targets, msgId)
 
 }
 
@@ -181,27 +159,6 @@ func supplyCallback(clt *api.SMServiceClient, sp *api.Supply) {
 		mu.Unlock()
 		fmt.Printf("resist provider response")
 	}
-}
-
-func registToWorker() {
-	// workerへ登録
-	senderId := myProvider.Id
-	targets := make([]uint64, 0)
-	simapi.RegistProviderRequest(senderId, targets, myProvider)
-
-	go func() {
-		for {
-			if workerProvider != nil {
-				logger.Debug("Regist Success to Worker!")
-				return
-			} else {
-				logger.Debug("Couldn't Regist Worker...Retry...\n")
-				time.Sleep(2 * time.Second)
-				// workerへ登録
-				simapi.RegistProviderRequest(senderId, targets, myProvider)
-			}
-		}
-	}()
 }
 
 func main() {

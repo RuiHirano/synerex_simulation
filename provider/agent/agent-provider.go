@@ -140,6 +140,12 @@ func forwardClock() {
 	logger.Debug("2: Set")
 	agentsMessage.Set(nextControlAgents)
 
+	// databaseに保存
+	targets = pm.GetProviderIds([]simutil.IDType{
+		simutil.IDType_DATABASE,
+	})
+	sim.SetAgentRequest(myProvider.Id, targets, nextControlAgents)
+
 	logger.Debug("3: 隣接エージェントを取得")
 	targets = pm.GetProviderIds([]simutil.IDType{
 		//simutil.IDType_NEIGHBOR,
