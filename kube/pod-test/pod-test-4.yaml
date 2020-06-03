@@ -20,7 +20,7 @@ metadata:
 spec:
   containers:
   - name: simulator
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/simulator:latest
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/simulator:3.0
     stdin: true
     tty: true
     env:
@@ -60,14 +60,14 @@ metadata:
 spec:
   containers:
   - name: nodeid-server
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/nodeid-server:latest
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/nodeid-server:3.0
     env:
     - name: NODEID_SERVER
       value: :9000
     ports:
     - containerPort: 9000
   - name: synerex-server
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/synerex-server:latest
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/synerex-server:3.0
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -76,7 +76,7 @@ spec:
     ports:
     - containerPort: 10000
   - name: master-provider
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/master-provider:latest
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/master-provider:3.0
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -93,20 +93,6 @@ spec:
 apiVersion: v1
 kind: Service
 metadata:
-  name: vis-monitor11
-spec:
-  selector:
-    app: worker11
-  ports:
-  - name: http
-    port: 80
-    targetPort: 9500
-  type: NodePort
-
----
-apiVersion: v1
-kind: Service
-metadata:
   name: worker11
 spec:
   selector:
@@ -129,14 +115,14 @@ metadata:
 spec:
   containers:
   - name: nodeid-server
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/nodeid-server:latest
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/nodeid-server:3.0
     env:
     - name: NODEID_SERVER
       value: :9000
     ports:
     - containerPort: 9000
   - name: synerex-server
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/synerex-server:latest
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/synerex-server:3.0
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -147,7 +133,7 @@ spec:
     ports:
     - containerPort: 10000
   - name: worker-provider
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/worker-provider:latest
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/worker-provider:3.0
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -164,7 +150,7 @@ spec:
     ports:
     - containerPort: 9980
   - name: agent-provider
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/agent-provider:latest
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/agent-provider:3.0
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -179,33 +165,8 @@ spec:
         "longitude":136.9805025}]}'
     - name: PROVIDER_NAME
       value: AgentProvider11
-  - name: visualization-provider
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/visualization-provider:latest
-    env:
-    - name: NODEID_SERVER
-      value: :9000
-    - name: SYNEREX_SERVER
-      value: :10000
-    - name: VIS_ADDRESS
-      value: :9500
-    - name: PROVIDER_NAME
-      value: VisProvider11
   imagePullSecrets:
   - name: ruirui-regcred
-
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: vis-monitor12
-spec:
-  selector:
-    app: worker12
-  ports:
-  - name: http
-    port: 80
-    targetPort: 9500
-  type: NodePort
 
 ---
 apiVersion: v1
@@ -233,14 +194,14 @@ metadata:
 spec:
   containers:
   - name: nodeid-server
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/nodeid-server:latest
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/nodeid-server:3.0
     env:
     - name: NODEID_SERVER
       value: :9000
     ports:
     - containerPort: 9000
   - name: synerex-server
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/synerex-server:latest
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/synerex-server:3.0
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -251,7 +212,7 @@ spec:
     ports:
     - containerPort: 10000
   - name: worker-provider
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/worker-provider:latest
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/worker-provider:3.0
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -268,7 +229,7 @@ spec:
     ports:
     - containerPort: 9980
   - name: agent-provider
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/agent-provider:latest
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/agent-provider:3.0
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -283,33 +244,8 @@ spec:
         "longitude":136.9805025}]}'
     - name: PROVIDER_NAME
       value: AgentProvider12
-  - name: visualization-provider
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/visualization-provider:latest
-    env:
-    - name: NODEID_SERVER
-      value: :9000
-    - name: SYNEREX_SERVER
-      value: :10000
-    - name: VIS_ADDRESS
-      value: :9500
-    - name: PROVIDER_NAME
-      value: VisProvider12
   imagePullSecrets:
   - name: ruirui-regcred
-
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: vis-monitor21
-spec:
-  selector:
-    app: worker21
-  ports:
-  - name: http
-    port: 80
-    targetPort: 9500
-  type: NodePort
 
 ---
 apiVersion: v1
@@ -337,14 +273,14 @@ metadata:
 spec:
   containers:
   - name: nodeid-server
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/nodeid-server:latest
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/nodeid-server:3.0
     env:
     - name: NODEID_SERVER
       value: :9000
     ports:
     - containerPort: 9000
   - name: synerex-server
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/synerex-server:latest
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/synerex-server:3.0
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -355,7 +291,7 @@ spec:
     ports:
     - containerPort: 10000
   - name: worker-provider
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/worker-provider:latest
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/worker-provider:3.0
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -372,7 +308,7 @@ spec:
     ports:
     - containerPort: 9980
   - name: agent-provider
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/agent-provider:latest
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/agent-provider:3.0
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -387,33 +323,8 @@ spec:
         "longitude":136.989379}]}'
     - name: PROVIDER_NAME
       value: AgentProvider21
-  - name: visualization-provider
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/visualization-provider:latest
-    env:
-    - name: NODEID_SERVER
-      value: :9000
-    - name: SYNEREX_SERVER
-      value: :10000
-    - name: VIS_ADDRESS
-      value: :9500
-    - name: PROVIDER_NAME
-      value: VisProvider21
   imagePullSecrets:
   - name: ruirui-regcred
-
----
-apiVersion: v1
-kind: Service
-metadata:
-  name: vis-monitor22
-spec:
-  selector:
-    app: worker22
-  ports:
-  - name: http
-    port: 80
-    targetPort: 9500
-  type: NodePort
 
 ---
 apiVersion: v1
@@ -441,14 +352,14 @@ metadata:
 spec:
   containers:
   - name: nodeid-server
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/nodeid-server:latest
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/nodeid-server:3.0
     env:
     - name: NODEID_SERVER
       value: :9000
     ports:
     - containerPort: 9000
   - name: synerex-server
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/synerex-server:latest
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/synerex-server:3.0
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -459,7 +370,7 @@ spec:
     ports:
     - containerPort: 10000
   - name: worker-provider
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/worker-provider:latest
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/worker-provider:3.0
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -476,7 +387,7 @@ spec:
     ports:
     - containerPort: 9980
   - name: agent-provider
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/agent-provider:latest
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/agent-provider:3.0
     env:
     - name: NODEID_SERVER
       value: :9000
@@ -491,17 +402,6 @@ spec:
         "longitude":136.989379}]}'
     - name: PROVIDER_NAME
       value: AgentProvider22
-  - name: visualization-provider
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/visualization-provider:latest
-    env:
-    - name: NODEID_SERVER
-      value: :9000
-    - name: SYNEREX_SERVER
-      value: :10000
-    - name: VIS_ADDRESS
-      value: :9500
-    - name: PROVIDER_NAME
-      value: VisProvider22
   imagePullSecrets:
   - name: ruirui-regcred
 
@@ -515,7 +415,7 @@ metadata:
 spec:
   containers:
   - name: gateway-provider
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/gateway-provider:latest
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/gateway-provider:3.0
     env:
     - name: WORKER_SYNEREX_SERVER1
       value: worker11:700
@@ -542,7 +442,7 @@ metadata:
 spec:
   containers:
   - name: gateway-provider
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/gateway-provider:latest
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/gateway-provider:3.0
     env:
     - name: WORKER_SYNEREX_SERVER1
       value: worker11:700
@@ -569,7 +469,7 @@ metadata:
 spec:
   containers:
   - name: gateway-provider
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/gateway-provider:latest
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/gateway-provider:3.0
     env:
     - name: WORKER_SYNEREX_SERVER1
       value: worker12:700
@@ -596,7 +496,7 @@ metadata:
 spec:
   containers:
   - name: gateway-provider
-    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/gateway-provider:latest
+    image: ucl.nuee.nagoya-u.ac.jp/uclab/synerex-simulation/gateway-provider:3.0
     env:
     - name: WORKER_SYNEREX_SERVER1
       value: worker21:700

@@ -519,14 +519,14 @@ func convertAreaToJson(area Area) string {
 func main() {
 
 	option := Option{
-		FileName: "pod-test-1.yaml",
+		FileName: "pod-test-4.yaml",
 		AreaCoords: []Coord{
 			{Longitude: 136.971626, Latitude: 35.161499},
 			{Longitude: 136.971626, Latitude: 35.152210},
 			{Longitude: 136.989379, Latitude: 35.152210},
 			{Longitude: 136.989379, Latitude: 35.161499},
 		},
-		DevideSquareNum: 1,   // 2*2 = 4 areas
+		DevideSquareNum: 2,   // 2*2 = 4 areas
 		DuplicateRate:   0.1, // 10% of each area
 	}
 
