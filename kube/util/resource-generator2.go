@@ -79,9 +79,9 @@ type Option struct {
 }
 
 // vis-monitor
-func NewVisMonitorService(area Area) Resource {
-	name := "worker" + strconv.Itoa(area.Id)
-	monitorName := "vis-monitor" + strconv.Itoa(area.Id)
+func NewVisMonitorService() Resource {
+	name := "visualization-provider"
+	monitorName := "vis-monitor"
 	service := Resource{
 		ApiVersion: "v1",
 		Kind:       "Service",
@@ -101,18 +101,44 @@ func NewVisMonitorService(area Area) Resource {
 	return service
 }
 
-func NewVis(area Area) Resource {
-	workerName := "worker" + strconv.Itoa(area.Id)
-	visName := "vis" + strconv.Itoa(area.Id)
+func NewVis() Resource {
 	vis := Resource{
 		ApiVersion: "v1",
 		Kind:       "Pod",
 		Metadata: Metadata{
-			Name:   visName,
-			Labels: Label{App: visName},
+			Name:   "visualization-provider",
+			Labels: Label{App: "visualization-provider"},
 		},
 		Spec: Spec{
 			Containers: []Container{
+				{
+					Name:            "nodeid-server",
+					Image:           "synerex-simulation/nodeid-server:latest",
+					ImagePullPolicy: "Never",
+					Env: []Env{
+						{
+							Name:  "NODEID_SERVER",
+							Value: ":9000",
+						},
+					},
+					Ports: []Port{{ContainerPort: 9000}},
+				},
+				{
+					Name:            "synerex-server",
+					Image:           "synerex-simulation/synerex-server:latest",
+					ImagePullPolicy: "Never",
+					Env: []Env{
+						{
+							Name:  "NODEID_SERVER",
+							Value: ":9000",
+						},
+						{
+							Name:  "SYNEREX_SERVER",
+							Value: ":10000",
+						},
+					},
+					Ports: []Port{{ContainerPort: 10000}},
+				},
 				{
 					Name:            "visualization-provider",
 					Image:           "synerex-simulation/visualization-provider:latest",
@@ -120,11 +146,11 @@ func NewVis(area Area) Resource {
 					Env: []Env{
 						{
 							Name:  "NODEID_SERVER",
-							Value: workerName + ":600",
+							Value: ":9000",
 						},
 						{
 							Name:  "SYNEREX_SERVER",
-							Value: workerName + ":700",
+							Value: ":10000",
 						},
 						{
 							Name:  "VIS_ADDRESS",
@@ -132,9 +158,10 @@ func NewVis(area Area) Resource {
 						},
 						{
 							Name:  "PROVIDER_NAME",
-							Value: "VisProvider" + strconv.Itoa(area.Id),
+							Value: "VisProvider",
 						},
 					},
+					Ports: []Port{{ContainerPort: 9500}},
 				},
 			},
 		},
@@ -557,7 +584,7 @@ func convertAreaToJson(area Area) string {
 func main() {
 
 	option := Option{
-		FileName: "test-4.yaml",
+		FileName: "test-4-vis.yaml",
 		AreaCoords: []Coord{
 			{Longitude: 136.971626, Latitude: 35.161499},
 			{Longitude: 136.971626, Latitude: 35.152210},
@@ -588,12 +615,14 @@ func createData(option Option) []Resource {
 		NewSimulator(),
 		NewMasterService(),
 		NewMaster(),
+		NewVisMonitorService(),
+		NewVis(),
 	}
 	areas, neighbors := AreaDivider(option.AreaCoords, option.DevideSquareNum, option.DuplicateRate)
 	//fmt.Printf("areas: %v\n", areas)
 
 	for _, area := range areas {
-		rsrcs = append(rsrcs, NewVisMonitorService(area))
+		//rsrcs = append(rsrcs, NewVisMonitorService(area))
 		rsrcs = append(rsrcs, NewWorkerService(area))
 		rsrcs = append(rsrcs, NewWorker(area))
 		rsrcs = append(rsrcs, NewAgent(area))
