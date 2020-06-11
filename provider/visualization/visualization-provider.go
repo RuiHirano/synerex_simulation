@@ -195,7 +195,7 @@ func sendToHarmowareVis(agents []*api.Agent) {
 // callbackForwardClockRequest: クロックを進める関数
 func forwardClock(dm *api.Demand) {
 	t1 := time.Now()
-	// エージェントからの可視化リクエスト待ち
+	// Databaseへ取得する
 	targets := pm.GetProviderIds([]simutil.IDType{
 		simutil.IDType_DATABASE,
 	})

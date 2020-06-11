@@ -69,22 +69,30 @@ func init() {
 ////////////              Database              ///////////
 ///////////////////////////////////////////////////////////
 
+type TimeData struct {
+	Clock: *api.Clock
+	Agents: []*api.Agent
+}
+
 type Database struct {
-	Data     [][]*api.Agent
+	Data     []*TimeData
 	Capacity uint64
 }
 
 func NewDatabase(capacity uint64) *Database {
 	db := &Database{
-		Data:     [][]*api.Agent{},
+		Data:     []*TimeData{},
 		Capacity: capacity,
 	}
 
 	return db
 }
 
-func (db *Database) Push(agents []*api.Agent) {
-	db.Data = append(db.Data, agents)
+func (db *Database) Push(clock *api.Clock, agents []*api.Agent) {
+	db.Data = append(db.Data, &TimeData{
+		Clock: clock,
+		Agents: agents,
+	})
 	if len(db.Data) > int(db.Capacity) {
 		pos := len(db.Data) - int(db.Capacity)
 		db.Data = db.Data[pos : len(db.Data)-1]
@@ -135,8 +143,8 @@ func demandCallback(clt *api.SMServiceClient, dm *api.Demand) {
 
 	case api.DemandType_SET_AGENT_REQUEST:
 		
-		agents := sp.GetSimSupply().GetSetAgentResponse().GetAgents()
-		db.Push(allAgents)
+		agents := dm.GetSimSupply().GetSetAgentResponse().GetAgents()
+		db.Push(agents)
 		// response
 		pId := myProvider.Id
 		targets := []uint64{dm.GetSimDemand().GetSenderId()}
