@@ -153,6 +153,15 @@ func masterDemandCallback(clt *api.SMServiceClient, dm *api.Demand) {
 		logger.Debug("Response to master pid %v, msgId%v\n", myProvider.Id, msgId)
 		masterapi.ForwardClockResponse(senderId, targets, msgId)
 
+	case api.DemandType_FORWARD_CLOCK_INIT_REQUEST:
+		//agentsMessage = NewMessage()
+
+		// response
+		targets := []uint64{dm.GetSimDemand().GetSenderId()}
+		msgId := dm.GetSimDemand().GetMsgId()
+		masterapi.ForwardClockInitResponse(senderId, targets, msgId)
+		logger.Info("Finish: Forward Clock Init")
+
 	case api.DemandType_SET_AGENT_REQUEST:
 		fmt.Printf("set agent")
 		// request to providers

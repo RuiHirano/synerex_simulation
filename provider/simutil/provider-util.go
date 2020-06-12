@@ -26,6 +26,7 @@ const (
 	IDType_NEIGHBOR      IDType = 5
 	IDType_SAME          IDType = 6
 	IDType_GATEWAY       IDType = 7
+	IDType_DATABASE      IDType = 8
 )
 
 type ProviderManager struct {
@@ -109,6 +110,8 @@ func (pm *ProviderManager) CreateProvidersMap() {
 				providersMap[IDType_GATEWAY] = append(providersMap[IDType_GATEWAY], p)
 			case api.ProviderType_VISUALIZATION:
 				providersMap[IDType_VISUALIZATION] = append(providersMap[IDType_VISUALIZATION], p)
+			case api.ProviderType_DATABASE:
+				providersMap[IDType_DATABASE] = append(providersMap[IDType_DATABASE], p)
 			case api.ProviderType_AGENT:
 				providersMap[IDType_AGENT] = append(providersMap[IDType_AGENT], p)
 				// AgentProviderでなければ必要ない

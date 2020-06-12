@@ -44,12 +44,12 @@ var (
 	assetsDir         http.FileSystem
 	ioserv            *gosocketio.Server
 	logger            *util.Logger
-	simapi            *api.SimAPI
 	waiter            *api.Waiter
+	agentsMessage     *Message
 )
 
 func init() {
-	//flag.Parse()
+
 	logger = util.NewLogger()
 	synerexAddr = os.Getenv("SYNEREX_SERVER")
 	if synerexAddr == "" {
@@ -78,6 +78,54 @@ func init() {
 	}
 
 	waiter = api.NewWaiter()
+}
+
+////////////////////////////////////////////////////////////
+////////////            Message Class           ///////////
+///////////////////////////////////////////////////////////
+
+type Message struct {
+	ready     chan struct{}
+	agents    []*api.Agent
+	senderIds []uint64
+	targets   []uint64
+}
+
+func NewMessage(targets []uint64) *Message {
+	return &Message{ready: make(chan struct{}), agents: make([]*api.Agent, 0), senderIds: []uint64{}, targets: targets}
+}
+
+func (m *Message) IsFinish() bool {
+	for _, tgt := range m.targets {
+		isExist := false
+		for _, sid := range m.senderIds {
+			if tgt == sid {
+				isExist = true
+			}
+		}
+		if isExist == false {
+			return false
+		}
+	}
+	return true
+}
+
+func (m *Message) Set(a []*api.Agent, senderId uint64) {
+	m.agents = append(m.agents, a...)
+	m.senderIds = append(m.senderIds, senderId)
+	if m.IsFinish() {
+		close(m.ready)
+	}
+}
+
+func (m *Message) Get() []*api.Agent {
+	select {
+	case <-m.ready:
+		//case <-time.After(100 * time.Millisecond):
+		//	logger.Warn("Timeout Get")
+	}
+
+	return m.agents
 }
 
 ////////////////////////////////////////////////////////////
@@ -195,7 +243,7 @@ func sendToHarmowareVis(agents []*api.Agent) {
 // callbackForwardClockRequest: クロックを進める関数
 func forwardClock(dm *api.Demand) {
 	t1 := time.Now()
-	// Databaseへ取得する
+	/*// Databaseへ取得する
 	targets := pm.GetProviderIds([]simutil.IDType{
 		simutil.IDType_DATABASE,
 	})
@@ -208,10 +256,12 @@ func forwardClock(dm *api.Demand) {
 	for _, sp := range sps {
 		agents := sp.GetSimSupply().GetGetAgentResponse().GetAgents()
 		allAgents = append(allAgents, agents...)
-	}
+	}*/
+
+	agents := agentsMessage.Get()
 
 	// Harmowareに送る
-	sendToHarmowareVis(allAgents)
+	sendToHarmowareVis(agents)
 
 	t2 := time.Now()
 	duration := t2.Sub(t1).Milliseconds()
@@ -235,6 +285,19 @@ func demandCallback(clt *api.SMServiceClient, dm *api.Demand) {
 
 		logger.Info("Success Regist Agent or Vis Providers", targets)
 
+	case api.DemandType_SET_AGENT_REQUEST:
+
+		agents := dm.GetSimDemand().GetSetAgentRequest().GetAgents()
+		logger.Info("get Agents: %v\n", len(agents))
+		//sendToHarmowareVis(agents)
+		agentsMessage.Set(agents, dm.GetSimDemand().GetSenderId())
+		//db.Push(agents)
+		// response
+		pId := myProvider.Id
+		targets := []uint64{dm.GetSimDemand().GetSenderId()}
+		msgId := dm.GetSimDemand().GetMsgId()
+		visapi.SetAgentResponse(pId, targets, msgId)
+
 	}
 
 }
@@ -242,10 +305,6 @@ func demandCallback(clt *api.SMServiceClient, dm *api.Demand) {
 // callback for each Supply
 func supplyCallback(clt *api.SMServiceClient, sp *api.Supply) {
 	switch sp.GetSimSupply().GetType() {
-	case api.SupplyType_GET_AGENT_RESPONSE:
-		//time.Sleep(10 * time.Millisecond)
-		fmt.Printf("get agents response")
-		simapi.SendSpToWait(sp)
 	}
 }
 
@@ -271,14 +330,29 @@ func masterDemandCallback(clt *api.SMServiceClient, dm *api.Demand) {
 	switch dm.GetSimDemand().GetType() {
 
 	case api.DemandType_FORWARD_CLOCK_REQUEST:
-		fmt.Printf("get forwardClockRequest")
-
-		forwardClock()
+		//fmt.Printf("get forwardClockRequest")
+		t1 := time.Now()
+		//forwardClock()
+		t2 := time.Now()
+		duration := t2.Sub(t1).Milliseconds()
+		logger.Info("Duration: %v, PID: %v", duration, myProvider.Id)
 		// response to master
-		targets = []uint64{dm.GetSimDemand().GetSenderId()}
+		targets := []uint64{dm.GetSimDemand().GetSenderId()}
 		msgId := dm.GetSimDemand().GetMsgId()
 		logger.Debug("Response to master pid %v, msgId%v\n", myProvider.Id, msgId)
 		masterapi.ForwardClockResponse(senderId, targets, msgId)
+
+	case api.DemandType_FORWARD_CLOCK_INIT_REQUEST:
+		targets := pm.GetProviderIds([]simutil.IDType{
+			simutil.IDType_AGENT,
+		})
+		agentsMessage = NewMessage(targets)
+
+		// response
+		targets = []uint64{dm.GetSimDemand().GetSenderId()}
+		msgId := dm.GetSimDemand().GetMsgId()
+		masterapi.ForwardClockInitResponse(senderId, targets, msgId)
+		logger.Info("Finish: Forward Clock Init")
 
 	case api.DemandType_UPDATE_PROVIDERS_REQUEST:
 		providers := dm.GetSimDemand().GetUpdateProvidersRequest().GetProviders()
@@ -343,6 +417,7 @@ func main() {
 		}
 	}
 
+	// for visNodeID
 	// Connect to Node Server
 	nodeapi2 := napi.NewNodeAPI()
 	for {

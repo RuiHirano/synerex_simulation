@@ -103,6 +103,8 @@ func supplyCallback(clt *api.SMServiceClient, sp *api.Supply) {
 		simapi.SendSpToWait(sp)
 	case api.SupplyType_FORWARD_CLOCK_RESPONSE:
 		simapi.SendSpToWait(sp)
+	case api.SupplyType_FORWARD_CLOCK_INIT_RESPONSE:
+		simapi.SendSpToWait(sp)
 	case api.SupplyType_UPDATE_PROVIDERS_RESPONSE:
 		simapi.SendSpToWait(sp)
 	}
@@ -187,8 +189,10 @@ func startClock() {
 	senderId := myProvider.Id
 	targets := pm.GetProviderIds([]simutil.IDType{
 		simutil.IDType_WORKER,
+		simutil.IDType_VISUALIZATION,
 	})
 	logger.Debug("Next Cycle! \n%v\n", targets)
+	simapi.ForwardClockInitRequest(senderId, targets)
 	simapi.ForwardClockRequest(senderId, targets)
 
 	// calc next time

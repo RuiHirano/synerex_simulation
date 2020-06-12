@@ -28,11 +28,16 @@ import (
 var (
 	synerexAddr    string
 	nodeIdAddr     string
+	visSynerexAddr string
+	visNodeIdAddr  string
+	visAddr        string
 	providerName   string
 	myProvider     *api.Provider
 	workerProvider *api.Provider
+	visProvider    *api.Provider
 	pm             *simutil.ProviderManager
 	simapi         *api.SimAPI
+	vissimapi      *api.SimAPI
 	sim            *Simulator
 	logger         *util.Logger
 	mu             sync.Mutex
@@ -55,9 +60,23 @@ func init() {
 		nodeIdAddr = "127.0.0.1:9000"
 	}
 
+	visSynerexAddr = os.Getenv("VIS_SYNEREX_SERVER")
+	if visSynerexAddr == "" {
+		visSynerexAddr = "127.0.0.1:10000"
+	}
+	visNodeIdAddr = os.Getenv("VIS_NODEID_SERVER")
+	if visNodeIdAddr == "" {
+		visNodeIdAddr = "127.0.0.1:9000"
+	}
+
 	providerName = os.Getenv("PROVIDER_NAME")
 	if providerName == "" {
 		providerName = "AgentProvider"
+	}
+
+	visAddr = os.Getenv("VIS_SERVER")
+	if visAddr == "" {
+		visAddr = "127.0.0.1:8080"
 	}
 
 	areaJson := os.Getenv("AREA")
@@ -144,7 +163,13 @@ func forwardClock() {
 	targets = pm.GetProviderIds([]simutil.IDType{
 		simutil.IDType_DATABASE,
 	})
-	sim.SetAgentRequest(myProvider.Id, targets, nextControlAgents)
+	simapi.SetAgentRequest(myProvider.Id, targets, nextControlAgents)
+
+	// visに保存
+	targets = pm.GetProviderIds([]simutil.IDType{
+		simutil.IDType_VISUALIZATION,
+	})
+	vissimapi.SetAgentRequest(myProvider.Id, targets, nextControlAgents)
 
 	logger.Debug("3: 隣接エージェントを取得")
 	targets = pm.GetProviderIds([]simutil.IDType{
@@ -276,6 +301,28 @@ func supplyCallback(clt *api.SMServiceClient, sp *api.Supply) {
 		//time.Sleep(10 * time.Millisecond)
 		//logger.Debug("get agent response \n", sp)
 		simapi.SendSpToWait(sp)
+	case api.SupplyType_SET_AGENT_RESPONSE:
+		//time.Sleep(10 * time.Millisecond)
+		//logger.Debug("get agent response \n", sp)
+		simapi.SendSpToWait(sp)
+	}
+}
+
+//////////////////// for VIS ////////////////////////////
+// callback for each Supply
+func visDemandCallback(clt *api.SMServiceClient, dm *api.Demand) {
+
+}
+
+// callback for each Supply
+func visSupplyCallback(clt *api.SMServiceClient, sp *api.Supply) {
+	switch sp.GetSimSupply().GetType() {
+	case api.SupplyType_REGIST_PROVIDER_RESPONSE:
+		logger.Debug("resist provider response")
+		mu.Lock()
+		visProvider = sp.GetSimSupply().GetRegistProviderResponse().GetProvider()
+		pm.AddProvider(visProvider)
+		mu.Unlock()
 	}
 }
 
@@ -295,6 +342,27 @@ func registToWorker() {
 				time.Sleep(2 * time.Second)
 				// workerへ登録
 				simapi.RegistProviderRequest(senderId, targets, myProvider)
+			}
+		}
+	}()
+}
+
+func registToVis() {
+	// workerへ登録
+	senderId := myProvider.Id
+	targets := make([]uint64, 0)
+	vissimapi.RegistProviderRequest(senderId, targets, myProvider)
+
+	go func() {
+		for {
+			if visProvider != nil {
+				logger.Debug("Regist Success to Vis!")
+				return
+			} else {
+				logger.Debug("Couldn't Regist Vis...Retry...\n")
+				time.Sleep(2 * time.Second)
+				// visへ登録
+				vissimapi.RegistProviderRequest(senderId, targets, myProvider)
 			}
 		}
 	}()
@@ -346,17 +414,52 @@ func main() {
 	client := api.NewSynerexClient(conn)
 	argJson := fmt.Sprintf("{Client:Agent}")
 
-	// Simulator
-	sim = NewSimulator(myArea, api.AgentType_PEDESTRIAN)
-
 	// WorkerAPI作成
 	simapi = api.NewSimAPI()
 	simapi.RegistClients(client, myProvider.Id, argJson) // channelごとのClientを作成
 	simapi.SubscribeAll(demandCallback, supplyCallback)  // ChannelにSubscribe
 
+	////////////////  for Vis //////////////////////
+	// Connect to VisNode Server
+	visNodeApi := napi.NewNodeAPI()
+	for {
+		err := visNodeApi.RegisterNodeName(visNodeIdAddr, myProvider.GetName(), false)
+		if err == nil {
+			logger.Info("connected VIS NodeID server!")
+			go visNodeApi.HandleSigInt()
+			visNodeApi.RegisterDeferFunction(visNodeApi.UnRegisterNode)
+			break
+		} else {
+			logger.Warn("VisNodeID Error... reconnecting..., %v, %v\n", visNodeIdAddr, visSynerexAddr)
+			time.Sleep(2 * time.Second)
+		}
+	}
+
+	// Connect to Synerex Server
+	//var opts []grpc.DialOption
+	//opts = append(opts, grpc.WithInsecure())
+	visconn, err := grpc.Dial(visSynerexAddr, opts...)
+	if err != nil {
+		log.Fatalf("fail to dial: %v", err)
+	}
+	visNodeApi.RegisterDeferFunction(func() { visconn.Close() })
+	visclient := api.NewSynerexClient(visconn)
+	//argJson := fmt.Sprintf("{Client:Agent}")
+
+	// VisAPI作成
+	vissimapi = api.NewSimAPI()
+	vissimapi.RegistClients(visclient, myProvider.Id, argJson)   // channelごとのClientを作成
+	vissimapi.SubscribeAll(visDemandCallback, visSupplyCallback) // ChannelにSubscribe
+
+	//////////////////////////////////////////////////
+
+	// Simulator
+	sim = NewSimulator(myArea, api.AgentType_PEDESTRIAN)
+
 	time.Sleep(5 * time.Second)
 
 	registToWorker()
+	registToVis()
 
 	// プロバイダのsetup
 	wg := sync.WaitGroup{}

@@ -70,8 +70,8 @@ func init() {
 ///////////////////////////////////////////////////////////
 
 type TimeData struct {
-	Clock: *api.Clock
-	Agents: []*api.Agent
+	Clock  *api.Clock
+	Agents []*api.Agent
 }
 
 type Database struct {
@@ -90,7 +90,7 @@ func NewDatabase(capacity uint64) *Database {
 
 func (db *Database) Push(clock *api.Clock, agents []*api.Agent) {
 	db.Data = append(db.Data, &TimeData{
-		Clock: clock,
+		Clock:  clock,
 		Agents: agents,
 	})
 	if len(db.Data) > int(db.Capacity) {
@@ -99,13 +99,13 @@ func (db *Database) Push(clock *api.Clock, agents []*api.Agent) {
 	}
 }
 
-func (db *Database) Get() [][]*api.Agent {
+func (db *Database) Get() []*TimeData {
 	return db.Data
 }
 
 // callbackForwardClockRequest: クロックを進める関数
 func forwardClock(dm *api.Demand) {
-	t1 := time.Now()
+	/*t1 := time.Now()
 	// エージェントからの可視化リクエスト待ち
 	targets := pm.GetProviderIds([]simutil.IDType{
 		simutil.IDType_AGENT,
@@ -124,7 +124,7 @@ func forwardClock(dm *api.Demand) {
 	db.Push(allAgents)
 	t2 := time.Now()
 	duration := t2.Sub(t1).Milliseconds()
-	logger.Info("Duration: %v, PID: %v", duration, myProvider.Id)
+	logger.Info("Duration: %v, PID: %v", duration, myProvider.Id)*/
 }
 
 // callback for each Supply
@@ -132,9 +132,10 @@ func demandCallback(clt *api.SMServiceClient, dm *api.Demand) {
 	switch dm.GetSimDemand().GetType() {
 
 	case api.DemandType_GET_AGENT_REQUEST:
-		data := db.Get()
-		agents := data[len(data)-1]
-
+		//data := db.Get()
+		//agents := data[len(data)-1]
+		agents := []*api.Agent{}
+		//logger.Info("get Agents: %v\n", len(agents))
 		// response
 		pId := myProvider.Id
 		targets := []uint64{dm.GetSimDemand().GetSenderId()}
@@ -142,15 +143,18 @@ func demandCallback(clt *api.SMServiceClient, dm *api.Demand) {
 		simapi.GetAgentResponse(pId, targets, msgId, agents)
 
 	case api.DemandType_SET_AGENT_REQUEST:
-		
-		agents := dm.GetSimSupply().GetSetAgentResponse().GetAgents()
-		db.Push(agents)
+
+		agents := dm.GetSimDemand().GetSetAgentRequest().GetAgents()
+		logger.Info("get Agents: %v\n", len(agents))
+
+		//db.Push(agents)
 		// response
 		pId := myProvider.Id
 		targets := []uint64{dm.GetSimDemand().GetSenderId()}
 		msgId := dm.GetSimDemand().GetMsgId()
 		simapi.SetAgentResponse(pId, targets, msgId)
 
+	}
 }
 
 // callback for each Supply
@@ -167,6 +171,27 @@ func supplyCallback(clt *api.SMServiceClient, sp *api.Supply) {
 		mu.Unlock()
 		fmt.Printf("resist provider response")
 	}
+}
+
+func registToWorker() {
+	// workerへ登録
+	senderId := myProvider.Id
+	targets := make([]uint64, 0)
+	simapi.RegistProviderRequest(senderId, targets, myProvider)
+
+	go func() {
+		for {
+			if workerProvider != nil {
+				logger.Debug("Regist Success to Worker!")
+				return
+			} else {
+				logger.Debug("Couldn't Regist Worker...Retry...\n")
+				time.Sleep(2 * time.Second)
+				// workerへ登録
+				simapi.RegistProviderRequest(senderId, targets, myProvider)
+			}
+		}
+	}()
 }
 
 func main() {
