@@ -80,7 +80,7 @@ type Option struct {
 
 // vis-monitor
 func NewVisMonitorService() Resource {
-	name := "visualization-provider"
+	name := "visualization"
 	monitorName := "vis-monitor"
 	service := Resource{
 		ApiVersion: "v1",
@@ -101,13 +101,39 @@ func NewVisMonitorService() Resource {
 	return service
 }
 
+// Visualization
+func NewVisService() Resource {
+	name := "visualization"
+	service := Resource{
+		ApiVersion: "v1",
+		Kind:       "Service",
+		Metadata:   Metadata{Name: name},
+		Spec: Spec{
+			Selector: Selector{App: name},
+			Ports: []Port{
+				{
+					Name:       "synerex",
+					Port:       700,
+					TargetPort: 10000,
+				},
+				{
+					Name:       "nodeid",
+					Port:       600,
+					TargetPort: 9000,
+				},
+			},
+		},
+	}
+	return service
+}
+
 func NewVis() Resource {
 	vis := Resource{
 		ApiVersion: "v1",
 		Kind:       "Pod",
 		Metadata: Metadata{
-			Name:   "visualization-provider",
-			Labels: Label{App: "visualization-provider"},
+			Name:   "visualization",
+			Labels: Label{App: "visualization"},
 		},
 		Spec: Spec{
 			Containers: []Container{
@@ -153,6 +179,14 @@ func NewVis() Resource {
 							Value: ":10000",
 						},
 						{
+							Name:  "MASTER_SYNEREX_SERVER",
+							Value: "master:700",
+						},
+						{
+							Name:  "MASTER_NODEID_SERVER",
+							Value: "master:600",
+						},
+						{
 							Name:  "VIS_ADDRESS",
 							Value: ":9500",
 						},
@@ -195,10 +229,6 @@ func NewDatabase(area Area) Resource {
 							Value: workerName + ":700",
 						},
 						{
-							Name:  "VIS_ADDRESS",
-							Value: ":9500",
-						},
-						{
 							Name:  "PROVIDER_NAME",
 							Value: "DatabaseProvider" + strconv.Itoa(area.Id),
 						},
@@ -234,6 +264,14 @@ func NewAgent(area Area) Resource {
 						{
 							Name:  "SYNEREX_SERVER",
 							Value: workerName + ":700",
+						},
+						{
+							Name:  "VIS_SYNEREX_SERVER",
+							Value: "visualization:700",
+						},
+						{
+							Name:  "VIS_NODEID_SERVER",
+							Value: "visualization:600",
 						},
 						{
 							Name:  "AREA",
@@ -584,7 +622,7 @@ func convertAreaToJson(area Area) string {
 func main() {
 
 	option := Option{
-		FileName: "test-4-vis.yaml",
+		FileName: "test-4-vis2.yaml",
 		AreaCoords: []Coord{
 			{Longitude: 136.971626, Latitude: 35.161499},
 			{Longitude: 136.971626, Latitude: 35.152210},
@@ -616,6 +654,7 @@ func createData(option Option) []Resource {
 		NewMasterService(),
 		NewMaster(),
 		NewVisMonitorService(),
+		NewVisService(),
 		NewVis(),
 	}
 	areas, neighbors := AreaDivider(option.AreaCoords, option.DevideSquareNum, option.DuplicateRate)

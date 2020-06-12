@@ -18,11 +18,14 @@ simulator:
 worker:
 		kubectl logs -f worker${arg} -c worker-provider
 
+database:
+		kubectl logs -f database${arg} -c database-provider
+
 agent:
-		kubectl logs -f worker${arg} -c agent-provider
+		kubectl logs -f agent${arg} -c agent-provider
 
 vis:
-		kubectl logs -f worker${arg} -c visualization-provider
+		kubectl logs -f visualization -c visualization-provider
 
 gateway:
 		kubectl logs -f gateway${arg} -c gateway-provider
