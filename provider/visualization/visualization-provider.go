@@ -242,7 +242,6 @@ func sendToHarmowareVis(agents []*api.Agent) {
 
 // callbackForwardClockRequest: クロックを進める関数
 func forwardClock(dm *api.Demand) {
-	t1 := time.Now()
 	/*// Databaseへ取得する
 	targets := pm.GetProviderIds([]simutil.IDType{
 		simutil.IDType_DATABASE,
@@ -263,9 +262,7 @@ func forwardClock(dm *api.Demand) {
 	// Harmowareに送る
 	sendToHarmowareVis(agents)
 
-	t2 := time.Now()
-	duration := t2.Sub(t1).Milliseconds()
-	logger.Info("Duration: %v, PID: %v", duration, myProvider.Id)
+	logger.Info("Agents %v\n", len(agents))
 }
 
 // callback for each Supply
@@ -332,7 +329,7 @@ func masterDemandCallback(clt *api.SMServiceClient, dm *api.Demand) {
 	case api.DemandType_FORWARD_CLOCK_REQUEST:
 		//fmt.Printf("get forwardClockRequest")
 		t1 := time.Now()
-		//forwardClock()
+		forwardClock()
 		t2 := time.Now()
 		duration := t2.Sub(t1).Milliseconds()
 		logger.Info("Duration: %v, PID: %v", duration, myProvider.Id)

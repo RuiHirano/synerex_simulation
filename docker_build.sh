@@ -47,7 +47,6 @@ function ConfirmExecution() {
         docker image build -t synerex-simulation/agent-provider:${version} -f provider/agent/Dockerfile .
 
     elif [ $input = '6' ] ; then
-        echo "building visualization provider..."
         docker image build -t synerex-simulation/visualization-provider:${version} -f provider/visualization/Dockerfile .
 
     elif [ $input = '7' ] ; then
