@@ -7,4 +7,4 @@ start:
 		./simulator order start
 		
 stop:
-		./simulator order start
+		./simulator order stop
