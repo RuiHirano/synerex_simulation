@@ -138,7 +138,7 @@ func runServer() *gosocketio.Server {
 	if err != nil {
 		log.Fatal(err)
 	}
-	d := filepath.Join(currentRoot, "monitor", "build")
+	d := filepath.Join(currentRoot, "mclient", "build")
 
 	assetsDir = http.Dir(d)
 	log.Println("AssetDir:", assetsDir)
