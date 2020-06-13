@@ -138,7 +138,7 @@ func runServer() *gosocketio.Server {
 	if err != nil {
 		log.Fatal(err)
 	}
-	d := filepath.Join(currentRoot, "mclient", "build")
+	d := filepath.Join(currentRoot, "monitor", "build")
 
 	assetsDir = http.Dir(d)
 	log.Println("AssetDir:", assetsDir)
@@ -329,7 +329,7 @@ func masterDemandCallback(clt *api.SMServiceClient, dm *api.Demand) {
 	case api.DemandType_FORWARD_CLOCK_REQUEST:
 		//fmt.Printf("get forwardClockRequest")
 		t1 := time.Now()
-		forwardClock()
+		forwardClock(dm)
 		t2 := time.Now()
 		duration := t2.Sub(t1).Milliseconds()
 		logger.Info("Duration: %v, PID: %v", duration, myProvider.Id)
