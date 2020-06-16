@@ -1,0 +1,328 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: simulator
+spec:
+  selector:
+    app: simulator
+  ports:
+  - name: http
+    port: 8000
+  type: NodePort
+
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: simulator
+  labels:
+    app: simulator
+spec:
+  containers:
+  - name: simulator
+    image: synerex-simulation/simulator:latest
+    imagePullPolicy: Never
+    stdin: true
+    tty: true
+    env:
+    - name: MASTER_ADDRESS
+      value: http://master:800
+    ports:
+    - containerPort: 8000
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: master
+spec:
+  selector:
+    app: master
+  ports:
+  - name: synerex
+    port: 700
+    targetPort: 10000
+  - name: nodeid
+    port: 600
+    targetPort: 9000
+  - name: master-provider
+    port: 800
+    targetPort: 9990
+
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: master
+  labels:
+    app: master
+spec:
+  containers:
+  - name: masters-provider
+    image: synerex-simulation/masters-provider:latest
+    imagePullPolicy: Never
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: vis-monitor
+spec:
+  selector:
+    app: visualization
+  ports:
+  - name: http
+    port: 80
+    targetPort: 9500
+  type: NodePort
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: visualization
+spec:
+  selector:
+    app: visualization
+  ports:
+  - name: synerex
+    port: 700
+    targetPort: 10000
+  - name: nodeid
+    port: 600
+    targetPort: 9000
+
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: visualization
+  labels:
+    app: visualization
+spec:
+  containers:
+  - name: visualizations-provider
+    image: synerex-simulation/visualizations-provider:latest
+    imagePullPolicy: Never
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: worker11
+spec:
+  selector:
+    app: worker11
+  ports:
+  - name: synerex
+    port: 700
+    targetPort: 10000
+  - name: nodeid
+    port: 600
+    targetPort: 9000
+
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: worker11
+  labels:
+    app: worker11
+spec:
+  containers:
+  - name: workers-provider
+    image: synerex-simulation/workers-provider:latest
+    imagePullPolicy: Never
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: worker12
+spec:
+  selector:
+    app: worker12
+  ports:
+  - name: synerex
+    port: 700
+    targetPort: 10000
+  - name: nodeid
+    port: 600
+    targetPort: 9000
+
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: worker12
+  labels:
+    app: worker12
+spec:
+  containers:
+  - name: workers-provider
+    image: synerex-simulation/workers-provider:latest
+    imagePullPolicy: Never
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: worker21
+spec:
+  selector:
+    app: worker21
+  ports:
+  - name: synerex
+    port: 700
+    targetPort: 10000
+  - name: nodeid
+    port: 600
+    targetPort: 9000
+
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: worker21
+  labels:
+    app: worker21
+spec:
+  containers:
+  - name: workers-provider
+    image: synerex-simulation/workers-provider:latest
+    imagePullPolicy: Never
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: worker22
+spec:
+  selector:
+    app: worker22
+  ports:
+  - name: synerex
+    port: 700
+    targetPort: 10000
+  - name: nodeid
+    port: 600
+    targetPort: 9000
+
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: worker22
+  labels:
+    app: worker22
+spec:
+  containers:
+  - name: workers-provider
+    image: synerex-simulation/workers-provider:latest
+    imagePullPolicy: Never
+
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: gateway1121
+  labels:
+    app: gateway1121
+spec:
+  containers:
+  - name: gateway-provider
+    image: synerex-simulation/gateway-provider:latest
+    imagePullPolicy: Never
+    env:
+    - name: WORKER_SYNEREX_SERVER1
+      value: worker11:700
+    - name: WORKER_NODEID_SERVER1
+      value: worker11:600
+    - name: WORKER_SYNEREX_SERVER2
+      value: worker21:700
+    - name: WORKER_NODEID_SERVER2
+      value: worker21:600
+    - name: PROVIDER_NAME
+      value: GatewayProvider1121
+    ports:
+    - containerPort: 9980
+
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: gateway1112
+  labels:
+    app: gateway1112
+spec:
+  containers:
+  - name: gateway-provider
+    image: synerex-simulation/gateway-provider:latest
+    imagePullPolicy: Never
+    env:
+    - name: WORKER_SYNEREX_SERVER1
+      value: worker11:700
+    - name: WORKER_NODEID_SERVER1
+      value: worker11:600
+    - name: WORKER_SYNEREX_SERVER2
+      value: worker12:700
+    - name: WORKER_NODEID_SERVER2
+      value: worker12:600
+    - name: PROVIDER_NAME
+      value: GatewayProvider1112
+    ports:
+    - containerPort: 9980
+
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: gateway1222
+  labels:
+    app: gateway1222
+spec:
+  containers:
+  - name: gateway-provider
+    image: synerex-simulation/gateway-provider:latest
+    imagePullPolicy: Never
+    env:
+    - name: WORKER_SYNEREX_SERVER1
+      value: worker12:700
+    - name: WORKER_NODEID_SERVER1
+      value: worker12:600
+    - name: WORKER_SYNEREX_SERVER2
+      value: worker22:700
+    - name: WORKER_NODEID_SERVER2
+      value: worker22:600
+    - name: PROVIDER_NAME
+      value: GatewayProvider1222
+    ports:
+    - containerPort: 9980
+
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: gateway2122
+  labels:
+    app: gateway2122
+spec:
+  containers:
+  - name: gateway-provider
+    image: synerex-simulation/gateway-provider:latest
+    imagePullPolicy: Never
+    env:
+    - name: WORKER_SYNEREX_SERVER1
+      value: worker21:700
+    - name: WORKER_NODEID_SERVER1
+      value: worker21:600
+    - name: WORKER_SYNEREX_SERVER2
+      value: worker22:700
+    - name: WORKER_NODEID_SERVER2
+      value: worker22:600
+    - name: PROVIDER_NAME
+      value: GatewayProvider2122
+    ports:
+    - containerPort: 9980
+
+---

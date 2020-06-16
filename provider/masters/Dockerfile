@@ -21,8 +21,8 @@ RUN go get -u google.golang.org/grpc
 
 # build synerex daemon
 WORKDIR /synerex_simulation
-COPY /provider/workers ./provider/workers
-COPY /provider/worker ./provider/worker
+COPY /provider/masters ./provider/masters
+COPY /provider/master ./provider/master
 COPY /nodeserv ./nodeserv
 COPY /server ./server
 COPY /provider/agent ./provider/agent
@@ -33,10 +33,9 @@ COPY /nodeapi ./nodeapi
 
 # expose port
 #EXPOSE 10000
-RUN cd provider/agent && go build agent-provider.go simulator.go
-RUN cd provider/worker && go build worker-provider.go
+RUN cd provider/master && go build master-provider.go
 RUN cd server && go build synerex-server.go message-store.go
 RUN cd nodeserv && go build nodeid-server.go
-WORKDIR /synerex_simulation/provider/workers
-RUN go build workers-provider.go
-ENTRYPOINT [ "./workers-provider" ]
+WORKDIR /synerex_simulation/provider/masters
+RUN go build masters-provider.go
+ENTRYPOINT [ "./masters-provider" ]

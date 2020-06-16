@@ -56,7 +56,7 @@ func (mn *Manager) run(cmd *exec.Cmd, name string) {
 
 }
 
-func runWorkerProviders() {
+func runMasterProviders() {
 
 	// run nodeserver
 	nodecmd := exec.Command("./../../nodeserv/nodeid-server")
@@ -64,17 +64,14 @@ func runWorkerProviders() {
 	// run synerexserver
 	sycmd := exec.Command("./../../server/synerex-server")
 	go manager.run(sycmd, "synerex")
-	// run worker provider
-	wocmd := exec.Command("./../worker/worker-provider")
-	go manager.run(wocmd, "worker")
-	// run agent provider
-	agcmd := exec.Command("./../agent/agent-provider")
-	go manager.run(agcmd, "agent")
+	// run master provider
+	wocmd := exec.Command("./../master/master-provider")
+	go manager.run(wocmd, "master")
 }
 
 func main() {
-	fmt.Printf("starting workers provider...\n")
-	runWorkerProviders()
+	fmt.Printf("starting Masters provider...\n")
+	runMasterProviders()
 
 	wg := sync.WaitGroup{}
 	wg.Add(1)

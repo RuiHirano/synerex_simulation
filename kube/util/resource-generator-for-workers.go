@@ -140,155 +140,14 @@ func NewVis() Resource {
 		Spec: Spec{
 			Containers: []Container{
 				{
-					Name:            "nodeid-server",
-					Image:           "synerex-simulation/nodeid-server:latest",
+					Name:            "visualizations-provider",
+					Image:           "synerex-simulation/visualizations-provider:latest",
 					ImagePullPolicy: "Never",
-					Env: []Env{
-						{
-							Name:  "NODEID_SERVER",
-							Value: ":9000",
-						},
-					},
-					Ports: []Port{{ContainerPort: 9000}},
-				},
-				{
-					Name:            "synerex-server",
-					Image:           "synerex-simulation/synerex-server:latest",
-					ImagePullPolicy: "Never",
-					Env: []Env{
-						{
-							Name:  "NODEID_SERVER",
-							Value: ":9000",
-						},
-						{
-							Name:  "SYNEREX_SERVER",
-							Value: ":10000",
-						},
-					},
-					Ports: []Port{{ContainerPort: 10000}},
-				},
-				{
-					Name:            "visualization-provider",
-					Image:           "synerex-simulation/visualization-provider:latest",
-					ImagePullPolicy: "Never",
-					Env: []Env{
-						{
-							Name:  "NODEID_SERVER",
-							Value: ":9000",
-						},
-						{
-							Name:  "SYNEREX_SERVER",
-							Value: ":10000",
-						},
-						{
-							Name:  "MASTER_SYNEREX_SERVER",
-							Value: "master:700",
-						},
-						{
-							Name:  "MASTER_NODEID_SERVER",
-							Value: "master:600",
-						},
-						{
-							Name:  "VIS_ADDRESS",
-							Value: ":9500",
-						},
-						{
-							Name:  "PROVIDER_NAME",
-							Value: "VisProvider",
-						},
-					},
-					Ports: []Port{{ContainerPort: 9500}},
 				},
 			},
 		},
 	}
 	return vis
-}
-
-func NewDatabase(area Area) Resource {
-	workerName := "worker" + strconv.Itoa(area.Id)
-	databaseName := "database" + strconv.Itoa(area.Id)
-	database := Resource{
-		ApiVersion: "v1",
-		Kind:       "Pod",
-		Metadata: Metadata{
-			Name:   databaseName,
-			Labels: Label{App: databaseName},
-		},
-		Spec: Spec{
-			Containers: []Container{
-				{
-					Name:            "database-provider",
-					Image:           "synerex-simulation/database-provider:latest",
-					ImagePullPolicy: "Never",
-					Env: []Env{
-						{
-							Name:  "NODEID_SERVER",
-							Value: workerName + ":600",
-						},
-						{
-							Name:  "SYNEREX_SERVER",
-							Value: workerName + ":700",
-						},
-						{
-							Name:  "PROVIDER_NAME",
-							Value: "DatabaseProvider" + strconv.Itoa(area.Id),
-						},
-					},
-				},
-			},
-		},
-	}
-	return database
-}
-
-func NewAgent(area Area) Resource {
-	workerName := "worker" + strconv.Itoa(area.Id)
-	agentName := "agent" + strconv.Itoa(area.Id)
-	agent := Resource{
-		ApiVersion: "v1",
-		Kind:       "Pod",
-		Metadata: Metadata{
-			Name:   agentName,
-			Labels: Label{App: agentName},
-		},
-		Spec: Spec{
-			Containers: []Container{
-				{
-					Name:            "agent-provider",
-					Image:           "synerex-simulation/agent-provider:latest",
-					ImagePullPolicy: "Never",
-					Env: []Env{
-						{
-							Name:  "NODEID_SERVER",
-							Value: workerName + ":600",
-						},
-						{
-							Name:  "SYNEREX_SERVER",
-							Value: workerName + ":700",
-						},
-						{
-							Name:  "VIS_SYNEREX_SERVER",
-							Value: "visualization:700",
-						},
-						{
-							Name:  "VIS_NODEID_SERVER",
-							Value: "visualization:600",
-						},
-						{
-							Name:  "AREA",
-							Value: convertAreaToJson(area),
-						},
-						{
-							Name:  "PROVIDER_NAME",
-							Value: "AgentProvider" + strconv.Itoa(area.Id),
-						},
-					},
-				},
-			},
-		},
-	}
-	return agent
 }
 
 // worker
@@ -380,52 +239,9 @@ func NewMaster() Resource {
 		Spec: Spec{
 			Containers: []Container{
 				{
-					Name:            "nodeid-server",
-					Image:           "synerex-simulation/nodeid-server:latest",
+					Name:            "masters-provider",
+					Image:           "synerex-simulation/masters-provider:latest",
 					ImagePullPolicy: "Never",
-					Env: []Env{
-						{
-							Name:  "NODEID_SERVER",
-							Value: ":9000",
-						},
-					},
-					Ports: []Port{{ContainerPort: 9000}},
-				},
-				{
-					Name:            "synerex-server",
-					Image:           "synerex-simulation/synerex-server:latest",
-					ImagePullPolicy: "Never",
-					Env: []Env{
-						{
-							Name:  "NODEID_SERVER",
-							Value: ":9000",
-						},
-						{
-							Name:  "SYNEREX_SERVER",
-							Value: ":10000",
-						},
-					},
-					Ports: []Port{{ContainerPort: 10000}},
-				},
-				{
-					Name:            "master-provider",
-					Image:           "synerex-simulation/master-provider:latest",
-					ImagePullPolicy: "Never",
-					Env: []Env{
-						{
-							Name:  "NODEID_SERVER",
-							Value: ":9000",
-						},
-						{
-							Name:  "SYNEREX_SERVER",
-							Value: ":10000",
-						},
-						{
-							Name:  "PORT",
-							Value: "9990",
-						},
-					},
-					Ports: []Port{{ContainerPort: 9990}},
 				},
 			},
 		},
@@ -565,7 +381,7 @@ func convertAreaToJson(area Area) string {
 func main() {
 
 	option := Option{
-		FileName: "test-multiprocess-4.yaml",
+		FileName: "test-multiprocess-4-v2.yaml",
 		AreaCoords: []Coord{
 			{Longitude: 136.971626, Latitude: 35.161499},
 			{Longitude: 136.971626, Latitude: 35.152210},
