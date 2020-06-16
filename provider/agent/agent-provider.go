@@ -30,7 +30,6 @@ var (
 	nodeIdAddr     string
 	visSynerexAddr string
 	visNodeIdAddr  string
-	visAddr        string
 	providerName   string
 	myProvider     *api.Provider
 	workerProvider *api.Provider
@@ -62,21 +61,16 @@ func init() {
 
 	visSynerexAddr = os.Getenv("VIS_SYNEREX_SERVER")
 	if visSynerexAddr == "" {
-		visSynerexAddr = "127.0.0.1:10000"
+		visSynerexAddr = "visualization:700"
 	}
 	visNodeIdAddr = os.Getenv("VIS_NODEID_SERVER")
 	if visNodeIdAddr == "" {
-		visNodeIdAddr = "127.0.0.1:9000"
+		visNodeIdAddr = "visualization:600"
 	}
 
 	providerName = os.Getenv("PROVIDER_NAME")
 	if providerName == "" {
 		providerName = "AgentProvider"
-	}
-
-	visAddr = os.Getenv("VIS_SERVER")
-	if visAddr == "" {
-		visAddr = "127.0.0.1:8080"
 	}
 
 	areaJson := os.Getenv("AREA")

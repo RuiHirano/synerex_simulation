@@ -56,11 +56,11 @@ func init() {
 	}
 	masterSynerexAddr = os.Getenv("MASTER_SYNEREX_SERVER")
 	if masterSynerexAddr == "" {
-		masterSynerexAddr = "127.0.0.1:10000"
+		masterSynerexAddr = "master:700"
 	}
 	masterNodeIdAddr = os.Getenv("MASTER_NODEID_SERVER")
 	if masterNodeIdAddr == "" {
-		masterNodeIdAddr = "127.0.0.1:9000"
+		masterNodeIdAddr = "master:600"
 	}
 	providerName = os.Getenv("PROVIDER_NAME")
 	if providerName == "" {

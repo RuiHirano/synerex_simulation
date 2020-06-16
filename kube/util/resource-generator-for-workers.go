@@ -1,6 +1,6 @@
 package main
 
-// visを一箇所にしdbを作成する場合のresorce-generator
+// workerをmultiプロセスで起動する場合のresouce-generator
 
 import (
 	"fmt"
@@ -292,7 +292,7 @@ func NewAgent(area Area) Resource {
 }
 
 // worker
-func NewWorkerService(area Area) Resource {
+func NewWorkersService(area Area) Resource {
 	name := "worker" + strconv.Itoa(area.Id)
 	service := Resource{
 		ApiVersion: "v1",
@@ -317,7 +317,7 @@ func NewWorkerService(area Area) Resource {
 	return service
 }
 
-func NewWorker(area Area) Resource {
+func NewWorkers(area Area) Resource {
 	name := "worker" + strconv.Itoa(area.Id)
 	worker := Resource{
 		ApiVersion: "v1",
@@ -329,68 +329,9 @@ func NewWorker(area Area) Resource {
 		Spec: Spec{
 			Containers: []Container{
 				{
-					Name:            "nodeid-server",
-					Image:           "synerex-simulation/nodeid-server:latest",
+					Name:            "workers-provider",
+					Image:           "synerex-simulation/workers-provider:latest",
 					ImagePullPolicy: "Never",
-					Env: []Env{
-						{
-							Name:  "NODEID_SERVER",
-							Value: ":9000",
-						},
-					},
-					Ports: []Port{{ContainerPort: 9000}},
-				},
-				{
-					Name:            "synerex-server",
-					Image:           "synerex-simulation/synerex-server:latest",
-					ImagePullPolicy: "Never",
-					Env: []Env{
-						{
-							Name:  "NODEID_SERVER",
-							Value: ":9000",
-						},
-						{
-							Name:  "SYNEREX_SERVER",
-							Value: ":10000",
-						},
-						{
-							Name:  "SERVER_NAME",
-							Value: "SynerexServer" + strconv.Itoa(area.Id),
-						},
-					},
-					Ports: []Port{{ContainerPort: 10000}},
-				},
-				{
-					Name:            "worker-provider",
-					Image:           "synerex-simulation/worker-provider:latest",
-					ImagePullPolicy: "Never",
-					Env: []Env{
-						{
-							Name:  "NODEID_SERVER",
-							Value: ":9000",
-						},
-						{
-							Name:  "SYNEREX_SERVER",
-							Value: ":10000",
-						},
-						{
-							Name:  "MASTER_SYNEREX_SERVER",
-							Value: "master:700",
-						},
-						{
-							Name:  "MASTER_NODEID_SERVER",
-							Value: "master:600",
-						},
-						{
-							Name:  "PORT",
-							Value: "9980",
-						},
-						{
-							Name:  "PROVIDER_NAME",
-							Value: "WorkerProvider" + strconv.Itoa(area.Id),
-						},
-					},
-					Ports: []Port{{ContainerPort: 9980}},
 				},
 			},
 		},
@@ -624,7 +565,7 @@ func convertAreaToJson(area Area) string {
 func main() {
 
 	option := Option{
-		FileName: "test-4-vis2.yaml",
+		FileName: "test-multiprocess-4.yaml",
 		AreaCoords: []Coord{
 			{Longitude: 136.971626, Latitude: 35.161499},
 			{Longitude: 136.971626, Latitude: 35.152210},
@@ -664,10 +605,8 @@ func createData(option Option) []Resource {
 
 	for _, area := range areas {
 		//rsrcs = append(rsrcs, NewVisMonitorService(area))
-		rsrcs = append(rsrcs, NewWorkerService(area))
-		rsrcs = append(rsrcs, NewWorker(area))
-		rsrcs = append(rsrcs, NewAgent(area))
-		rsrcs = append(rsrcs, NewDatabase(area))
+		rsrcs = append(rsrcs, NewWorkersService(area))
+		rsrcs = append(rsrcs, NewWorkers(area))
 	}
 
 	for _, neiPair := range neighbors {
