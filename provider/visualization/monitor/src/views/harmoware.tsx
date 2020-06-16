@@ -113,12 +113,12 @@ const HarmowarePage: React.FC<BasedProps> = (props) => {
                 viewport={viewport} actions={actions}
                 mapboxApiAccessToken={MAPBOX_TOKEN}
                 layers={[
-                    /*new LineLayer({
+                    /*new LineMapLayer({
                         data: [{
-                            "sourcePosition": [136.901961, 35.156615, 0],
-                            "targetPosition": [136.933907, 35.144681, 0]
+                            sourcePosition: [136.901961, 35.156615, 0],
+                            targetPosition: [136.933907, 35.144681, 0]
                         }]
-                    })*/
+                    }),*/
                     new DepotsLayer({
                         depotsData,
                         iconChange: false,

@@ -6101,10 +6101,10 @@ harmony-reflect@^1.4.6:
   resolved "https://registry.yarnpkg.com/harmony-reflect/-/harmony-reflect-1.6.1.tgz#c108d4f2bb451efef7a37861fdbdae72c9bdefa9"
   integrity sha512-WJTeyp0JzGtHcuMsi7rw2VwtkvLa+JyfEKJCFyfcS0+CDkjQ5lHPu7zEhFZP+PDSRrEgXa5Ah0l1MbgbE41XjA==
 
-harmoware-vis@^1.6.8:
-  version "1.6.8"
-  resolved "https://registry.yarnpkg.com/harmoware-vis/-/harmoware-vis-1.6.8.tgz#0e428e5d2334189d97b5ca6bd42ddb62dcd49980"
-  integrity sha512-Tj5ZSBffdv7zpJV/+2dWlNBUnFs4uNXplrf6VTn6ndiMl/2qZSJuMKE5vHwiwbuGO8ZS6UCgRP8MeRgltcK1EA==
+harmoware-vis@1.6.9:
+  version "1.6.9"
+  resolved "https://registry.yarnpkg.com/harmoware-vis/-/harmoware-vis-1.6.9.tgz#e7872fcc930fc53333800c226e8e7d48a2423a46"
+  integrity sha512-tppat0izqHN+rxqk+M0h0uus0D36HVI5CezpFz+PtYh5JJjNZ7nloUTCA5EppAC8v6nDmI0YsYY3XSslt1FYSQ==
   dependencies:
     "@luma.gl/core" "^8.1.3"
     deck.gl "^8.1.9"
