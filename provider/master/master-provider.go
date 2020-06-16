@@ -11,6 +11,11 @@ import (
 	"sync"
 	"time"
 
+	"io/ioutil"
+
+	"os/exec"
+
+	"github.com/go-yaml/yaml"
 	"github.com/google/uuid"
 	"github.com/labstack/echo"
 	"github.com/labstack/echo/middleware"
@@ -35,9 +40,38 @@ var (
 	pm     *simutil.ProviderManager
 	logger *util.Logger
 	waiter *api.Waiter
+	config *Config
+	podgen *PodGenerator
 )
 
+type Config struct {
+	Area Config_Area `yaml:"area"`
+}
+
+type Config_Area struct {
+	SideRange float64 `yaml:"sideRange"`
+}
+
+func readConfig() (*Config, error) {
+	var config *Config
+	buf, err := ioutil.ReadFile("./config.yaml")
+	if err != nil {
+		fmt.Println(err)
+		return config, err
+	}
+	// []map[string]string のときと使う関数は同じです。
+	// いい感じにマッピングしてくれます。
+	err = yaml.Unmarshal(buf, &config)
+	if err != nil {
+		fmt.Println(err)
+		return config, err
+	}
+	fmt.Printf("yaml is %v\n", config)
+	return config, nil
+}
+
 func init() {
+	podgen = NewPodGenerator()
 	waiter = api.NewWaiter()
 	startFlag = false
 	masterClock = 0
@@ -46,7 +80,19 @@ func init() {
 	logger.SetPrefix("Master")
 	flag.Parse()
 	//providerManager = NewManager()
+	// configを読み取る
+	config, _ = readConfig()
 
+	// kubetest
+	id := "test"
+	area := &Area{
+		Id:        3,
+		Control:   []Coord{{Latitude: 0, Longitude: 0}, {Latitude: 10, Longitude: 0}, {Latitude: 10, Longitude: 10}, {Latitude: 0, Longitude: 10}},
+		Duplicate: []Coord{{Latitude: 0, Longitude: 0}, {Latitude: 10, Longitude: 0}, {Latitude: 10, Longitude: 10}, {Latitude: 0, Longitude: 10}},
+	}
+	go podgen.applyWorker(id, area)
+	time.Sleep(4 * time.Second)
+	go podgen.deleteWorker(id)
 	synerexAddr = os.Getenv("SYNEREX_SERVER")
 	if synerexAddr == "" {
 		synerexAddr = "127.0.0.1:10000"
@@ -343,4 +389,358 @@ func main() {
 	wg.Wait()
 	nodeapi.CallDeferFunctions() // cleanup!
 
+}
+
+//////////////////////////////////
+////////// Pod Generator ////////
+//////////////////////////////////
+
+type PodGenerator struct {
+	RsrcMap map[string][]Resource
+}
+
+func NewPodGenerator() *PodGenerator {
+	pg := &PodGenerator{
+		RsrcMap: make(map[string][]Resource),
+	}
+	return pg
+}
+
+func (pg *PodGenerator) applyWorker(areaid string, area *Area) error {
+	fmt.Printf("applying WorkerPod...")
+	rsrcs := []Resource{
+		pg.NewWorkerService(areaid),
+		pg.NewWorker(areaid),
+		pg.NewAgent(areaid, area),
+	}
+
+	// write yaml
+	fileName := "worker" + areaid + ".yaml"
+	for _, rsrc := range rsrcs {
+		err := WriteOnFile(fileName, rsrc)
+		if err != nil {
+			fmt.Println(err)
+			return err
+		}
+	}
+	// apply yaml
+	cmd := exec.Command("kubectl", "apply", "-f", fileName)
+	out, err := cmd.Output()
+	if err != nil {
+		fmt.Println("Command Start Error.")
+		return err
+	}
+
+	// delete yaml
+	if err := os.Remove(fileName); err != nil {
+		fmt.Println(err)
+		return err
+	}
+	fmt.Printf("out: %v\n", string(out))
+
+	// regist resource
+	pg.RsrcMap[areaid] = rsrcs
+
+	return nil
+}
+
+func (pg *PodGenerator) deleteWorker(areaid string) error {
+	fmt.Printf("deleting WorkerPod...")
+	rsrcs := pg.RsrcMap[areaid]
+
+	// write yaml
+	fileName := "worker" + areaid + ".yaml"
+	for _, rsrc := range rsrcs {
+		err := WriteOnFile(fileName, rsrc)
+		if err != nil {
+			fmt.Println(err)
+			return err
+		}
+	}
+	// apply yaml
+	cmd := exec.Command("kubectl", "delete", "-f", fileName)
+	out, err := cmd.Output()
+	if err != nil {
+		fmt.Println("Command Start Error.")
+		return err
+	}
+
+	// delete yaml
+	if err := os.Remove(fileName); err != nil {
+		fmt.Println(err)
+		return err
+	}
+	fmt.Printf("out: %v\n", string(out))
+
+	// regist resource
+	pg.RsrcMap[areaid] = nil
+
+	return nil
+}
+
+func (pg *PodGenerator) NewAgent(areaid string, area *Area) Resource {
+	workerName := "worker" + areaid
+	agentName := "agent" + areaid
+	agent := Resource{
+		ApiVersion: "v1",
+		Kind:       "Pod",
+		Metadata: Metadata{
+			Name:   agentName,
+			Labels: Label{App: agentName},
+		},
+		Spec: Spec{
+			Containers: []Container{
+				{
+					Name:            "agent-provider",
+					Image:           "synerex-simulation/agent-provider:latest",
+					ImagePullPolicy: "Never",
+					Env: []Env{
+						{
+							Name:  "NODEID_SERVER",
+							Value: workerName + ":600",
+						},
+						{
+							Name:  "SYNEREX_SERVER",
+							Value: workerName + ":700",
+						},
+						{
+							Name:  "VIS_SYNEREX_SERVER",
+							Value: "visualization:700",
+						},
+						{
+							Name:  "VIS_NODEID_SERVER",
+							Value: "visualization:600",
+						},
+						{
+							Name:  "AREA",
+							Value: convertAreaToJson(area),
+						},
+						{
+							Name:  "PROVIDER_NAME",
+							Value: "AgentProvider" + areaid,
+						},
+					},
+				},
+			},
+		},
+	}
+	return agent
+}
+
+// worker
+func (pg *PodGenerator) NewWorkerService(areaid string) Resource {
+	name := "worker" + areaid
+	service := Resource{
+		ApiVersion: "v1",
+		Kind:       "Service",
+		Metadata:   Metadata{Name: name},
+		Spec: Spec{
+			Selector: Selector{App: name},
+			Ports: []Port{
+				{
+					Name:       "synerex",
+					Port:       700,
+					TargetPort: 10000,
+				},
+				{
+					Name:       "nodeid",
+					Port:       600,
+					TargetPort: 9000,
+				},
+			},
+		},
+	}
+	return service
+}
+
+func (pg *PodGenerator) NewWorker(areaid string) Resource {
+	name := "worker" + areaid
+	worker := Resource{
+		ApiVersion: "v1",
+		Kind:       "Pod",
+		Metadata: Metadata{
+			Name:   name,
+			Labels: Label{App: name},
+		},
+		Spec: Spec{
+			Containers: []Container{
+				{
+					Name:            "nodeid-server",
+					Image:           "synerex-simulation/nodeid-server:latest",
+					ImagePullPolicy: "Never",
+					Env: []Env{
+						{
+							Name:  "NODEID_SERVER",
+							Value: ":9000",
+						},
+					},
+					Ports: []Port{{ContainerPort: 9000}},
+				},
+				{
+					Name:            "synerex-server",
+					Image:           "synerex-simulation/synerex-server:latest",
+					ImagePullPolicy: "Never",
+					Env: []Env{
+						{
+							Name:  "NODEID_SERVER",
+							Value: ":9000",
+						},
+						{
+							Name:  "SYNEREX_SERVER",
+							Value: ":10000",
+						},
+						{
+							Name:  "SERVER_NAME",
+							Value: "SynerexServer" + areaid,
+						},
+					},
+					Ports: []Port{{ContainerPort: 10000}},
+				},
+				{
+					Name:            "worker-provider",
+					Image:           "synerex-simulation/worker-provider:latest",
+					ImagePullPolicy: "Never",
+					Env: []Env{
+						{
+							Name:  "NODEID_SERVER",
+							Value: ":9000",
+						},
+						{
+							Name:  "SYNEREX_SERVER",
+							Value: ":10000",
+						},
+						{
+							Name:  "MASTER_SYNEREX_SERVER",
+							Value: "master:700",
+						},
+						{
+							Name:  "MASTER_NODEID_SERVER",
+							Value: "master:600",
+						},
+						{
+							Name:  "PORT",
+							Value: "9980",
+						},
+						{
+							Name:  "PROVIDER_NAME",
+							Value: "WorkerProvider" + areaid,
+						},
+					},
+					Ports: []Port{{ContainerPort: 9980}},
+				},
+			},
+		},
+	}
+	return worker
+}
+
+// ファイル名とデータをを渡すとyamlファイルに保存してくれる関数です。
+func WriteOnFile(fileName string, data interface{}) error {
+	// ここでデータを []byte に変換しています。
+	buf, err := yaml.Marshal(data)
+	if err != nil {
+		return err
+	}
+
+	file, err := os.OpenFile(fileName, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
+	if err != nil {
+		//エラー処理
+		log.Fatal(err)
+	}
+	defer file.Close()
+	fmt.Fprintln(file, string(buf))   //書き込み
+	fmt.Fprintln(file, string("---")) //書き込み
+	return nil
+}
+
+func convertAreaToJson(area *Area) string {
+	id := area.Id
+	duplicateText := `[`
+	controlText := `[`
+	for i, ctl := range area.Control {
+		ctlText := fmt.Sprintf(`{"latitude":%v, "longitude":%v}`, ctl.Latitude, ctl.Longitude)
+		//fmt.Printf("ctl %v\n", ctlText)
+		if i == len(area.Control)-1 { // 最後は,をつけない
+			controlText += ctlText
+		} else {
+			controlText += ctlText + ","
+		}
+	}
+	for i, dpl := range area.Duplicate {
+		dplText := fmt.Sprintf(`{"latitude":%v, "longitude":%v}`, dpl.Latitude, dpl.Longitude)
+		//fmt.Printf("dpl %v\n", dplText)
+		if i == len(area.Duplicate)-1 { // 最後は,をつけない
+			duplicateText += dplText
+		} else {
+			duplicateText += dplText + ","
+		}
+	}
+
+	duplicateText += `]`
+	controlText += `]`
+	result := fmt.Sprintf(`{"id":%d, "name":"Unknown", "duplicate_area": %s, "control_area": %s}`, id, duplicateText, controlText)
+	//result = fmt.Sprintf("%s", result)
+	//fmt.Printf("areaJson: %s\n", result)
+	return result
+}
+
+type Resource struct {
+	ApiVersion string   `yaml:"apiVersion,omitempty"`
+	Kind       string   `yaml:"kind,omitempty"`
+	Metadata   Metadata `yaml:"metadata,omitempty"`
+	Spec       Spec     `yaml:"spec,omitempty"`
+}
+
+type Spec struct {
+	Containers []Container `yaml:"containers,omitempty"`
+	Selector   Selector    `yaml:"selector,omitempty"`
+	Ports      []Port      `yaml:"ports,omitempty"`
+	Type       string      `yaml:"type,omitempty"`
+}
+
+type Container struct {
+	Name            string `yaml:"name,omitempty"`
+	Image           string `yaml:"image,omitempty"`
+	ImagePullPolicy string `yaml:"imagePullPolicy,omitempty"`
+	Stdin           bool   `yaml:"stdin,omitempty"`
+	Tty             bool   `yaml:"tty,omitempty"`
+	Env             []Env  `yaml:"env,omitempty"`
+	Ports           []Port `yaml:"ports,omitempty"`
+}
+
+type Env struct {
+	Name  string `yaml:"name,omitempty"`
+	Value string `yaml:"value,omitempty"`
+}
+
+type Selector struct {
+	App         string `yaml:"app,omitempty"`
+	MatchLabels Label  `yaml:"matchLabels,omitempty"`
+}
+
+type Port struct {
+	Name          string `yaml:"name,omitempty"`
+	Port          int    `yaml:"port,omitempty"`
+	TargetPort    int    `yaml:"targetPort,omitempty"`
+	ContainerPort int    `yaml:"containerPort,omitempty"`
+}
+
+type Metadata struct {
+	Name   string `yaml:"name,omitempty"`
+	Labels Label  `yaml:"labels,omitempty"`
+}
+
+type Label struct {
+	App string `yaml:"app,omitempty"`
+}
+
+type Area struct {
+	Id        int
+	Control   []Coord
+	Duplicate []Coord
+}
+
+type Coord struct {
+	Latitude  float64
+	Longitude float64
 }

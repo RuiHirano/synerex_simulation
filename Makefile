@@ -47,3 +47,12 @@ push-lab:
 
 build-lab:
 		bash ./docker_build_uclab.sh
+
+desc:
+		cd kube && bash kube_describe.sh
+
+log:
+		cd kube && bash kube_log.sh
+
+exec:
+		cd kube && bash kube_exec.sh

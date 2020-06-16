@@ -6,8 +6,12 @@ WORKDIR /go/src
 RUN curl -sL https://deb.nodesource.com/setup_10.x | bash -
 
 # install tools
-RUN apt-get update
-RUN apt-get -y install zip unzip
+RUN apt-get update \
+    && apt-get install -y wget zip unzip \
+    && rm -rf /var/lib/apt/lists/* \
+    && wget https://storage.googleapis.com/kubernetes-release/release/v1.13.0/bin/linux/amd64/kubectl \
+    && mv kubectl /usr/local/bin/kubectl \
+    && chmod +x /usr/local/bin/kubectl
 
 # install protocol buffers
 RUN curl -OL https://github.com/google/protobuf/releases/download/v3.9.1/protoc-3.9.1-linux-x86_64.zip
