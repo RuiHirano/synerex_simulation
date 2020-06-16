@@ -242,6 +242,7 @@ func NewMaster() Resource {
 					Name:            "masters-provider",
 					Image:           "synerex-simulation/masters-provider:latest",
 					ImagePullPolicy: "Never",
+					Ports:           []Port{{ContainerPort: 9000}},
 				},
 			},
 		},

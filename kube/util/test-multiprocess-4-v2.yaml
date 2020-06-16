@@ -61,6 +61,8 @@ spec:
   - name: masters-provider
     image: synerex-simulation/masters-provider:latest
     imagePullPolicy: Never
+    ports:
+    - containerPort: 9000
 
 ---
 apiVersion: v1
