@@ -156,6 +156,8 @@ func supplyCallback(clt *api.SMServiceClient, sp *api.Supply) {
 		simapi.SendSpToWait(sp)
 	case api.SupplyType_UPDATE_PROVIDERS_RESPONSE:
 		simapi.SendSpToWait(sp)
+	case api.SupplyType_SEND_AREA_INFO_RESPONSE:
+		simapi.SendSpToWait(sp)
 	}
 }
 
@@ -193,15 +195,15 @@ func demandCallback(clt *api.SMServiceClient, dm *api.Demand) {
 ///////////////////////////////////////////////
 
 type Processor struct {
-	Area        *Area               // 全体のエリア
-	AreaMap     map[string]*Area    // [areaid] []areaCoord     エリア情報を表したmap
-	NeighborMap map[string][]string // [areaid] []neighborAreaid   隣接関係を表したmap
+	Area        *api.Area            // 全体のエリア
+	AreaMap     map[string]*api.Area // [areaid] []areaCoord     エリア情報を表したmap
+	NeighborMap map[string][]string  // [areaid] []neighborAreaid   隣接関係を表したmap
 }
 
 func NewProcessor() *Processor {
 	proc := &Processor{
 		Area:        nil,
-		AreaMap:     make(map[string]*Area),
+		AreaMap:     make(map[string]*api.Area),
 		NeighborMap: make(map[string][]string),
 	}
 	return proc
@@ -216,7 +218,7 @@ func (proc *Processor) setAgents(agentNum uint64) (bool, error) {
 
 	agents := make([]*api.Agent, 0)
 	//minLon, maxLon, minLat, maxLat := 136.971626, 136.989379, 35.152210, 35.161499
-	maxLat, maxLon, minLat, minLon := GetCoordRange(proc.Area.Control)
+	maxLat, maxLon, minLat, minLon := GetCoordRange(proc.Area.ControlArea)
 	fmt.Printf("minLon %v, maxLon %v, minLat %v, maxLat %v\n", minLon, maxLon, minLat, maxLat)
 	for i := 0; i < int(agentNum); i++ {
 		uid, _ := uuid.NewRandom()
@@ -257,16 +259,25 @@ func (proc *Processor) setAgents(agentNum uint64) (bool, error) {
 }
 
 // setAreas: areaをセットするDemandを出す関数
-func (proc *Processor) setAreas(areaCoords []*Coord) (bool, error) {
-	proc.Area = &Area{
-		Id:        0,
-		Control:   areaCoords,
-		Duplicate: areaCoords,
+func (proc *Processor) setAreas(areaCoords []*api.Coord) (bool, error) {
+	proc.Area = &api.Area{
+		Id:            0,
+		ControlArea:   areaCoords,
+		DuplicateArea: areaCoords,
 	}
 	id := "test"
 
 	go podgen.applyWorker(id, proc.Area)
-	defer podgen.deleteWorker(id)
+	defer podgen.deleteWorker(id) // not working...
+
+	// send area info to visualization
+	senderId := myProvider.Id
+	targets := pm.GetProviderIds([]simutil.IDType{
+		simutil.IDType_VISUALIZATION,
+	})
+	logger.Debug("Send Area Info to Vis! \n%v\n", targets)
+	areas := []*api.Area{proc.Area}
+	simapi.SendAreaInfoRequest(senderId, targets, areas)
 
 	return true, nil
 }
@@ -373,7 +384,7 @@ func (or *Order) SetArea() echo.HandlerFunc {
 		slon, _ := strconv.ParseFloat(ao.SLon, 64)
 		elat, _ := strconv.ParseFloat(ao.ELat, 64)
 		elon, _ := strconv.ParseFloat(ao.ELon, 64)
-		area := []*Coord{
+		area := []*api.Coord{
 			{Latitude: slat, Longitude: slon},
 			{Latitude: slat, Longitude: elon},
 			{Latitude: elat, Longitude: elon},
@@ -498,7 +509,7 @@ func NewPodGenerator() *PodGenerator {
 	return pg
 }
 
-func (pg *PodGenerator) applyWorker(areaid string, area *Area) error {
+func (pg *PodGenerator) applyWorker(areaid string, area *api.Area) error {
 	fmt.Printf("applying WorkerPod...")
 	rsrcs := []Resource{
 		pg.NewWorkerService(areaid),
@@ -570,7 +581,7 @@ func (pg *PodGenerator) deleteWorker(areaid string) error {
 	return nil
 }
 
-func (pg *PodGenerator) NewAgent(areaid string, area *Area) Resource {
+func (pg *PodGenerator) NewAgent(areaid string, area *api.Area) Resource {
 	workerName := "worker" + areaid
 	agentName := "agent" + areaid
 	agent := Resource{
@@ -745,23 +756,23 @@ func WriteOnFile(fileName string, data interface{}) error {
 	return nil
 }
 
-func convertAreaToJson(area *Area) string {
+func convertAreaToJson(area *api.Area) string {
 	id := area.Id
 	duplicateText := `[`
 	controlText := `[`
-	for i, ctl := range area.Control {
+	for i, ctl := range area.ControlArea {
 		ctlText := fmt.Sprintf(`{"latitude":%v, "longitude":%v}`, ctl.Latitude, ctl.Longitude)
 		//fmt.Printf("ctl %v\n", ctlText)
-		if i == len(area.Control)-1 { // 最後は,をつけない
+		if i == len(area.ControlArea)-1 { // 最後は,をつけない
 			controlText += ctlText
 		} else {
 			controlText += ctlText + ","
 		}
 	}
-	for i, dpl := range area.Duplicate {
+	for i, dpl := range area.DuplicateArea {
 		dplText := fmt.Sprintf(`{"latitude":%v, "longitude":%v}`, dpl.Latitude, dpl.Longitude)
 		//fmt.Printf("dpl %v\n", dplText)
-		if i == len(area.Duplicate)-1 { // 最後は,をつけない
+		if i == len(area.DuplicateArea)-1 { // 最後は,をつけない
 			duplicateText += dplText
 		} else {
 			duplicateText += dplText + ","
@@ -828,8 +839,8 @@ type Label struct {
 
 type Area struct {
 	Id        int
-	Control   []*Coord
-	Duplicate []*Coord
+	Control   []*api.Coord
+	Duplicate []*api.Coord
 }
 
 type Coord struct {
@@ -837,7 +848,7 @@ type Coord struct {
 	Longitude float64
 }
 
-func GetCoordRange(coords []*Coord) (float64, float64, float64, float64) {
+func GetCoordRange(coords []*api.Coord) (float64, float64, float64, float64) {
 	maxLon, maxLat := math.Inf(-1), math.Inf(-1)
 	minLon, minLat := math.Inf(0), math.Inf(0)
 	for _, coord := range coords {

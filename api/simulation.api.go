@@ -174,6 +174,50 @@ func (s *SimAPI) SendSpToWait(sp *Supply) {
 }
 
 ///////////////////////////////////////////
+/////////////    Area API   //////////////
+//////////////////////////////////////////
+
+// Areaを送るDemand
+func (s *SimAPI) SendAreaInfoRequest(senderId uint64, targets []uint64, areas []*Area) ([]*Supply, error) {
+
+	uid, _ := uuid.NewRandom()
+	sendAreaInfoRequest := &SendAreaInfoRequest{
+		Areas: areas,
+	}
+
+	msgId := uint64(uid.ID())
+	simDemand := &SimDemand{
+		MsgId:    msgId,
+		SenderId: senderId,
+		Type:     DemandType_SEND_AREA_INFO_REQUEST,
+		Data:     &SimDemand_SendAreaInfoRequest{sendAreaInfoRequest},
+		Targets:  targets,
+	}
+
+	sps, err := s.SendSyncDemand(s.MyClients.ProviderClient, simDemand)
+
+	return sps, err
+}
+
+// Agentのセット完了
+func (s *SimAPI) SendAreaInfoResponse(senderId uint64, targets []uint64, msgId uint64) uint64 {
+	sendAreaInfoResponse := &SendAreaInfoResponse{}
+
+	simSupply := &SimSupply{
+		MsgId:    msgId,
+		SenderId: senderId,
+		Type:     SupplyType_SEND_AREA_INFO_RESPONSE,
+		Status:   StatusType_OK,
+		Data:     &SimSupply_SendAreaInfoResponse{sendAreaInfoResponse},
+		Targets:  targets,
+	}
+
+	s.SendSyncSupply(s.MyClients.AgentClient, simSupply)
+
+	return msgId
+}
+
+///////////////////////////////////////////
 /////////////   Agent API   //////////////
 //////////////////////////////////////////
 

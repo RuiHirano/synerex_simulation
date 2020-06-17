@@ -2,7 +2,9 @@ package main
 
 import (
 	//"flag"
+	"encoding/json"
 	"log"
+
 	//"math/rand"
 	"time"
 
@@ -138,7 +140,7 @@ func runServer() *gosocketio.Server {
 	if err != nil {
 		log.Fatal(err)
 	}
-	d := filepath.Join(currentRoot, "mclient", "build")
+	d := filepath.Join(currentRoot, "monitor", "build")
 
 	assetsDir = http.Dir(d)
 	log.Println("AssetDir:", assetsDir)
@@ -193,6 +195,9 @@ type MapMarker struct {
 	area  int32   `json:"area"`
 }
 
+/////////////////////////////////////////
+////////  Send Agent to HamowareVIS /////
+////////////////////////////////////////
 // GetJson: json化する関数
 func (m *MapMarker) GetJson() string {
 	s := fmt.Sprintf("{\"mtype\":%d,\"id\":%d,\"lat\":%f,\"lon\":%f,\"angle\":%f,\"speed\":%d,\"area\":%d}",
@@ -200,8 +205,8 @@ func (m *MapMarker) GetJson() string {
 	return s
 }
 
-// sendToHarmowareVis: harmowareVisに情報を送信する関数
-func sendToHarmowareVis(agents []*api.Agent) {
+// sendAgentToHarmowareVis: harmowareVisに情報を送信する関数
+func sendAgentToHarmowareVis(agents []*api.Agent) {
 
 	if agents != nil {
 		jsonAgents := make([]string, 0)
@@ -235,9 +240,29 @@ func sendToHarmowareVis(agents []*api.Agent) {
 			}
 		}
 		mu.Lock()
-		ioserv.BroadcastToAll("event", jsonAgents)
+		ioserv.BroadcastToAll("agents", jsonAgents)
 		mu.Unlock()
 	}
+}
+
+/////////////////////////////////////////
+////////  Send Agent to HamowareVIS /////
+////////////////////////////////////////
+
+// sendAreaToHarmowareVis: harmowareVisに情報を送信する関数
+func sendAreaToHarmowareVis(areas []*api.Area) {
+
+	if areas != nil {
+		jsonAreas := make([]string, 0)
+		for _, areaInfo := range areas {
+			areaJson, _ := json.Marshal(areaInfo)
+			jsonAreas = append(jsonAreas, string(areaJson))
+		}
+		mu.Lock()
+		ioserv.BroadcastToAll("areas", jsonAreas)
+		mu.Unlock()
+	}
+
 }
 
 // callbackForwardClockRequest: クロックを進める関数
@@ -260,7 +285,7 @@ func forwardClock(dm *api.Demand) {
 	agents := agentsMessage.Get()
 
 	// Harmowareに送る
-	sendToHarmowareVis(agents)
+	sendAgentToHarmowareVis(agents)
 
 	logger.Info("Agents %v\n", len(agents))
 }
@@ -286,7 +311,7 @@ func demandCallback(clt *api.SMServiceClient, dm *api.Demand) {
 
 		agents := dm.GetSimDemand().GetSetAgentRequest().GetAgents()
 		logger.Info("get Agents: %v\n", len(agents))
-		//sendToHarmowareVis(agents)
+		//sendAgentToHarmowareVis(agents)
 		agentsMessage.Set(agents, dm.GetSimDemand().GetSenderId())
 		//db.Push(agents)
 		// response
@@ -361,6 +386,16 @@ func masterDemandCallback(clt *api.SMServiceClient, dm *api.Demand) {
 		msgId := dm.GetSimDemand().GetMsgId()
 		masterapi.UpdateProvidersResponse(senderId, targets, msgId)
 		logger.Info("Finish: Update Workers num: %v\n", len(providers))
+
+	case api.DemandType_SEND_AREA_INFO_REQUEST:
+		areas := dm.GetSimDemand().GetSendAreaInfoRequest().GetAreas()
+		sendAreaToHarmowareVis(areas)
+		// response
+		targets := []uint64{dm.GetSimDemand().GetSenderId()}
+		senderId := myProvider.Id
+		msgId := dm.GetSimDemand().GetMsgId()
+		masterapi.SendAreaInfoResponse(senderId, targets, msgId)
+		logger.Info("Finish: GetAreaInfo: %v\n", areas)
 	}
 }
 

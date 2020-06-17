@@ -30,6 +30,7 @@ message SimDemand {
             DeletePodRequest delete_pod_request = 15;
 			ForwardClockInitRequest forward_clock_init_request = 16;
             ReadyProviderRequest ready_provider_request = 17;
+            SendAreaInfoRequest send_area_info_request = 18;
         }
     }
 
@@ -59,6 +60,7 @@ message SimDemand {
             DeletePodResponse delete_pod_response = 16;
 			ForwardClockInitResponse forward_clock_init_response = 17;
             ReadyProviderResponse ready_provider_response = 18;
+            SendAreaInfoResponse send_area_info_response = 19;
         }
 }
 
@@ -81,6 +83,7 @@ enum DemandType {
 	CREATE_POD_REQUEST = 9;
     DELETE_POD_REQUEST = 10;
     READY_PROVIDER_REQUEST = 11;
+    SEND_AREA_INFO_REQUEST = 12;
 }
 
 enum SupplyType {
@@ -96,8 +99,15 @@ enum SupplyType {
 	CREATE_POD_RESPONSE = 9;
     DELETE_POD_RESPONSE = 10;
     READY_PROVIDER_RESPONSE = 11;
+    SEND_AREA_INFO_RESPONSE = 12;
 }
 
+message SendAreaInfoRequest {
+    repeated Area areas = 1;
+}
+
+message SendAreaInfoResponse {
+}
 
 message RegistProviderRequest {
     Provider provider = 1;

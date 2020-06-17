@@ -1,6 +1,6 @@
 
-import React, { useEffect } from 'react';
-import { HarmoVisLayers, Container, BasedProps, BasedState, connectToHarmowareVis, MovesLayer, Movesbase, MovesbaseOperation, DepotsLayer, DepotsData, LineMapLayer } from 'harmoware-vis';
+import React, { useEffect, useState } from 'react';
+import { HarmoVisLayers, Container, BasedProps, BasedState, connectToHarmowareVis, MovesLayer, Movesbase, MovesbaseOperation, DepotsLayer, DepotsData, LineMapLayer, LineMapData } from 'harmoware-vis';
 import io from "socket.io-client";
 import { Controller } from '../components';
 
@@ -18,54 +18,87 @@ class Harmoware extends Container<BasedProps & BasedState> {
 
 const socket: SocketIOClient.Socket = io();
 
+interface AreaInfo {
+    Id: string
+    Name: string
+    ControlArea: Coord[]
+    DuplicateArea: Coord[]
+}
+
+interface Coord {
+    Lat: number
+    Lon: number
+}
+
 const HarmowarePage: React.FC<BasedProps> = (props) => {
     const { actions, depotsData, viewport, movesbase, movedData, routePaths, clickedObject } = props
 
+    const [linedata, setLinedata] = useState<LineMapData[]>([])
+    const [areadata, setAreadata] = useState<AreaInfo[]>([])
+    const [movesbases, setMovesbases] = useState<AreaInfo[]>([])
 
     const getAgents = (data: any) => {
         const time = Date.now() / 1000; // set time as now. (If data have time, ..)
         console.log("socketData length2", data.length);
         //console.log("movesbasedata length", movesbasedata.length)
-        const setMovesbase: any[] = [];
+        const movesbases: Movesbase[] = [];
 
         data.forEach((value: any) => {
-            const { mtype, id, lat, lon, angle, speed, area } = JSON.parse(
+            const { mtype, id, lat, lon } = JSON.parse(
                 value
             );
-            //console.log("data: ", value);
 
-            let color = [0, 200, 0];
-            if (mtype == 0) {
-                // Ped
-                color = [0, 200, 120];
-            } else if (mtype == 1) {
-                // Car
-                color = [200, 0, 0];
-            }
-            setMovesbase.push({
-                mtype,
-                id,
+            let color = [0, 200, 120];
+            movesbases.push({
+                type: mtype,
+                movesbaseidx: id,
                 departuretime: time,
                 arrivaltime: time,
                 operation: [
                     {
                         elapsedtime: time,
                         position: [lon, lat, 0],
-                        radius: 20,
-                        angle,
-                        speed,
+                        //direction: 10,
                         color
                     }
                 ]
             });
         });
 
-        //console.log("lenth before", setMovesbase.length);
-        actions.updateMovesBase(setMovesbase);
-        //actions.updateMovedData(setMovedData);
+        actions.updateMovesBase(movesbases);
     }
 
-    const testAgent = async () => {
+    const getAreas = (data: any) => {
+        console.log("areaInfo", data);
+
+        const linedata: LineMapData[] = []
+        const areas = convertJsonToArea(data)
+        setAreadata(areas)
+
+        areas.forEach((areaInfo: AreaInfo) => {
+            const { maxLat, maxLon, minLat, minLon } = getCoordRange(areaInfo.ControlArea)
+            linedata.push({
+                "sourcePosition": [minLon, minLat, 0],
+                "targetPosition": [minLon, maxLat, 0]
+            })
+            linedata.push({
+                "sourcePosition": [minLon, maxLat, 0],
+                "targetPosition": [maxLon, maxLat, 0]
+            })
+            linedata.push({
+                "sourcePosition": [maxLon, maxLat, 0],
+                "targetPosition": [maxLon, minLat, 0]
+            })
+            linedata.push({
+                "sourcePosition": [maxLon, minLat, 0],
+                "targetPosition": [minLon, minLat, 0]
+            })
+        })
+
+        setLinedata(linedata)
+    }
+
+    /*const testAgent = async () => {
         for (let i = 0; i < 100; i++) {
             const setMovesbase: Movesbase[] = [];
             const time = Date.now() / 1000;
@@ -90,11 +123,13 @@ const HarmowarePage: React.FC<BasedProps> = (props) => {
 
             actions.updateMovesBase(setMovesbase);
         }
-    }
+    }*/
 
     useEffect(() => {
-        socket.on("event", (data: any) => getAgents(data));
-        testAgent()
+        socket.on("agents", (data: any) => getAgents(data));
+        socket.on("areas", (data: any) => getAreas(data));
+
+        //testAgent()
         console.log(process.env);
         if (actions) {
             actions.setViewport({
@@ -113,12 +148,10 @@ const HarmowarePage: React.FC<BasedProps> = (props) => {
                 viewport={viewport} actions={actions}
                 mapboxApiAccessToken={MAPBOX_TOKEN}
                 layers={[
-                    /*new LineLayer({
-                        data: [{
-                            "sourcePosition": [136.901961, 35.156615, 0],
-                            "targetPosition": [136.933907, 35.144681, 0]
-                        }]
-                    })*/
+                    new LineMapLayer({
+                        data: linedata,
+                        getWidth: (x) => 20,
+                    }),
                     new DepotsLayer({
                         depotsData,
                         iconChange: false,
@@ -146,9 +179,52 @@ const HarmowarePage: React.FC<BasedProps> = (props) => {
     );
 }
 
-async function timeout(ms: number) {
+/*async function timeout(ms: number) {
     await new Promise(resolve => setTimeout(resolve, ms));
     return
-}
+}*/
+
+const getCoordRange = ((coords: Coord[]) => {
+    let maxLat = Number.NEGATIVE_INFINITY
+    let maxLon = Number.NEGATIVE_INFINITY
+    let minLat = Number.POSITIVE_INFINITY
+    let minLon = Number.POSITIVE_INFINITY
+
+    coords.forEach((coord) => {
+        if (coord.Lat > maxLat) {
+            maxLat = coord.Lat
+        }
+        if (coord.Lon > maxLon) {
+            maxLon = coord.Lon
+        }
+        if (coord.Lat < minLat) {
+            minLat = coord.Lat
+        }
+        if (coord.Lon < minLon) {
+            minLon = coord.Lon
+        }
+    })
+
+    return { maxLat, maxLon, minLat, minLon }
+})
+
+const convertJsonToArea = ((data: any[]) => {
+    const areas: AreaInfo[] = []
+    data.forEach((areaStr: any) => {
+        const areaJson = JSON.parse(areaStr);
+        var area: AreaInfo = { ControlArea: [], DuplicateArea: [], Name: "", Id: "" }
+        areaJson.control_area.forEach((arg: any) => {
+            area.ControlArea.push({ Lat: arg.latitude, Lon: arg.longitude })
+        })
+        areaJson.duplicate_area.forEach((arg: any) => {
+            area.DuplicateArea.push({ Lat: arg.latitude, Lon: arg.longitude })
+        })
+        areaJson.id ? area.Id = areaJson.id : area.Id = ""
+        areaJson.name ? area.Name = areaJson.name : area.Name = ""
+        areas.push(area)
+    })
+
+    return areas
+})
 
 export default connectToHarmowareVis(Harmoware);
