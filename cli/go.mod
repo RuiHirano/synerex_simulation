@@ -3,6 +3,7 @@ module github.com/synerex/synerex_alpha/cli/simulation/simulator
 require (
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible // indirect
 	github.com/go-playground/universal-translator v0.17.0 // indirect
+	github.com/go-yaml/yaml v2.1.0+incompatible
 	github.com/gorilla/websocket v1.4.0 // indirect
 	github.com/inconshreveable/mousetrap v1.0.0 // indirect
 	github.com/labstack/echo v3.3.10+incompatible // indirect

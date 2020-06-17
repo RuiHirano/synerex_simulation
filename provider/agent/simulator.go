@@ -4,14 +4,11 @@ import (
 	//"log"
 
 	//"github.com/paulmach/orb/geojson"
+
 	"math"
 
 	"github.com/synerex/synerex_alpha/api"
 	algo "github.com/synerex/synerex_alpha/provider/agent/algorithm"
-)
-
-var (
-//geoInfo *geojson.FeatureCollection
 )
 
 // SynerexSimulator :

@@ -160,10 +160,10 @@ func forwardClock() {
 	agentsMessage.Set(nextControlAgents)
 
 	// databaseに保存
-	targets = pm.GetProviderIds([]simutil.IDType{
+	/*targets = pm.GetProviderIds([]simutil.IDType{
 		simutil.IDType_DATABASE,
 	})
-	simapi.SetAgentRequest(myProvider.Id, targets, nextControlAgents)
+	simapi.SetAgentRequest(myProvider.Id, targets, nextControlAgents)*/
 
 	// visに保存
 	targets = pm.GetProviderIds([]simutil.IDType{

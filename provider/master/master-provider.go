@@ -4,15 +4,16 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"math"
 	"math/rand"
 	"net/http"
 	"os"
 	"runtime"
+	"strconv"
 	"sync"
 	"time"
 
 	"io/ioutil"
-
 	"os/exec"
 
 	"github.com/go-yaml/yaml"
@@ -42,6 +43,7 @@ var (
 	waiter *api.Waiter
 	config *Config
 	podgen *PodGenerator
+	proc   *Processor
 )
 
 type Config struct {
@@ -72,6 +74,7 @@ func readConfig() (*Config, error) {
 
 func init() {
 	podgen = NewPodGenerator()
+	proc = NewProcessor()
 	waiter = api.NewWaiter()
 	startFlag = false
 	masterClock = 0
@@ -84,7 +87,7 @@ func init() {
 	config, _ = readConfig()
 
 	// kubetest
-	id := "test"
+	/*id := "test"
 	area := &Area{
 		Id:        3,
 		Control:   []Coord{{Latitude: 0, Longitude: 0}, {Latitude: 10, Longitude: 0}, {Latitude: 10, Longitude: 10}, {Latitude: 0, Longitude: 10}},
@@ -92,7 +95,7 @@ func init() {
 	}
 	go podgen.applyWorker(id, area)
 	time.Sleep(4 * time.Second)
-	go podgen.deleteWorker(id)
+	go podgen.deleteWorker(id)*/
 	synerexAddr = os.Getenv("SYNEREX_SERVER")
 	if synerexAddr == "" {
 		synerexAddr = "127.0.0.1:10000"
@@ -185,12 +188,36 @@ func demandCallback(clt *api.SMServiceClient, dm *api.Demand) {
 	}
 }
 
+///////////////////////////////////////////////
+////////////  Processor  //////////////////////
+///////////////////////////////////////////////
+
+type Processor struct {
+	Area        *Area               // 全体のエリア
+	AreaMap     map[string]*Area    // [areaid] []areaCoord     エリア情報を表したmap
+	NeighborMap map[string][]string // [areaid] []neighborAreaid   隣接関係を表したmap
+}
+
+func NewProcessor() *Processor {
+	proc := &Processor{
+		Area:        nil,
+		AreaMap:     make(map[string]*Area),
+		NeighborMap: make(map[string][]string),
+	}
+	return proc
+}
+
 // setAgents: agentをセットするDemandを出す関数
-func setAgents(agentNum uint64) (bool, error) {
+func (proc *Processor) setAgents(agentNum uint64) (bool, error) {
+
+	if proc.Area == nil {
+		return false, fmt.Errorf("area is nil")
+	}
 
 	agents := make([]*api.Agent, 0)
-
-	minLon, maxLon, minLat, maxLat := 136.971626, 136.989379, 35.152210, 35.161499
+	//minLon, maxLon, minLat, maxLat := 136.971626, 136.989379, 35.152210, 35.161499
+	maxLat, maxLon, minLat, minLon := GetCoordRange(proc.Area.Control)
+	fmt.Printf("minLon %v, maxLon %v, minLat %v, maxLat %v\n", minLon, maxLon, minLat, maxLat)
 	for i := 0; i < int(agentNum); i++ {
 		uid, _ := uuid.NewRandom()
 		position := &api.Coord{
@@ -215,6 +242,7 @@ func setAgents(agentNum uint64) (bool, error) {
 				NextTransit:   destination,
 			},
 		})
+		fmt.Printf("position %v\n", position)
 	}
 
 	// エージェントを設置するリクエスト
@@ -228,8 +256,23 @@ func setAgents(agentNum uint64) (bool, error) {
 	return true, nil
 }
 
+// setAreas: areaをセットするDemandを出す関数
+func (proc *Processor) setAreas(areaCoords []*Coord) (bool, error) {
+	proc.Area = &Area{
+		Id:        0,
+		Control:   areaCoords,
+		Duplicate: areaCoords,
+	}
+	id := "test"
+
+	go podgen.applyWorker(id, proc.Area)
+	defer podgen.deleteWorker(id)
+
+	return true, nil
+}
+
 // startClock:
-func startClock() {
+func (proc *Processor) startClock() {
 	t1 := time.Now()
 
 	senderId := myProvider.Id
@@ -258,7 +301,7 @@ func startClock() {
 
 	// 次のサイクルを行う
 	if startFlag {
-		startClock()
+		proc.startClock()
 	} else {
 		log.Printf("\x1b[30m\x1b[47m \n Finish: Clock stopped \n GlobalTime:  %v \x1b[0m\n", masterClock)
 		startFlag = false
@@ -267,11 +310,23 @@ func startClock() {
 
 }
 
+///////////////////////////////////////////////
+////////////  Order  //////////////////////
+///////////////////////////////////////////////
+
+type Order struct {
+}
+
+func NewOrder() *Order {
+	order := &Order{}
+	return order
+}
+
 type ClockOptions struct {
 	Time int `validate:"required,min=0" json:"time"`
 }
 
-func orderSetClock() echo.HandlerFunc {
+func (or *Order) SetClock() echo.HandlerFunc {
 	return func(c echo.Context) error {
 		co := new(ClockOptions)
 		if err := c.Bind(co); err != nil {
@@ -287,23 +342,53 @@ type AgentOptions struct {
 	Num int `validate:"required,min=0,max=10", json:"num"`
 }
 
-func orderSetAgent() echo.HandlerFunc {
+func (or *Order) SetAgent() echo.HandlerFunc {
 	return func(c echo.Context) error {
 		ao := new(AgentOptions)
 		if err := c.Bind(ao); err != nil {
 			return err
 		}
 		fmt.Printf("agent num %d\n", ao.Num)
-		setAgents(uint64(ao.Num))
+		ok, err := proc.setAgents(uint64(ao.Num))
+		fmt.Printf("ok %v, err %v", ok, err)
 		return c.String(http.StatusOK, "Set Agent")
 	}
 }
 
-func orderStart() echo.HandlerFunc {
+type AreaOptions struct {
+	SLat string `min=0,max=100", json:"slat"`
+	SLon string `min=0,max=200", json:"slon"`
+	ELat string `min=0,max=100", json:"elat"`
+	ELon string `min=0,max=200", json:"elon"`
+}
+
+func (or *Order) SetArea() echo.HandlerFunc {
+	return func(c echo.Context) error {
+		ao := new(AreaOptions)
+		if err := c.Bind(ao); err != nil {
+			return err
+		}
+		fmt.Printf("area %d\n", ao)
+		slat, _ := strconv.ParseFloat(ao.SLat, 64)
+		slon, _ := strconv.ParseFloat(ao.SLon, 64)
+		elat, _ := strconv.ParseFloat(ao.ELat, 64)
+		elon, _ := strconv.ParseFloat(ao.ELon, 64)
+		area := []*Coord{
+			{Latitude: slat, Longitude: slon},
+			{Latitude: slat, Longitude: elon},
+			{Latitude: elat, Longitude: elon},
+			{Latitude: elat, Longitude: slon},
+		}
+		proc.setAreas(area)
+		return c.String(http.StatusOK, "Set Area")
+	}
+}
+
+func (or *Order) Start() echo.HandlerFunc {
 	return func(c echo.Context) error {
 		if startFlag == false {
 			startFlag = true
-			go startClock()
+			go proc.startClock()
 			return c.String(http.StatusOK, "Start")
 		} else {
 			logger.Warn("Clock is already started.")
@@ -312,7 +397,7 @@ func orderStart() echo.HandlerFunc {
 	}
 }
 
-func orderStop() echo.HandlerFunc {
+func (or *Order) Stop() echo.HandlerFunc {
 	return func(c echo.Context) error {
 		startFlag = false
 		return c.String(http.StatusOK, "Stop")
@@ -321,6 +406,7 @@ func orderStop() echo.HandlerFunc {
 
 func startSimulatorServer() {
 	fmt.Printf("Starting Simulator Server...")
+	order := NewOrder()
 
 	e := echo.New()
 
@@ -328,10 +414,11 @@ func startSimulatorServer() {
 	e.Use(middleware.Recover())
 	e.Use(middleware.CORS())
 
-	e.POST("/order/set/clock", orderSetClock())
-	e.POST("/order/set/agent", orderSetAgent())
-	e.POST("/order/start", orderStart())
-	e.POST("/order/stop", orderStop())
+	e.POST("/order/set/clock", order.SetClock())
+	e.POST("/order/set/agent", order.SetAgent())
+	e.POST("/order/set/area", order.SetArea())
+	e.POST("/order/start", order.Start())
+	e.POST("/order/stop", order.Stop())
 
 	e.Start(":" + port)
 }
@@ -351,6 +438,11 @@ func main() {
 
 	// CLI, GUIの受信サーバ
 	go startSimulatorServer()
+
+	/*quit := make(chan os.Signal)
+	// 受け取るシグナルを設定
+	signal.Notify(quit, os.Interrupt)
+	<-quit*/
 
 	// Connect to Node Server
 	nodeapi := napi.NewNodeAPI()
@@ -415,7 +507,7 @@ func (pg *PodGenerator) applyWorker(areaid string, area *Area) error {
 	}
 
 	// write yaml
-	fileName := "worker" + areaid + ".yaml"
+	fileName := "scripts/worker" + areaid + ".yaml"
 	for _, rsrc := range rsrcs {
 		err := WriteOnFile(fileName, rsrc)
 		if err != nil {
@@ -432,10 +524,10 @@ func (pg *PodGenerator) applyWorker(areaid string, area *Area) error {
 	}
 
 	// delete yaml
-	if err := os.Remove(fileName); err != nil {
+	/*if err := os.Remove(fileName); err != nil {
 		fmt.Println(err)
 		return err
-	}
+	}*/
 	fmt.Printf("out: %v\n", string(out))
 
 	// regist resource
@@ -736,11 +828,31 @@ type Label struct {
 
 type Area struct {
 	Id        int
-	Control   []Coord
-	Duplicate []Coord
+	Control   []*Coord
+	Duplicate []*Coord
 }
 
 type Coord struct {
 	Latitude  float64
 	Longitude float64
+}
+
+func GetCoordRange(coords []*Coord) (float64, float64, float64, float64) {
+	maxLon, maxLat := math.Inf(-1), math.Inf(-1)
+	minLon, minLat := math.Inf(0), math.Inf(0)
+	for _, coord := range coords {
+		if coord.Latitude > maxLat {
+			maxLat = coord.Latitude
+		}
+		if coord.Longitude > maxLon {
+			maxLon = coord.Longitude
+		}
+		if coord.Latitude < minLat {
+			minLat = coord.Latitude
+		}
+		if coord.Longitude < minLon {
+			minLon = coord.Longitude
+		}
+	}
+	return maxLat, maxLon, minLat, minLon
 }

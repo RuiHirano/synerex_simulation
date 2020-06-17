@@ -3,11 +3,56 @@ package cmd
 import (
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"strings"
+
+	"github.com/go-yaml/yaml"
 
 	"github.com/spf13/cobra"
 	"gopkg.in/go-playground/validator.v9"
 )
+
+var (
+	//geoInfo *geojson.FeatureCollection
+	config *Config
+)
+
+func init() {
+
+	// configを読み取る
+	config, _ = readConfig()
+}
+
+type Config struct {
+	Area Config_Area `yaml:"area"`
+}
+
+type Config_Area struct {
+	Coords []*Coord `yaml:"coords"`
+}
+
+type Coord struct {
+	Latitude  float64 `yaml:"latitude"`
+	Longitude float64 `yaml:"longitude"`
+}
+
+func readConfig() (*Config, error) {
+	var config *Config
+	buf, err := ioutil.ReadFile("./config.yaml")
+	if err != nil {
+		fmt.Println(err)
+		return config, err
+	}
+	// []map[string]string のときと使う関数は同じです。
+	// いい感じにマッピングしてくれます。
+	err = yaml.Unmarshal(buf, &config)
+	if err != nil {
+		fmt.Println(err)
+		return config, err
+	}
+	fmt.Printf("yaml is %v\n", config)
+	return config, nil
+}
 
 /////////////////////////////////////////////////
 /////////           Stop Command            /////
@@ -53,13 +98,21 @@ type AgentOptions struct {
 	Num int `validate:"required,min=0,max=100000", json:"num"`
 }
 
+type AreaOptions struct {
+	SLat string `min=0,max=100", json:"slat"`
+	SLon string `min=0,max=200", json:"slon"`
+	ELat string `min=0,max=100", json:"elat"`
+	ELon string `min=0,max=200", json:"elon"`
+}
+
 type ClockOptions struct {
 	Time int `validate:"required,min=0" json:"time"`
 }
 
 var (
-	ao = &AgentOptions{}
-	co = &ClockOptions{}
+	ao  = &AgentOptions{}
+	aro = &AreaOptions{}
+	co  = &ClockOptions{}
 )
 
 var setCmd = &cobra.Command{
@@ -80,6 +133,19 @@ var agentCmd = &cobra.Command{
 	},
 }
 
+var areaCmd = &cobra.Command{
+	Use:   "area",
+	Short: "Set area",
+	Run: func(cmd *cobra.Command, args []string) {
+		fmt.Printf("set area %v\n", aro)
+		arojson, _ := json.Marshal(aro)
+		sender.Post(arojson, "/order/set/area")
+	},
+	PreRunE: func(cmd *cobra.Command, args []string) error {
+		return validateParams(*aro)
+	},
+}
+
 var clockCmd = &cobra.Command{
 	Use:   "clock",
 	Short: "Set clock",
@@ -95,9 +161,14 @@ var clockCmd = &cobra.Command{
 
 func init() {
 	agentCmd.Flags().IntVarP(&ao.Num, "num", "n", 0, "agent num (required)")
+	areaCmd.Flags().StringVarP(&aro.ELat, "elat", "a", "35.666", "area end latitude (required)")
+	areaCmd.Flags().StringVarP(&aro.SLat, "slat", "b", "37.666", "area start latitude (required)")
+	areaCmd.Flags().StringVarP(&aro.ELon, "elon", "c", "135.666", "area end lonitude (required)")
+	areaCmd.Flags().StringVarP(&aro.SLon, "slon", "d", "137.666", "area start lonitude (required)")
 	clockCmd.Flags().IntVarP(&co.Time, "time", "t", 0, "clcok time (required)")
 	setCmd.AddCommand(agentCmd)
 	setCmd.AddCommand(clockCmd)
+	setCmd.AddCommand(areaCmd)
 	orderCmd.AddCommand(setCmd)
 }
 
