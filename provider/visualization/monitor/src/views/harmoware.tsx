@@ -11,7 +11,8 @@ const MAPBOX_TOKEN = 'pk.eyJ1IjoicnVpaGlyYW5vIiwiYSI6ImNqdmc0bXJ0dTAzZDYzem5vMmk
 
 class Harmoware extends Container<BasedProps & BasedState> {
     render() {
-        const { actions, depotsData, viewport } = this.props;
+        const { actions, depotsData, viewport, movesbase } = this.props;
+        //console.log("test2", movesbase)
         return (<HarmowarePage {...this.props} />)
     }
 }
@@ -30,34 +31,55 @@ interface Coord {
     Lon: number
 }
 
-const HarmowarePage: React.FC<BasedProps> = (props) => {
+const HarmowarePage: React.FC<BasedProps & BasedState> = (props) => {
     const { actions, depotsData, viewport, movesbase, movedData, routePaths, clickedObject } = props
-
+    //console.log("test1", movesbase)
     const [linedata, setLinedata] = useState<LineMapData[]>([])
     const [areadata, setAreadata] = useState<AreaInfo[]>([])
-    const [movesbases, setMovesbases] = useState<AreaInfo[]>([])
+    const [movesdata, setMovesdata] = useState<Movesbase[]>([])
+    //const movesdata = [...movesbase]
 
     const getAgents = (data: any) => {
         const time = Date.now() / 1000; // set time as now. (If data have time, ..)
-        console.log("socketData length2", data.length);
-        //console.log("movesbasedata length", movesbasedata.length)
         const newMovesbase: Movesbase[] = [];
+        // useEffect内では外側のstateは初期化時のままなので、set関数内で過去のstateを取得する必要がある
+        setMovesdata((movesdata) => {
+            //console.log("socketData: ", movesdata);
+            data.forEach((value: any) => {
+                const { mtype, id, lat, lon } = JSON.parse(
+                    value
+                );
+                let color = [0, 200, 120];
 
-        data.forEach((value: any) => {
-            const { mtype, id, lat, lon } = JSON.parse(
-                value
-            );
-            let color = [0, 200, 120];
+                let isExist = false;
+                // operation内のelapsedtimeなどのオブジェクトは2つ以上ないと表示されないので注意
 
-            let isExist = false;
-            // operation内のelapsedtimeなどのオブジェクトは2つ以上ないと表示されないので注意
-            movesbase.forEach((movedata) => {
-                if (id === movedata.type) {
-                    // 存在する場合、更新
+                movesdata.forEach((movedata) => {
+                    //console.log("id, type: ", id, movedata.type)
+                    if (id === movedata.type) {
+                        //console.log("match")
+                        // 存在する場合、更新
+                        newMovesbase.push({
+                            ...movedata,
+                            operation: [
+                                ...movedata.operation,
+                                {
+                                    elapsedtime: time,
+                                    position: [lon, lat, 0],
+                                    color
+                                }
+                            ]
+                        });
+                        isExist = true
+                    }
+                })
+
+                if (!isExist) {
+                    // 存在しない場合、新規作成
+                    let color = [0, 255, 0];
                     newMovesbase.push({
-                        ...movedata,
+                        type: id,
                         operation: [
-                            ...movedata.operation,
                             {
                                 elapsedtime: time,
                                 position: [lon, lat, 0],
@@ -65,27 +87,12 @@ const HarmowarePage: React.FC<BasedProps> = (props) => {
                             }
                         ]
                     });
-                    isExist = true
                 }
-            })
-
-            if (!isExist) {
-                // 存在しない場合、新規作成
-                let color = [0, 255, 0];
-                newMovesbase.push({
-                    type: id,
-                    operation: [
-                        {
-                            elapsedtime: time,
-                            position: [lon, lat, 0],
-                            color
-                        }
-                    ]
-                });
-            }
 
 
-        });
+            });
+            return newMovesbase
+        })
 
         actions.updateMovesBase(newMovesbase);
     }
@@ -120,38 +127,10 @@ const HarmowarePage: React.FC<BasedProps> = (props) => {
         setLinedata(linedata)
     }
 
-    /*const testAgent = async () => {
-        for (let i = 0; i < 100; i++) {
-            const setMovesbase: Movesbase[] = [];
-            const time = Date.now() / 1000;
-            let color = [0, 200, 0];
-            await timeout(1000)
-            for (let index = 0; index < 100; index++) {
-                setMovesbase.push({
-                    type: 'ped',
-                    movesbaseidx: index,
-                    departuretime: time,
-                    arrivaltime: time,
-                    operation: [
-                        {
-                            elapsedtime: time,
-                            position: [135.4664 + index * 0.0001, 35.633253 + index * 0.0001, 0],
-                            direction: 10,
-                            color
-                        }
-                    ]
-                });
-            }
-
-            actions.updateMovesBase(setMovesbase);
-        }
-    }*/
-
     useEffect(() => {
         socket.on("agents", (data: any) => getAgents(data));
         socket.on("areas", (data: any) => getAreas(data));
 
-        //testAgent()
         console.log(process.env);
         if (actions) {
             actions.setViewport({
@@ -163,7 +142,7 @@ const HarmowarePage: React.FC<BasedProps> = (props) => {
             actions.setSecPerHour(1000);
         }
     }, [])
-    console.log("render: ", viewport, actions)
+    //console.log("render: ", viewport, actions)
     return (
         <div>
             <Controller {...props} />

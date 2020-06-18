@@ -12,13 +12,6 @@ const Controller: React.FC<BasedProps> = (props) => {
     <div className="harmovis_controller">
       <div className="container">
         <ul className="list-group">
-          <li><span>ナビゲーションパネル</span>
-            <div className="btn-group d-flex" role="group">
-              <NavigationButton buttonType="zoom-in" actions={actions} viewport={viewport} className="btn btn-outline-light btn-sm w-100" />
-              <NavigationButton buttonType="zoom-out" actions={actions} viewport={viewport} className="btn btn-outline-light btn-sm w-100" />
-              <NavigationButton buttonType="compass" actions={actions} viewport={viewport} className="btn btn-outline-light btn-sm w-100" />
-            </div>
-          </li>
           <li><span>コントロールパネル</span>
             <div className="btn-group d-flex" role="group">
               {animatePause ?
