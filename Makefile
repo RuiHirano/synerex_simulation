@@ -16,13 +16,13 @@ simulator:
 		kubectl exec -it simulator -c simulator bash
 
 worker:
-		kubectl logs -f worker${arg} -c worker-provider
+		kubectl logs -f workertest -c worker-provider
 
 database:
 		kubectl logs -f database${arg} -c database-provider
 
 agent:
-		kubectl logs -f agent${arg} -c agent-provider
+		kubectl logs -f agenttest -c agent-provider
 
 vis:
 		kubectl logs -f visualization -c visualization-provider
@@ -35,6 +35,12 @@ apply:
 
 delete:
 		cd kube && bash ./kube_delete.sh
+
+app:
+		kubectl apply -f ./kube/util/master-simulator.yaml
+
+del:
+		kubectl delete -f ./kube/util/master-simulator.yaml
 
 gen-rsc:
 		bash ./kube/util/gen-rsc.sh

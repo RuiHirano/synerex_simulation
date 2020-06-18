@@ -21,17 +21,17 @@ RUN go get -u google.golang.org/grpc
 
 # build synerex daemon
 WORKDIR /synerex_simulation
-COPY /provider/visualization ./provider/visualization
+COPY /provider/visualization/visualization-provider.go ./provider/visualization/
+COPY /provider/visualization/go.mod ./provider/visualization/
+COPY /provider/visualization/monitor/build ./provider/visualization/monitor/build
 COPY /provider/simutil ./provider/simutil
 COPY /util ./util
 COPY /api ./api
 COPY /nodeapi ./nodeapi
-RUN cd provider/visualization && \
-    sed -i 's/\r//' ./entrypoint.sh && \
-    chmod +x ./entrypoint.sh
+
 
 # expose port
 #EXPOSE 10000
 WORKDIR /synerex_simulation/provider/visualization
 RUN go build visualization-provider.go
-ENTRYPOINT [ "./entrypoint.sh" ]
+ENTRYPOINT [ "./visualization-provider" ]

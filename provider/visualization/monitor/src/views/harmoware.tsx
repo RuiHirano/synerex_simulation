@@ -41,31 +41,53 @@ const HarmowarePage: React.FC<BasedProps> = (props) => {
         const time = Date.now() / 1000; // set time as now. (If data have time, ..)
         console.log("socketData length2", data.length);
         //console.log("movesbasedata length", movesbasedata.length)
-        const movesbases: Movesbase[] = [];
+        const newMovesbase: Movesbase[] = [];
 
         data.forEach((value: any) => {
             const { mtype, id, lat, lon } = JSON.parse(
                 value
             );
-
             let color = [0, 200, 120];
-            movesbases.push({
-                type: mtype,
-                movesbaseidx: id,
-                departuretime: time,
-                arrivaltime: time,
-                operation: [
-                    {
-                        elapsedtime: time,
-                        position: [lon, lat, 0],
-                        //direction: 10,
-                        color
-                    }
-                ]
-            });
+
+            let isExist = false;
+            // operation内のelapsedtimeなどのオブジェクトは2つ以上ないと表示されないので注意
+            movesbase.forEach((movedata) => {
+                if (id === movedata.type) {
+                    // 存在する場合、更新
+                    newMovesbase.push({
+                        ...movedata,
+                        operation: [
+                            ...movedata.operation,
+                            {
+                                elapsedtime: time,
+                                position: [lon, lat, 0],
+                                color
+                            }
+                        ]
+                    });
+                    isExist = true
+                }
+            })
+
+            if (!isExist) {
+                // 存在しない場合、新規作成
+                let color = [0, 255, 0];
+                newMovesbase.push({
+                    type: id,
+                    operation: [
+                        {
+                            elapsedtime: time,
+                            position: [lon, lat, 0],
+                            color
+                        }
+                    ]
+                });
+            }
+
+
         });
 
-        actions.updateMovesBase(movesbases);
+        actions.updateMovesBase(newMovesbase);
     }
 
     const getAreas = (data: any) => {
@@ -141,6 +163,7 @@ const HarmowarePage: React.FC<BasedProps> = (props) => {
             actions.setSecPerHour(1000);
         }
     }, [])
+    console.log("render: ", viewport, actions)
     return (
         <div>
             <Controller {...props} />
