@@ -135,11 +135,15 @@ const HarmowarePage: React.FC<BasedProps & BasedState> = (props) => {
         if (actions) {
             actions.setViewport({
                 ...props.viewport,
+                longitude: 136.9831702,
+                latitude: 35.1562909,
                 width: window.screen.width,
                 height: window.screen.height,
-                zoom: 10
+                zoom: 16
             })
-            actions.setSecPerHour(1000);
+            actions.setSecPerHour(3600);
+            actions.setLeading(5)
+            actions.setTrailing(5)
         }
     }, [])
     //console.log("render: ", viewport, actions)
@@ -153,11 +157,6 @@ const HarmowarePage: React.FC<BasedProps & BasedState> = (props) => {
                     new LineMapLayer({
                         data: linedata,
                         getWidth: (x) => 20,
-                    }),
-                    new DepotsLayer({
-                        depotsData,
-                        iconChange: false,
-                        layerRadiusScale: 20
                     }),
                     new MovesLayer({
                         routePaths,
