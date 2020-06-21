@@ -221,7 +221,7 @@ func supplyCallback1(clt *api.SMServiceClient, sp *api.Supply) {
 		fmt.Printf("ready provider response")
 
 	case api.SupplyType_GET_AGENT_RESPONSE:
-		//fmt.Printf("Get Sp from Worker1%v\n", sp)
+		fmt.Printf("Get Sp from Worker1\n")
 
 		//time.Sleep(10 * time.Millisecond)
 		worker1api.SendSpToWait(sp)
@@ -301,6 +301,7 @@ func demandCallback1(clt *api.SMServiceClient, dm *api.Demand) {
 func supplyCallback2(clt *api.SMServiceClient, sp *api.Supply) {
 	switch sp.GetSimSupply().GetType() {
 	case api.SupplyType_GET_AGENT_RESPONSE:
+		fmt.Printf("Get Sp from Worker2\n")
 		worker2api.SendSpToWait(sp)
 
 	case api.SupplyType_REGIST_PROVIDER_RESPONSE:

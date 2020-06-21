@@ -116,6 +116,7 @@ func (m *Message) Set(a []*api.Agent, senderId uint64) {
 	m.agents = append(m.agents, a...)
 	m.senderIds = append(m.senderIds, senderId)
 	if m.IsFinish() {
+		logger.Info("closeChannel set agent")
 		close(m.ready)
 	}
 }
@@ -126,7 +127,7 @@ func (m *Message) Get() []*api.Agent {
 		//case <-time.After(100 * time.Millisecond):
 		//	logger.Warn("Timeout Get")
 	}
-
+	logger.Info("Get agent")
 	return m.agents
 }
 
@@ -283,6 +284,7 @@ func forwardClock(dm *api.Demand) {
 	}*/
 
 	agents := agentsMessage.Get()
+	//agents := []*api.Agent{}
 
 	// Harmowareに送る
 	sendAgentToHarmowareVis(agents)
@@ -310,15 +312,17 @@ func demandCallback(clt *api.SMServiceClient, dm *api.Demand) {
 	case api.DemandType_SET_AGENT_REQUEST:
 
 		agents := dm.GetSimDemand().GetSetAgentRequest().GetAgents()
-		logger.Info("get Agents: %v\n", len(agents))
+		logger.Info("get Agents: %v %v\n", len(agents), dm.GetSimDemand().GetSenderId())
 		//sendAgentToHarmowareVis(agents)
-		agentsMessage.Set(agents, dm.GetSimDemand().GetSenderId())
+		go agentsMessage.Set(agents, dm.GetSimDemand().GetSenderId())
 		//db.Push(agents)
 		// response
 		pId := myProvider.Id
 		targets := []uint64{dm.GetSimDemand().GetSenderId()}
 		msgId := dm.GetSimDemand().GetMsgId()
+		logger.Info("set Agent Finished: %v\n", len(agents))
 		visapi.SetAgentResponse(pId, targets, msgId)
+		logger.Info("set Agent Finished2: %v\n", len(agents))
 
 	}
 

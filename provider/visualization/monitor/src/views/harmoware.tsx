@@ -170,7 +170,7 @@ const HarmowarePage: React.FC<BasedProps & BasedState> = (props) => {
                         getRouteWidth: x => 1,
                         optionCellSize: 2,
                         sizeScale: 1,
-                        iconChange: false,
+                        iconChange: true,
                         optionChange: false, // this.state.optionChange,
                         //onHover
                     })

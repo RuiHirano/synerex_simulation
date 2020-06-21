@@ -62,3 +62,6 @@ log:
 
 exec:
 		cd kube && bash kube_exec.sh
+
+del2: 
+		kubectl delete pod agent11 agent12 agent21 agent22 agent31 agent32 worker11 worker12 worker21 worker22 worker31 worker32 gateway1111 gateway1112 gateway1121 gateway1212 gateway1222 gateway2121 gateway2122 gateway2131 gateway2222 gateway2232 gateway3131 gateway3132

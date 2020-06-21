@@ -161,10 +161,10 @@ var clockCmd = &cobra.Command{
 
 func init() {
 	agentCmd.Flags().IntVarP(&ao.Num, "num", "n", 0, "agent num (required)")
-	areaCmd.Flags().StringVarP(&aro.ELat, "elat", "a", "35.666", "area end latitude (required)")
-	areaCmd.Flags().StringVarP(&aro.SLat, "slat", "b", "37.666", "area start latitude (required)")
-	areaCmd.Flags().StringVarP(&aro.ELon, "elon", "c", "135.666", "area end lonitude (required)")
-	areaCmd.Flags().StringVarP(&aro.SLon, "slon", "d", "137.666", "area start lonitude (required)")
+	areaCmd.Flags().StringVarP(&aro.ELat, "elat", "a", "35.161544", "area end latitude (required)")
+	areaCmd.Flags().StringVarP(&aro.SLat, "slat", "b", "35.152371", "area start latitude (required)")
+	areaCmd.Flags().StringVarP(&aro.ELon, "elon", "c", "136.989860", "area end lonitude (required)")
+	areaCmd.Flags().StringVarP(&aro.SLon, "slon", "d", "136.971762", "area start lonitude (required)")
 	clockCmd.Flags().IntVarP(&co.Time, "time", "t", 0, "clcok time (required)")
 	setCmd.AddCommand(agentCmd)
 	setCmd.AddCommand(clockCmd)

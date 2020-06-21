@@ -51,7 +51,13 @@ type Config struct {
 }
 
 type Config_Area struct {
-	SideRange float64 `yaml:"sideRange"`
+	SideRange      float64        `yaml:"sideRange"`
+	DuplicateRange float64        `yaml:"duplicateRange"`
+	DefaultAreaNum Config_AreaNum `yaml:"defaultAreaNum"`
+}
+type Config_AreaNum struct {
+	Row    uint64 `yaml:"row"`
+	Column uint64 `yaml:"column"`
 }
 
 func readConfig() (*Config, error) {
@@ -260,15 +266,20 @@ func (proc *Processor) setAgents(agentNum uint64) (bool, error) {
 
 // setAreas: areaをセットするDemandを出す関数
 func (proc *Processor) setAreas(areaCoords []*api.Coord) (bool, error) {
+
 	proc.Area = &api.Area{
 		Id:            0,
 		ControlArea:   areaCoords,
 		DuplicateArea: areaCoords,
 	}
-	id := "test"
+	//id := "test"
 
-	go podgen.applyWorker(id, proc.Area)
-	defer podgen.deleteWorker(id) // not working...
+	areas, neighborsMap := proc.divideArea(areaCoords, config.Area)
+	for _, area := range areas {
+		neighbors := neighborsMap[int(area.Id)]
+		go podgen.applyWorker(area, neighbors)
+		//defer podgen.deleteWorker(id) // not working...
+	}
 
 	// send area info to visualization
 	senderId := myProvider.Id
@@ -276,7 +287,7 @@ func (proc *Processor) setAreas(areaCoords []*api.Coord) (bool, error) {
 		simutil.IDType_VISUALIZATION,
 	})
 	logger.Debug("Send Area Info to Vis! \n%v\n", targets)
-	areas := []*api.Area{proc.Area}
+	//areas := []*api.Area{proc.Area}
 	simapi.SendAreaInfoRequest(senderId, targets, areas)
 
 	return true, nil
@@ -319,6 +330,58 @@ func (proc *Processor) startClock() {
 		return
 	}
 
+}
+
+// areaをrow、columnに分割する関数
+func (proc *Processor) divideArea(areaCoords []*api.Coord, areaConfig Config_Area) ([]*api.Area, map[int][]string) {
+	row := areaConfig.DefaultAreaNum.Row
+	column := areaConfig.DefaultAreaNum.Column
+	dupRange := areaConfig.DuplicateRange
+	areas := []*api.Area{}
+	neighborMap := make(map[int][]string)
+
+	maxLat, maxLon, minLat, minLon := GetCoordRange(proc.Area.ControlArea)
+	//areaId := 0
+	for c := 0; c < int(column); c++ {
+		// calc slon, elon
+		slon := minLon + (maxLon-minLon)*float64(c)/float64(column)
+		elon := minLon + (maxLon-minLon)*float64((c+1))/float64(column)
+		for r := 0; r < int(row); r++ {
+			areaId := strconv.Itoa(c+1) + strconv.Itoa(r+1)
+			areaIdint, _ := strconv.Atoi(strconv.Itoa(c+1) + strconv.Itoa(r+1))
+			// calc slat, elat
+			slat := minLat + (maxLat-minLat)*float64(r)/float64(row)
+			elat := minLat + (maxLat-minLat)*float64((r+1))/float64(row)
+			fmt.Printf("test id %v\n", areaId)
+			areas = append(areas, &api.Area{
+				Id: uint64(areaIdint),
+				ControlArea: []*api.Coord{
+					{Latitude: slat, Longitude: slon},
+					{Latitude: slat, Longitude: elon},
+					{Latitude: elat, Longitude: elon},
+					{Latitude: elat, Longitude: slon},
+				},
+				DuplicateArea: []*api.Coord{
+					{Latitude: slat - dupRange, Longitude: slon - dupRange},
+					{Latitude: slat - dupRange, Longitude: elon + dupRange},
+					{Latitude: elat + dupRange, Longitude: elon + dupRange},
+					{Latitude: elat + dupRange, Longitude: slon - dupRange},
+				},
+			})
+
+			// add neighbors 各エリアの右と上を作成すれば全体を満たす
+			if c+2 <= int(column) {
+				id := strconv.Itoa(c+2) + strconv.Itoa(r+1)
+				neighborMap[areaIdint] = append(neighborMap[areaIdint], id)
+			}
+			if r+2 <= int(row) {
+				id := strconv.Itoa(c+1) + strconv.Itoa(r+2)
+				neighborMap[areaIdint] = append(neighborMap[areaIdint], id)
+			}
+		}
+	}
+
+	return areas, neighborMap
 }
 
 ///////////////////////////////////////////////
@@ -509,14 +572,18 @@ func NewPodGenerator() *PodGenerator {
 	return pg
 }
 
-func (pg *PodGenerator) applyWorker(areaid string, area *api.Area) error {
-	fmt.Printf("applying WorkerPod...")
+func (pg *PodGenerator) applyWorker(area *api.Area, neighbors []string) error {
+	fmt.Printf("applying WorkerPod... %v\n", area.Id)
+	areaid := strconv.FormatUint(area.Id, 10)
 	rsrcs := []Resource{
 		pg.NewWorkerService(areaid),
 		pg.NewWorker(areaid),
 		pg.NewAgent(areaid, area),
 	}
-
+	for _, neiId := range neighbors {
+		rsrcs = append(rsrcs, pg.NewGateway(areaid, neiId))
+	}
+	fmt.Printf("applying WorkerPod2... %v\n", areaid)
 	// write yaml
 	fileName := "scripts/worker" + areaid + ".yaml"
 	for _, rsrc := range rsrcs {
@@ -526,11 +593,12 @@ func (pg *PodGenerator) applyWorker(areaid string, area *api.Area) error {
 			return err
 		}
 	}
+	fmt.Printf("test: %v %v\n", fileName, areaid)
 	// apply yaml
 	cmd := exec.Command("kubectl", "apply", "-f", fileName)
 	out, err := cmd.Output()
 	if err != nil {
-		fmt.Println("Command Start Error.")
+		fmt.Println("Command Start Error. %v\n", err)
 		return err
 	}
 
@@ -579,6 +647,54 @@ func (pg *PodGenerator) deleteWorker(areaid string) error {
 	pg.RsrcMap[areaid] = nil
 
 	return nil
+}
+
+// gateway
+func (pg *PodGenerator) NewGateway(areaId string, neiId string) Resource {
+	worker1Name := "worker" + areaId
+	worker2Name := "worker" + neiId
+	gatewayName := "gateway" + areaId + neiId
+	gateway := Resource{
+		ApiVersion: "v1",
+		Kind:       "Pod",
+		Metadata: Metadata{
+			Name:   gatewayName,
+			Labels: Label{App: gatewayName},
+		},
+		Spec: Spec{
+			Containers: []Container{
+				{
+					Name:            "gateway-provider",
+					Image:           "synerex-simulation/gateway-provider:latest",
+					ImagePullPolicy: "Never",
+					Env: []Env{
+						{
+							Name:  "WORKER_SYNEREX_SERVER1",
+							Value: worker1Name + ":700",
+						},
+						{
+							Name:  "WORKER_NODEID_SERVER1",
+							Value: worker1Name + ":600",
+						},
+						{
+							Name:  "WORKER_SYNEREX_SERVER2",
+							Value: worker2Name + ":700",
+						},
+						{
+							Name:  "WORKER_NODEID_SERVER2",
+							Value: worker2Name + ":600",
+						},
+						{
+							Name:  "PROVIDER_NAME",
+							Value: "GatewayProvider" + areaId + neiId,
+						},
+					},
+					Ports: []Port{{ContainerPort: 9980}},
+				},
+			},
+		},
+	}
+	return gateway
 }
 
 func (pg *PodGenerator) NewAgent(areaid string, area *api.Area) Resource {

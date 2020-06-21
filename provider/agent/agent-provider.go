@@ -92,32 +92,12 @@ func init() {
 ///////////////////////////////////////////////////////////
 
 type Message struct {
-	ready     chan struct{}
-	agents    []*api.Agent
-	senderIds []uint64
+	ready  chan struct{}
+	agents []*api.Agent
 }
 
 func NewMessage() *Message {
-	return &Message{ready: make(chan struct{}), agents: make([]*api.Agent, 0), senderIds: []uint64{}}
-}
-
-func (m *Message) AddSenderId(senderId uint64) {
-	m.senderIds = append(m.senderIds, senderId)
-}
-
-func (m *Message) FinishSend(targets []uint64) bool {
-	for _, tgt := range targets {
-		isExist := false
-		for _, sid := range m.senderIds {
-			if tgt == sid {
-				isExist = true
-			}
-		}
-		if isExist == false {
-			return false
-		}
-	}
-	return true
+	return &Message{ready: make(chan struct{}), agents: make([]*api.Agent, 0)}
 }
 
 func (m *Message) Set(a []*api.Agent) {
@@ -130,6 +110,35 @@ func (m *Message) Get() []*api.Agent {
 	case <-m.ready:
 		//case <-time.After(100 * time.Millisecond):
 		//	logger.Warn("Timeout Get")
+	}
+
+	return m.agents
+}
+
+////////////////////////////////////////////////////////////
+////////////            Message Class2           ///////////
+///////////////////////////////////////////////////////////
+
+type Message2 struct {
+	isFinish bool
+	agents   []*api.Agent
+}
+
+func NewMessage2() *Message2 {
+	return &Message2{isFinish: false, agents: make([]*api.Agent, 0)}
+}
+
+func (m *Message2) Set(a []*api.Agent) {
+	m.agents = a
+	m.isFinish = true
+}
+
+func (m *Message2) Get() []*api.Agent {
+	for {
+		if m.isFinish == true {
+			time.Sleep(1 * time.Millisecond)
+			break
+		}
 	}
 
 	return m.agents
@@ -254,7 +263,7 @@ func demandCallback(clt *api.SMServiceClient, dm *api.Demand) {
 		logger.Info("Finish: Forward Clock Init")
 
 	case api.DemandType_GET_AGENT_REQUEST:
-		//logger.Debug("get agent request %v\n", dm)
+		logger.Debug("get agent request %v\n", dm)
 		senderId := dm.GetSimDemand().GetSenderId()
 		sameAreaIds := pm.GetProviderIds([]simutil.IDType{
 			simutil.IDType_SAME,
@@ -273,12 +282,13 @@ func demandCallback(clt *api.SMServiceClient, dm *api.Demand) {
 			agents = sim.Agents
 		} else if util.Contains(neighborAreaIds, senderId) {
 			// 隣接エリアのエージェントプロバイダの場合
-			logger.Debug("Get Agent Request from \n%v\n", dm)
+			//logger.Debug("Get Agent Request from \n%v\n", dm)
 			agents = agentsMessage.Get()
 		} else if util.Contains(visIds, senderId) {
 			// Visプロバイダの場合
 			agents = agentsMessage.Get()
 		}
+		logger.Debug("get agent request2 %v\n")
 
 		// response
 		pId := myProvider.Id
@@ -302,6 +312,7 @@ func supplyCallback(clt *api.SMServiceClient, sp *api.Supply) {
 		//logger.Debug("get agent response \n", sp)
 		simapi.SendSpToWait(sp)
 	case api.SupplyType_SET_AGENT_RESPONSE:
+		logger.Debug("response set agent")
 		//time.Sleep(10 * time.Millisecond)
 		//logger.Debug("get agent response \n", sp)
 		simapi.SendSpToWait(sp)
@@ -323,6 +334,11 @@ func visSupplyCallback(clt *api.SMServiceClient, sp *api.Supply) {
 		visProvider = sp.GetSimSupply().GetRegistProviderResponse().GetProvider()
 		pm.AddProvider(visProvider)
 		mu.Unlock()
+	case api.SupplyType_SET_AGENT_RESPONSE:
+		logger.Debug("response set agent from vis")
+		//time.Sleep(10 * time.Millisecond)
+		//logger.Debug("get agent response \n", sp)
+		vissimapi.SendSpToWait(sp)
 	}
 }
 
