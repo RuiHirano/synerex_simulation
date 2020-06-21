@@ -322,7 +322,7 @@ func demandCallback2(clt *api.SMServiceClient, dm *api.Demand) {
 	switch dm.GetSimDemand().GetType() {
 
 	case api.DemandType_GET_AGENT_REQUEST:
-		logger.Debug("get agent request\n")
+		logger.Debug("get agent request\n", dm.)
 
 		t1 := time.Now()
 		// 隣接エリアがない場合はそのまま返す

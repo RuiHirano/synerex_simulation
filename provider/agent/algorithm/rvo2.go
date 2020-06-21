@@ -1,7 +1,6 @@
 package algorithm
 
 import (
-	//"fmt"
 	"math"
 
 	//"github.com/paulmach/orb"
@@ -11,16 +10,25 @@ import (
 
 	//"io/ioutil"
 	//"log"
+	"math/rand"
 
 	rvo "github.com/RuiHirano/rvo2-go/src/rvosimulator"
 	"github.com/synerex/synerex_alpha/api"
+	"github.com/synerex/synerex_alpha/util"
 )
 
 var (
-	sim *rvo.RVOSimulator
+	sim       *rvo.RVOSimulator
+	logger    *util.Logger
+	routeName string
 
 //fcs *geojson.FeatureCollection
 )
+
+func init() {
+	logger = util.NewLogger()
+	routeName = ""
+}
 
 type RVO2Route struct {
 	Agents []*api.Agent
@@ -61,6 +69,7 @@ func (rvo2route *RVO2Route) CalcDirectionAndDistance(startCoord *api.Coord, goal
 
 // DecideNextTransit: 次の経由地を求める関数
 func (rvo2route *RVO2Route) DecideNextTransit(nextTransit *api.Coord, transitPoint []*api.Coord, distance float64, destination *api.Coord) *api.Coord {
+
 	// 距離が5m以下の場合
 	if distance < 150 {
 		if nextTransit != destination {
@@ -80,6 +89,27 @@ func (rvo2route *RVO2Route) DecideNextTransit(nextTransit *api.Coord, transitPoi
 		}
 	}
 	return nextTransit
+}
+
+// GetNextTransit: 次の経由地を求める関数
+func (rvo2route *RVO2Route) GetNextTransit(nextTransit *api.Coord, distance float64) *api.Coord {
+	newNextTransit := nextTransit
+	logger.Error("Name: %v, Distance %v\n", routeName, distance)
+	// 距離が5m以下の場合
+	if distance < 10 {
+		routes := GetRoutes()
+		for _, route := range routes {
+			if route.Point.Longitude == nextTransit.Longitude && route.Point.Latitude == nextTransit.Latitude {
+				index := rand.Intn(len(route.NeighborPoints))
+				nextRoute := route.NeighborPoints[index]
+				newNextTransit = nextRoute.Point
+				routeName = nextRoute.Name
+				logger.Warn("Name: %v, Index %v\n", routeName, index)
+				break
+			}
+		}
+	}
+	return newNextTransit
 }
 
 // SetupScenario: Scenarioを設定する関数
@@ -108,8 +138,8 @@ func (rvo2route *RVO2Route) CalcNextAgents() []*api.Agent {
 	currentAgents := rvo2route.Agents
 
 	timeStep := 0.1
-	neighborDist := 0.00008 // どのくらいの距離の相手をNeighborと認識するか?Neighborとの距離をどのくらいに保つか？ぶつかったと認識する距離？
-	maxneighbors := 10      // 周り何体を計算対象とするか
+	neighborDist := 0.00003 // どのくらいの距離の相手をNeighborと認識するか?Neighborとの距離をどのくらいに保つか？ぶつかったと認識する距離？
+	maxneighbors := 3       // 周り何体を計算対象とするか
 	timeHorizon := 1.0
 	timeHorizonObst := 1.0
 	radius := 0.00001  // エージェントの半径
@@ -139,10 +169,12 @@ func (rvo2route *RVO2Route) CalcNextAgents() []*api.Agent {
 			}
 
 			// 現在の位置とゴールとの距離と角度を求める (度, m))
-			//direction, distance := rvo2route.CalcDirectionAndDistance(nextCoord, agentInfo.Route.NextTransit)
+			_, distance := rvo2route.CalcDirectionAndDistance(nextCoord, agentInfo.Route.NextTransit)
 			// 次の経由地nextTransitを求める
 			//nextTransit := rvo2route.DecideNextTransit(agentInfo.Route.NextTransit, agentInfo.Route.TransitPoints, distance, destination)
-			nextTransit := agentInfo.Route.NextTransit
+			//nextTransit := agentInfo.Route.NextTransit
+			nextTransit := rvo2route.GetNextTransit(agentInfo.Route.NextTransit, distance)
+
 			goalVector := sim.GetAgentGoalVector(int(rvoId))
 			direction := math.Atan2(goalVector.Y, goalVector.X)
 			speed := agentInfo.Route.Speed
@@ -203,3 +235,182 @@ func GetCoordRange(coords []*api.Coord) (float64, float64, float64, float64) {
 	}
 	return maxLat, maxLon, minLat, minLon
 }
+
+type RoutePoint struct {
+	Id             uint64
+	Name           string
+	Point          *api.Coord
+	NeighborPoints []*RoutePoint
+}
+
+func GetRouteMap() map[uint64][]*RoutePoint {
+	routeMap := make(map[uint64][]*RoutePoint)
+	routeMap[0] = []*RoutePoint{{Id: 1, Name: "enterance", Point: &api.Coord{Longitude: 136.974688, Latitude: 35.158228}}}
+	routeMap[1] = []*RoutePoint{
+		{Id: 0, Name: "gate", Point: &api.Coord{Longitude: 136.974024, Latitude: 35.158995}},
+		{Id: 2, Name: "rightEnt", Point: &api.Coord{Longitude: 136.974645, Latitude: 35.157958}},
+		{Id: 3, Name: "leftEnt", Point: &api.Coord{Longitude: 136.974938, Latitude: 35.158164}},
+	}
+	routeMap[2] = []*RoutePoint{
+		{Id: 1, Name: "enterance", Point: &api.Coord{Longitude: 136.974688, Latitude: 35.158228}},
+		{Id: 4, Name: "road1", Point: &api.Coord{Longitude: 136.974864, Latitude: 35.157823}},
+	}
+	routeMap[3] = []*RoutePoint{
+		{Id: 1, Name: "enterance", Point: &api.Coord{Longitude: 136.974688, Latitude: 35.158228}},
+		{Id: 5, Name: "road2", Point: &api.Coord{Longitude: 136.975054, Latitude: 35.158001}},
+	}
+	routeMap[4] = []*RoutePoint{
+		{Id: 2, Name: "rightEnt", Point: &api.Coord{Longitude: 136.974645, Latitude: 35.157958}},
+		{Id: 5, Name: "road2", Point: &api.Coord{Longitude: 136.975054, Latitude: 35.158001}},
+		{Id: 6, Name: "road3", Point: &api.Coord{Longitude: 136.975517, Latitude: 35.157096}},
+	}
+	routeMap[5] = []*RoutePoint{
+		{Id: 3, Name: "leftEnt", Point: &api.Coord{Longitude: 136.974938, Latitude: 35.158164}},
+		{Id: 4, Name: "road1", Point: &api.Coord{Longitude: 136.974864, Latitude: 35.157823}},
+	}
+	routeMap[6] = []*RoutePoint{
+		{Id: 7, Name: "road4", Point: &api.Coord{Longitude: 136.975872, Latitude: 35.156678}},
+		{Id: 4, Name: "road1", Point: &api.Coord{Longitude: 136.974864, Latitude: 35.157823}},
+	}
+
+	return routeMap
+}
+
+func GetRoutes() []*RoutePoint {
+	routes := []*RoutePoint{
+		{
+			Id: 0, Name: "gate", Point: &api.Coord{Longitude: 136.974024, Latitude: 35.158995},
+			NeighborPoints: []*RoutePoint{
+				{Id: 1, Name: "enterance", Point: &api.Coord{Longitude: 136.974688, Latitude: 35.158228}},
+			},
+		},
+		{
+			Id: 1, Name: "enterance", Point: &api.Coord{Longitude: 136.974688, Latitude: 35.158228},
+			NeighborPoints: []*RoutePoint{
+				{Id: 0, Name: "gate", Point: &api.Coord{Longitude: 136.974024, Latitude: 35.158995}},
+				{Id: 2, Name: "rightEnt", Point: &api.Coord{Longitude: 136.974645, Latitude: 35.157958}},
+				{Id: 3, Name: "leftEnt", Point: &api.Coord{Longitude: 136.974938, Latitude: 35.158164}},
+			},
+		},
+		{
+			Id: 2, Name: "rightEnt", Point: &api.Coord{Longitude: 136.974645, Latitude: 35.157958},
+			NeighborPoints: []*RoutePoint{
+				{Id: 1, Name: "enterance", Point: &api.Coord{Longitude: 136.974688, Latitude: 35.158228}},
+				{Id: 4, Name: "road1", Point: &api.Coord{Longitude: 136.974864, Latitude: 35.157823}},
+			},
+		},
+		{
+			Id: 3, Name: "leftEnt", Point: &api.Coord{Longitude: 136.974938, Latitude: 35.158164},
+			NeighborPoints: []*RoutePoint{
+				{Id: 1, Name: "enterance", Point: &api.Coord{Longitude: 136.974688, Latitude: 35.158228}},
+				{Id: 5, Name: "road2", Point: &api.Coord{Longitude: 136.975054, Latitude: 35.158001}},
+			},
+		},
+		{
+			Id: 4, Name: "road1", Point: &api.Coord{Longitude: 136.974864, Latitude: 35.157823},
+			NeighborPoints: []*RoutePoint{
+				{Id: 2, Name: "rightEnt", Point: &api.Coord{Longitude: 136.974645, Latitude: 35.157958}},
+				{Id: 5, Name: "road2", Point: &api.Coord{Longitude: 136.975054, Latitude: 35.158001}},
+				{Id: 6, Name: "road3", Point: &api.Coord{Longitude: 136.975517, Latitude: 35.157096}},
+			},
+		},
+		{
+			Id: 5, Name: "road2", Point: &api.Coord{Longitude: 136.975054, Latitude: 35.158001},
+			NeighborPoints: []*RoutePoint{
+				{Id: 3, Name: "leftEnt", Point: &api.Coord{Longitude: 136.974938, Latitude: 35.158164}},
+				{Id: 4, Name: "road1", Point: &api.Coord{Longitude: 136.974864, Latitude: 35.157823}},
+			},
+		},
+		{
+			Id: 6, Name: "road3", Point: &api.Coord{Longitude: 136.975517, Latitude: 35.157096},
+			NeighborPoints: []*RoutePoint{
+				{Id: 7, Name: "road4", Point: &api.Coord{Longitude: 136.975872, Latitude: 35.156678}},
+				{Id: 4, Name: "road1", Point: &api.Coord{Longitude: 136.974864, Latitude: 35.157823}},
+			},
+		},
+		{
+			Id: 7, Name: "road4", Point: &api.Coord{Longitude: 136.975872, Latitude: 35.156678},
+			NeighborPoints: []*RoutePoint{
+				{Id: 6, Name: "road3", Point: &api.Coord{Longitude: 136.975517, Latitude: 35.157096}},
+				{Id: 8, Name: "road5", Point: &api.Coord{Longitude: 136.976314, Latitude: 35.156757}},
+				{Id: 10, Name: "burger", Point: &api.Coord{Longitude: 136.976960, Latitude: 35.155697}},
+			},
+		},
+		{
+			Id: 8, Name: "road5", Point: &api.Coord{Longitude: 136.976314, Latitude: 35.156757},
+			NeighborPoints: []*RoutePoint{
+				{Id: 6, Name: "road3", Point: &api.Coord{Longitude: 136.975517, Latitude: 35.157096}},
+				{Id: 9, Name: "toilet", Point: &api.Coord{Longitude: 136.977261, Latitude: 35.155951}},
+			},
+		},
+		{
+			Id: 9, Name: "toilet", Point: &api.Coord{Longitude: 136.977261, Latitude: 35.155951},
+			NeighborPoints: []*RoutePoint{
+				{Id: 8, Name: "road5", Point: &api.Coord{Longitude: 136.976314, Latitude: 35.156757}},
+				{Id: 10, Name: "burger", Point: &api.Coord{Longitude: 136.976960, Latitude: 35.155697}},
+			},
+		},
+		{
+			Id: 10, Name: "burger", Point: &api.Coord{Longitude: 136.976960, Latitude: 35.155697},
+			NeighborPoints: []*RoutePoint{
+				{Id: 8, Name: "road5", Point: &api.Coord{Longitude: 136.976314, Latitude: 35.156757}},
+				{Id: 7, Name: "road4", Point: &api.Coord{Longitude: 136.975872, Latitude: 35.156678}},
+				{Id: 11, Name: "lake1", Point: &api.Coord{Longitude: 136.978217, Latitude: 35.155266}},
+			},
+		},
+		{
+			Id: 11, Name: "lake1", Point: &api.Coord{Longitude: 136.978217, Latitude: 35.155266},
+			NeighborPoints: []*RoutePoint{
+				{Id: 10, Name: "burger", Point: &api.Coord{Longitude: 136.976960, Latitude: 35.155697}},
+				{Id: 12, Name: "lake2", Point: &api.Coord{Longitude: 136.978623, Latitude: 35.155855}},
+				{Id: 16, Name: "lake6", Point: &api.Coord{Longitude: 136.978297, Latitude: 35.154755}},
+			},
+		},
+		{
+			Id: 12, Name: "lake2", Point: &api.Coord{Longitude: 136.978623, Latitude: 35.155855},
+			NeighborPoints: []*RoutePoint{
+				{Id: 11, Name: "lake1", Point: &api.Coord{Longitude: 136.978217, Latitude: 35.155266}},
+				{Id: 13, Name: "lake3", Point: &api.Coord{Longitude: 136.979657, Latitude: 35.155659}},
+			},
+		},
+		{
+			Id: 13, Name: "lake3", Point: &api.Coord{Longitude: 136.979657, Latitude: 35.155659},
+			NeighborPoints: []*RoutePoint{
+				{Id: 12, Name: "lake2", Point: &api.Coord{Longitude: 136.978623, Latitude: 35.155855}},
+				{Id: 14, Name: "lake4", Point: &api.Coord{Longitude: 136.980489, Latitude: 35.154484}},
+			},
+		},
+		{
+			Id: 14, Name: "lake4", Point: &api.Coord{Longitude: 136.980489, Latitude: 35.154484},
+			NeighborPoints: []*RoutePoint{
+				{Id: 13, Name: "lake3", Point: &api.Coord{Longitude: 136.979657, Latitude: 35.155659}},
+				{Id: 15, Name: "lake5", Point: &api.Coord{Longitude: 136.980143, Latitude: 35.153869}},
+			},
+		},
+		{
+			Id: 15, Name: "lake5", Point: &api.Coord{Longitude: 136.980143, Latitude: 35.153869},
+			NeighborPoints: []*RoutePoint{
+				{Id: 14, Name: "lake4", Point: &api.Coord{Longitude: 136.980489, Latitude: 35.154484}},
+				{Id: 16, Name: "lake6", Point: &api.Coord{Longitude: 136.978297, Latitude: 35.154755}},
+			},
+		},
+		{
+			Id: 16, Name: "lake6", Point: &api.Coord{Longitude: 136.978297, Latitude: 35.154755},
+			NeighborPoints: []*RoutePoint{
+				{Id: 11, Name: "lake1", Point: &api.Coord{Longitude: 136.978217, Latitude: 35.155266}},
+				{Id: 15, Name: "lake5", Point: &api.Coord{Longitude: 136.980143, Latitude: 35.153869}},
+			},
+		},
+	}
+
+	return routes
+}
+
+// {Id: 0, Name: "gate", Point: &api.Coord{Longitude: 136.974024, Latitude: 35.158995}
+// {Id: 1, Name: "enterance", Point: &api.Coord{Longitude: 136.974688, Latitude: 35.158228}},
+// {Id: 2, Name: "rightEnt", Point: &api.Coord{Longitude: 136.974645, Latitude: 35.157958}},
+// {Id: 3, Name: "leftEnt", Point: &api.Coord{Longitude: 136.974938, Latitude: 35.158164}},
+// {Id: 4, Name: "road1", Point: &api.Coord{Longitude: 136.974864, Latitude: 35.157823}},
+// {Id: 5, Name: "road2", Point: &api.Coord{Longitude: 136.975054, Latitude: 35.158001}},
+// {Id: 6, Name: "road3", Point: &api.Coord{Longitude: 136.975517, Latitude: 35.157096}},
+// {Id: 7, Name: "road4", Point: &api.Coord{Longitude: 136.975872, Latitude: 35.156678}},

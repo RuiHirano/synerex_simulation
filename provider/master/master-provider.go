@@ -216,6 +216,54 @@ func NewProcessor() *Processor {
 }
 
 // setAgents: agentをセットするDemandを出す関数
+// routes から東山のrouteを作成する
+func (proc *Processor) setAgents2(agentNum uint64) (bool, error) {
+
+	if proc.Area == nil {
+		return false, fmt.Errorf("area is nil")
+	}
+
+	agents := make([]*api.Agent, 0)
+	//minLon, maxLon, minLat, maxLat := 136.971626, 136.989379, 35.152210, 35.161499
+	maxLat, maxLon, minLat, minLon := GetCoordRange(proc.Area.ControlArea)
+	fmt.Printf("minLon %v, maxLon %v, minLat %v, maxLat %v\n", minLon, maxLon, minLat, maxLat)
+	for i := 0; i < int(agentNum); i++ {
+		uid, _ := uuid.NewRandom()
+		routes := GetRoutes()
+		route1 := routes[rand.Intn(len(routes))]
+		point1 := route1.Point
+		point2 := route1.NeighborPoints[rand.Intn(int(len(route1.NeighborPoints)))].Point
+		position := GetAmongPosition(point1, point2)
+		nextTransit := point2
+
+		agents = append(agents, &api.Agent{
+			Type: api.AgentType_PEDESTRIAN,
+			Id:   uint64(uid.ID()),
+			Route: &api.Route{
+				Position:      position,
+				Direction:     30,
+				Speed:         60,
+				Departure:     position,
+				Destination:   position,
+				TransitPoints: []*api.Coord{},
+				NextTransit:   nextTransit,
+			},
+		})
+		fmt.Printf("position %v\n", position)
+	}
+
+	// エージェントを設置するリクエスト
+	senderId := myProvider.Id
+	targets := pm.GetProviderIds([]simutil.IDType{
+		simutil.IDType_WORKER,
+	})
+	simapi.SetAgentRequest(senderId, targets, agents)
+
+	logger.Info("Finish Setting Agents \n Add: %v", len(agents))
+	return true, nil
+}
+
+// setAgents: agentをセットするDemandを出す関数
 func (proc *Processor) setAgents(agentNum uint64) (bool, error) {
 
 	if proc.Area == nil {
@@ -236,7 +284,12 @@ func (proc *Processor) setAgents(agentNum uint64) (bool, error) {
 			Longitude: minLon + (maxLon-minLon)*rand.Float64(),
 			Latitude:  minLat + (maxLat-minLat)*rand.Float64(),
 		}
-		transitPoints := []*api.Coord{destination}
+		transitPoint := &api.Coord{
+			Longitude: minLon + (maxLon-minLon)*rand.Float64(),
+			Latitude:  minLat + (maxLat-minLat)*rand.Float64(),
+		}
+
+		transitPoints := []*api.Coord{transitPoint}
 		agents = append(agents, &api.Agent{
 			Type: api.AgentType_PEDESTRIAN,
 			Id:   uint64(uid.ID()),
@@ -247,7 +300,7 @@ func (proc *Processor) setAgents(agentNum uint64) (bool, error) {
 				Departure:     position,
 				Destination:   destination,
 				TransitPoints: transitPoints,
-				NextTransit:   destination,
+				NextTransit:   transitPoint,
 			},
 		})
 		fmt.Printf("position %v\n", position)
@@ -423,7 +476,7 @@ func (or *Order) SetAgent() echo.HandlerFunc {
 			return err
 		}
 		fmt.Printf("agent num %d\n", ao.Num)
-		ok, err := proc.setAgents(uint64(ao.Num))
+		ok, err := proc.setAgents2(uint64(ao.Num))
 		fmt.Printf("ok %v, err %v", ok, err)
 		return c.String(http.StatusOK, "Set Agent")
 	}
@@ -982,4 +1035,156 @@ func GetCoordRange(coords []*api.Coord) (float64, float64, float64, float64) {
 		}
 	}
 	return maxLat, maxLon, minLat, minLon
+}
+
+/////////////////////////////////////////////////////
+//////// util for creating higashiyama route ////////
+///////////////////////////////////////////////////////
+
+type RoutePoint struct {
+	Id             uint64
+	Name           string
+	Point          *api.Coord
+	NeighborPoints []*RoutePoint
+}
+
+func GetRoutes() []*RoutePoint {
+	routes := []*RoutePoint{
+		{
+			Id: 0, Name: "gate", Point: &api.Coord{Longitude: 136.974024, Latitude: 35.158995},
+			NeighborPoints: []*RoutePoint{
+				{Id: 1, Name: "enterance", Point: &api.Coord{Longitude: 136.974688, Latitude: 35.158228}},
+			},
+		},
+		{
+			Id: 1, Name: "enterance", Point: &api.Coord{Longitude: 136.974688, Latitude: 35.158228},
+			NeighborPoints: []*RoutePoint{
+				{Id: 0, Name: "gate", Point: &api.Coord{Longitude: 136.974024, Latitude: 35.158995}},
+				{Id: 2, Name: "rightEnt", Point: &api.Coord{Longitude: 136.974645, Latitude: 35.157958}},
+				{Id: 3, Name: "leftEnt", Point: &api.Coord{Longitude: 136.974938, Latitude: 35.158164}},
+			},
+		},
+		{
+			Id: 2, Name: "rightEnt", Point: &api.Coord{Longitude: 136.974645, Latitude: 35.157958},
+			NeighborPoints: []*RoutePoint{
+				{Id: 1, Name: "enterance", Point: &api.Coord{Longitude: 136.974688, Latitude: 35.158228}},
+				{Id: 4, Name: "road1", Point: &api.Coord{Longitude: 136.974864, Latitude: 35.157823}},
+			},
+		},
+		{
+			Id: 3, Name: "leftEnt", Point: &api.Coord{Longitude: 136.974938, Latitude: 35.158164},
+			NeighborPoints: []*RoutePoint{
+				{Id: 1, Name: "enterance", Point: &api.Coord{Longitude: 136.974688, Latitude: 35.158228}},
+				{Id: 5, Name: "road2", Point: &api.Coord{Longitude: 136.975054, Latitude: 35.158001}},
+			},
+		},
+		{
+			Id: 4, Name: "road1", Point: &api.Coord{Longitude: 136.974864, Latitude: 35.157823},
+			NeighborPoints: []*RoutePoint{
+				{Id: 2, Name: "rightEnt", Point: &api.Coord{Longitude: 136.974645, Latitude: 35.157958}},
+				{Id: 5, Name: "road2", Point: &api.Coord{Longitude: 136.975054, Latitude: 35.158001}},
+				{Id: 6, Name: "road3", Point: &api.Coord{Longitude: 136.975517, Latitude: 35.157096}},
+			},
+		},
+		{
+			Id: 5, Name: "road2", Point: &api.Coord{Longitude: 136.975054, Latitude: 35.158001},
+			NeighborPoints: []*RoutePoint{
+				{Id: 3, Name: "leftEnt", Point: &api.Coord{Longitude: 136.974938, Latitude: 35.158164}},
+				{Id: 4, Name: "road1", Point: &api.Coord{Longitude: 136.974864, Latitude: 35.157823}},
+			},
+		},
+		{
+			Id: 6, Name: "road3", Point: &api.Coord{Longitude: 136.975517, Latitude: 35.157096},
+			NeighborPoints: []*RoutePoint{
+				{Id: 7, Name: "road4", Point: &api.Coord{Longitude: 136.975872, Latitude: 35.156678}},
+				{Id: 4, Name: "road1", Point: &api.Coord{Longitude: 136.974864, Latitude: 35.157823}},
+			},
+		},
+		{
+			Id: 7, Name: "road4", Point: &api.Coord{Longitude: 136.975872, Latitude: 35.156678},
+			NeighborPoints: []*RoutePoint{
+				{Id: 6, Name: "road3", Point: &api.Coord{Longitude: 136.975517, Latitude: 35.157096}},
+				{Id: 8, Name: "road5", Point: &api.Coord{Longitude: 136.976314, Latitude: 35.156757}},
+				{Id: 10, Name: "burger", Point: &api.Coord{Longitude: 136.976960, Latitude: 35.155697}},
+			},
+		},
+		{
+			Id: 8, Name: "road5", Point: &api.Coord{Longitude: 136.976314, Latitude: 35.156757},
+			NeighborPoints: []*RoutePoint{
+				{Id: 6, Name: "road3", Point: &api.Coord{Longitude: 136.975517, Latitude: 35.157096}},
+				{Id: 9, Name: "toilet", Point: &api.Coord{Longitude: 136.977261, Latitude: 35.155951}},
+			},
+		},
+		{
+			Id: 9, Name: "toilet", Point: &api.Coord{Longitude: 136.977261, Latitude: 35.155951},
+			NeighborPoints: []*RoutePoint{
+				{Id: 8, Name: "road5", Point: &api.Coord{Longitude: 136.976314, Latitude: 35.156757}},
+				{Id: 10, Name: "burger", Point: &api.Coord{Longitude: 136.976960, Latitude: 35.155697}},
+			},
+		},
+		{
+			Id: 10, Name: "burger", Point: &api.Coord{Longitude: 136.976960, Latitude: 35.155697},
+			NeighborPoints: []*RoutePoint{
+				{Id: 8, Name: "road5", Point: &api.Coord{Longitude: 136.976314, Latitude: 35.156757}},
+				{Id: 7, Name: "road4", Point: &api.Coord{Longitude: 136.975872, Latitude: 35.156678}},
+				{Id: 11, Name: "lake1", Point: &api.Coord{Longitude: 136.978217, Latitude: 35.155266}},
+			},
+		},
+		{
+			Id: 11, Name: "lake1", Point: &api.Coord{Longitude: 136.978217, Latitude: 35.155266},
+			NeighborPoints: []*RoutePoint{
+				{Id: 10, Name: "burger", Point: &api.Coord{Longitude: 136.976960, Latitude: 35.155697}},
+				{Id: 12, Name: "lake2", Point: &api.Coord{Longitude: 136.978623, Latitude: 35.155855}},
+				{Id: 16, Name: "lake6", Point: &api.Coord{Longitude: 136.978297, Latitude: 35.154755}},
+			},
+		},
+		{
+			Id: 12, Name: "lake2", Point: &api.Coord{Longitude: 136.978623, Latitude: 35.155855},
+			NeighborPoints: []*RoutePoint{
+				{Id: 11, Name: "lake1", Point: &api.Coord{Longitude: 136.978217, Latitude: 35.155266}},
+				{Id: 13, Name: "lake3", Point: &api.Coord{Longitude: 136.979657, Latitude: 35.155659}},
+			},
+		},
+		{
+			Id: 13, Name: "lake3", Point: &api.Coord{Longitude: 136.979657, Latitude: 35.155659},
+			NeighborPoints: []*RoutePoint{
+				{Id: 12, Name: "lake2", Point: &api.Coord{Longitude: 136.978623, Latitude: 35.155855}},
+				{Id: 14, Name: "lake4", Point: &api.Coord{Longitude: 136.980489, Latitude: 35.154484}},
+			},
+		},
+		{
+			Id: 14, Name: "lake4", Point: &api.Coord{Longitude: 136.980489, Latitude: 35.154484},
+			NeighborPoints: []*RoutePoint{
+				{Id: 13, Name: "lake3", Point: &api.Coord{Longitude: 136.979657, Latitude: 35.155659}},
+				{Id: 15, Name: "lake5", Point: &api.Coord{Longitude: 136.980143, Latitude: 35.153869}},
+			},
+		},
+		{
+			Id: 15, Name: "lake5", Point: &api.Coord{Longitude: 136.980143, Latitude: 35.153869},
+			NeighborPoints: []*RoutePoint{
+				{Id: 14, Name: "lake4", Point: &api.Coord{Longitude: 136.980489, Latitude: 35.154484}},
+				{Id: 16, Name: "lake6", Point: &api.Coord{Longitude: 136.978297, Latitude: 35.154755}},
+			},
+		},
+		{
+			Id: 16, Name: "lake6", Point: &api.Coord{Longitude: 136.978297, Latitude: 35.154755},
+			NeighborPoints: []*RoutePoint{
+				{Id: 11, Name: "lake1", Point: &api.Coord{Longitude: 136.978217, Latitude: 35.155266}},
+				{Id: 15, Name: "lake5", Point: &api.Coord{Longitude: 136.980143, Latitude: 35.153869}},
+			},
+		},
+	}
+
+	return routes
+}
+func GetAmongPosition(pos1 *api.Coord, pos2 *api.Coord) *api.Coord {
+	lat1 := pos1.Latitude
+	lon1 := pos1.Longitude
+	lat2 := pos2.Latitude
+	lon2 := pos2.Longitude
+	position := &api.Coord{
+		Latitude:  lat1 + (lat2-lat1)*rand.Float64(),
+		Longitude: lon1 + (lon2-lon1)*rand.Float64(),
+	}
+	return position
 }

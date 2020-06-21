@@ -1,6 +1,6 @@
 
 import React, { useEffect, useState } from 'react';
-import { HarmoVisLayers, Container, BasedProps, BasedState, connectToHarmowareVis, MovesLayer, Movesbase, MovesbaseOperation, DepotsLayer, DepotsData, LineMapLayer, LineMapData } from 'harmoware-vis';
+import { HarmoVisLayers, Container, BasedProps, BasedState, connectToHarmowareVis, MovesLayer, Movesbase, GeoJsonLayer, MovesbaseOperation, DepotsLayer, DepotsData, LineMapLayer, LineMapData } from 'harmoware-vis';
 import io from "socket.io-client";
 import { Controller } from '../components';
 
@@ -131,6 +131,8 @@ const HarmowarePage: React.FC<BasedProps & BasedState> = (props) => {
         socket.on("agents", (data: any) => getAgents(data));
         socket.on("areas", (data: any) => getAreas(data));
 
+        //testAgent()
+
         console.log(process.env);
         if (actions) {
             actions.setViewport({
@@ -146,6 +148,8 @@ const HarmowarePage: React.FC<BasedProps & BasedState> = (props) => {
             actions.setTrailing(5)
         }
     }, [])
+
+
     //console.log("render: ", viewport, actions)
     return (
         <div>
@@ -156,7 +160,7 @@ const HarmowarePage: React.FC<BasedProps & BasedState> = (props) => {
                 layers={[
                     new LineMapLayer({
                         data: linedata,
-                        getWidth: (x) => 20,
+                        getWidth: (x) => 10,
                     }),
                     new MovesLayer({
                         routePaths,
@@ -165,25 +169,28 @@ const HarmowarePage: React.FC<BasedProps & BasedState> = (props) => {
                         clickedObject,
                         actions,
                         //lightSettings,
-                        layerRadiusScale: 0.1,
-                        getRadius: x => 1,
-                        getRouteWidth: x => 1,
-                        optionCellSize: 2,
-                        sizeScale: 1,
-                        iconChange: true,
-                        optionChange: false, // this.state.optionChange,
+                        //layerRadiusScale: 0.1,
+                        //getRadius: x => 1,
+                        //getRouteWidth: x => 1,
+                        //optionCellSize: 2,
+                        //sizeScale: 1,
+                        iconChange: false,
+                        //optionChange: false, // this.state.optionChange,
                         //onHover
-                    })
+                    }),
+
                 ]}
             />
         </div>
     );
 }
 
-/*async function timeout(ms: number) {
+
+
+async function timeout(ms: number) {
     await new Promise(resolve => setTimeout(resolve, ms));
     return
-}*/
+}
 
 const getCoordRange = ((coords: Coord[]) => {
     let maxLat = Number.NEGATIVE_INFINITY

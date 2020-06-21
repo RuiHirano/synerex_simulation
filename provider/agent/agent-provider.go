@@ -155,7 +155,7 @@ func forwardClock() {
 	if len(targets) != 0 {
 		senderId := myProvider.Id
 		sps, _ := simapi.GetAgentRequest(senderId, targets)
-		logger.Debug("1: targets %v\n", targets)
+		//logger.Debug("1: targets %v\n", targets)
 		for _, sp := range sps {
 			agents := sp.GetSimSupply().GetGetAgentResponse().GetAgents()
 			sameAgents = append(sameAgents, agents...)
@@ -190,7 +190,7 @@ func forwardClock() {
 	if len(targets) != 0 {
 		senderId := myProvider.Id
 		sps, _ := simapi.GetAgentRequest(senderId, targets)
-		logger.Debug("3: targets %v\n", targets)
+		//logger.Debug("3: targets %v\n", targets)
 		for _, sp := range sps {
 			agents := sp.GetSimSupply().GetGetAgentResponse().GetAgents()
 			neighborAgents = append(neighborAgents, agents...)
@@ -263,7 +263,7 @@ func demandCallback(clt *api.SMServiceClient, dm *api.Demand) {
 		logger.Info("Finish: Forward Clock Init")
 
 	case api.DemandType_GET_AGENT_REQUEST:
-		logger.Debug("get agent request %v\n", dm)
+		//logger.Debug("get agent request %v\n", dm)
 		senderId := dm.GetSimDemand().GetSenderId()
 		sameAreaIds := pm.GetProviderIds([]simutil.IDType{
 			simutil.IDType_SAME,
@@ -288,7 +288,7 @@ func demandCallback(clt *api.SMServiceClient, dm *api.Demand) {
 			// Visプロバイダの場合
 			agents = agentsMessage.Get()
 		}
-		logger.Debug("get agent request2 %v\n")
+		//logger.Debug("get agent request2 %v\n")
 
 		// response
 		pId := myProvider.Id
@@ -312,7 +312,7 @@ func supplyCallback(clt *api.SMServiceClient, sp *api.Supply) {
 		//logger.Debug("get agent response \n", sp)
 		simapi.SendSpToWait(sp)
 	case api.SupplyType_SET_AGENT_RESPONSE:
-		logger.Debug("response set agent")
+		//logger.Debug("response set agent")
 		//time.Sleep(10 * time.Millisecond)
 		//logger.Debug("get agent response \n", sp)
 		simapi.SendSpToWait(sp)
@@ -335,7 +335,7 @@ func visSupplyCallback(clt *api.SMServiceClient, sp *api.Supply) {
 		pm.AddProvider(visProvider)
 		mu.Unlock()
 	case api.SupplyType_SET_AGENT_RESPONSE:
-		logger.Debug("response set agent from vis")
+		//logger.Debug("response set agent from vis")
 		//time.Sleep(10 * time.Millisecond)
 		//logger.Debug("get agent response \n", sp)
 		vissimapi.SendSpToWait(sp)
