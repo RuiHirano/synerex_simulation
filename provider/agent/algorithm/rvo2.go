@@ -94,7 +94,7 @@ func (rvo2route *RVO2Route) DecideNextTransit(nextTransit *api.Coord, transitPoi
 // GetNextTransit: 次の経由地を求める関数
 func (rvo2route *RVO2Route) GetNextTransit(nextTransit *api.Coord, distance float64) *api.Coord {
 	newNextTransit := nextTransit
-	logger.Error("Name: %v, Distance %v\n", routeName, distance)
+	//logger.Error("Name: %v, Distance %v\n", routeName, distance)
 	// 距離が5m以下の場合
 	if distance < 10 {
 		routes := GetRoutes()
@@ -104,7 +104,7 @@ func (rvo2route *RVO2Route) GetNextTransit(nextTransit *api.Coord, distance floa
 				nextRoute := route.NeighborPoints[index]
 				newNextTransit = nextRoute.Point
 				routeName = nextRoute.Name
-				logger.Warn("Name: %v, Index %v\n", routeName, index)
+				//logger.Warn("Name: %v, Index %v\n", routeName, index)
 				break
 			}
 		}

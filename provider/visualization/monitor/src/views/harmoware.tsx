@@ -1,6 +1,6 @@
 
 import React, { useEffect, useState } from 'react';
-import { HarmoVisLayers, Container, BasedProps, BasedState, connectToHarmowareVis, MovesLayer, Movesbase, GeoJsonLayer, MovesbaseOperation, DepotsLayer, DepotsData, LineMapLayer, LineMapData } from 'harmoware-vis';
+import { HarmoVisLayers, Container, BasedProps, BasedState, connectToHarmowareVis, MovesLayer, Movesbase, MovesbaseOperation, DepotsLayer, DepotsData, LineMapLayer, LineMapData } from 'harmoware-vis';
 import io from "socket.io-client";
 import { Controller } from '../components';
 
@@ -146,6 +146,7 @@ const HarmowarePage: React.FC<BasedProps & BasedState> = (props) => {
             actions.setSecPerHour(3600);
             actions.setLeading(5)
             actions.setTrailing(5)
+
         }
     }, [])
 
@@ -168,9 +169,10 @@ const HarmowarePage: React.FC<BasedProps & BasedState> = (props) => {
                         movedData,
                         clickedObject,
                         actions,
+                        optionVisible: false,
                         //lightSettings,
                         //layerRadiusScale: 0.1,
-                        //getRadius: x => 1,
+                        getRadius: x => 0.5,
                         //getRouteWidth: x => 1,
                         //optionCellSize: 2,
                         //sizeScale: 1,
