@@ -1076,6 +1076,7 @@ func GetRoutes() []*RoutePoint {
 			NeighborPoints: []*RoutePoint{
 				{Id: 1, Name: "enterance", Point: &api.Coord{Longitude: 136.974688, Latitude: 35.158228}},
 				{Id: 5, Name: "road2", Point: &api.Coord{Longitude: 136.975054, Latitude: 35.158001}},
+				{Id: 17, Name: "north1", Point: &api.Coord{Longitude: 136.976395, Latitude: 35.158410}},
 			},
 		},
 		{
@@ -1150,6 +1151,9 @@ func GetRoutes() []*RoutePoint {
 			NeighborPoints: []*RoutePoint{
 				{Id: 12, Name: "lake2", Point: &api.Coord{Longitude: 136.978623, Latitude: 35.155855}},
 				{Id: 14, Name: "lake4", Point: &api.Coord{Longitude: 136.980489, Latitude: 35.154484}},
+				{Id: 26, Name: "east6", Point: &api.Coord{Longitude: 136.984100, Latitude: 35.153693}},
+				{Id: 22, Name: "east1", Point: &api.Coord{Longitude: 136.981124, Latitude: 35.157283}},
+				{Id: 27, Name: "east-in1", Point: &api.Coord{Longitude: 136.982804, Latitude: 35.154175}},
 			},
 		},
 		{
@@ -1171,6 +1175,115 @@ func GetRoutes() []*RoutePoint {
 			NeighborPoints: []*RoutePoint{
 				{Id: 11, Name: "lake1", Point: &api.Coord{Longitude: 136.978217, Latitude: 35.155266}},
 				{Id: 15, Name: "lake5", Point: &api.Coord{Longitude: 136.980143, Latitude: 35.153869}},
+			},
+		},
+		{
+			Id: 17, Name: "north1", Point: &api.Coord{Longitude: 136.976395, Latitude: 35.158410},
+			NeighborPoints: []*RoutePoint{
+				{Id: 3, Name: "leftEnt", Point: &api.Coord{Longitude: 136.974938, Latitude: 35.158164}},
+				{Id: 5, Name: "road2", Point: &api.Coord{Longitude: 136.975054, Latitude: 35.158001}},
+				{Id: 18, Name: "north2", Point: &api.Coord{Longitude: 136.977821, Latitude: 35.159220}},
+			},
+		},
+		{
+			Id: 18, Name: "north2", Point: &api.Coord{Longitude: 136.977821, Latitude: 35.159220},
+			NeighborPoints: []*RoutePoint{
+				{Id: 17, Name: "north1", Point: &api.Coord{Longitude: 136.976395, Latitude: 35.158410}},
+				{Id: 19, Name: "medaka", Point: &api.Coord{Longitude: 136.979040, Latitude: 35.158147}},
+			},
+		},
+		{
+			Id: 19, Name: "medaka", Point: &api.Coord{Longitude: 136.979040, Latitude: 35.158147},
+			NeighborPoints: []*RoutePoint{
+				{Id: 18, Name: "north2", Point: &api.Coord{Longitude: 136.977821, Latitude: 35.159220}},
+				{Id: 20, Name: "tower", Point: &api.Coord{Longitude: 136.978846, Latitude: 35.157108}},
+			},
+		},
+		{
+			Id: 20, Name: "tower", Point: &api.Coord{Longitude: 136.978846, Latitude: 35.157108},
+			NeighborPoints: []*RoutePoint{
+				{Id: 19, Name: "medaka", Point: &api.Coord{Longitude: 136.979040, Latitude: 35.158147}},
+				{Id: 21, Name: "north-out", Point: &api.Coord{Longitude: 136.977890, Latitude: 35.156563}},
+			},
+		},
+		{
+			Id: 21, Name: "north-out", Point: &api.Coord{Longitude: 136.977890, Latitude: 35.156563},
+			NeighborPoints: []*RoutePoint{
+				{Id: 20, Name: "tower", Point: &api.Coord{Longitude: 136.978846, Latitude: 35.157108}},
+				{Id: 17, Name: "north1", Point: &api.Coord{Longitude: 136.976395, Latitude: 35.158410}},
+				{Id: 9, Name: "toilet", Point: &api.Coord{Longitude: 136.977261, Latitude: 35.155951}},
+			},
+		},
+		{
+			Id: 22, Name: "east1", Point: &api.Coord{Longitude: 136.981124, Latitude: 35.157283},
+			NeighborPoints: []*RoutePoint{
+				{Id: 13, Name: "lake3", Point: &api.Coord{Longitude: 136.979657, Latitude: 35.155659}},
+				{Id: 23, Name: "east2", Point: &api.Coord{Longitude: 136.984350, Latitude: 35.157271}},
+			},
+		},
+		{
+			Id: 23, Name: "east2", Point: &api.Coord{Longitude: 136.984350, Latitude: 35.157271},
+			NeighborPoints: []*RoutePoint{
+				{Id: 22, Name: "east1", Point: &api.Coord{Longitude: 136.981124, Latitude: 35.157283}},
+				{Id: 24, Name: "east3", Point: &api.Coord{Longitude: 136.987567, Latitude: 35.158233}},
+			},
+		},
+		{
+			Id: 24, Name: "east3", Point: &api.Coord{Longitude: 136.987567, Latitude: 35.158233},
+			NeighborPoints: []*RoutePoint{
+				{Id: 23, Name: "east2", Point: &api.Coord{Longitude: 136.984350, Latitude: 35.157271}},
+				{Id: 25, Name: "east4", Point: &api.Coord{Longitude: 136.988522, Latitude: 35.157286}},
+			},
+		},
+		{
+			Id: 25, Name: "east4", Point: &api.Coord{Longitude: 136.988522, Latitude: 35.157286},
+			NeighborPoints: []*RoutePoint{
+				{Id: 24, Name: "east3", Point: &api.Coord{Longitude: 136.987567, Latitude: 35.158233}},
+				{Id: 25, Name: "east5", Point: &api.Coord{Longitude: 136.988355, Latitude: 35.155838}},
+			},
+		},
+		{
+			Id: 25, Name: "east5", Point: &api.Coord{Longitude: 136.988355, Latitude: 35.155838},
+			NeighborPoints: []*RoutePoint{
+				{Id: 25, Name: "east4", Point: &api.Coord{Longitude: 136.988522, Latitude: 35.157286}},
+				{Id: 26, Name: "east6", Point: &api.Coord{Longitude: 136.984100, Latitude: 35.153693}},
+			},
+		},
+		{
+			Id: 26, Name: "east6", Point: &api.Coord{Longitude: 136.984100, Latitude: 35.153693},
+			NeighborPoints: []*RoutePoint{
+				{Id: 25, Name: "east5", Point: &api.Coord{Longitude: 136.988355, Latitude: 35.155838}},
+				{Id: 13, Name: "lake3", Point: &api.Coord{Longitude: 136.979657, Latitude: 35.155659}},
+				{Id: 27, Name: "east-in1", Point: &api.Coord{Longitude: 136.982804, Latitude: 35.154175}},
+			},
+		},
+		{
+			Id: 27, Name: "east-in1", Point: &api.Coord{Longitude: 136.982804, Latitude: 35.154175},
+			NeighborPoints: []*RoutePoint{
+				{Id: 26, Name: "east6", Point: &api.Coord{Longitude: 136.984100, Latitude: 35.153693}},
+				{Id: 13, Name: "lake3", Point: &api.Coord{Longitude: 136.979657, Latitude: 35.155659}},
+				{Id: 28, Name: "east-in2", Point: &api.Coord{Longitude: 136.984244, Latitude: 35.156283}},
+			},
+		},
+		{
+			Id: 28, Name: "east-in2", Point: &api.Coord{Longitude: 136.984244, Latitude: 35.156283},
+			NeighborPoints: []*RoutePoint{
+				{Id: 29, Name: "east-in3", Point: &api.Coord{Longitude: 136.987627, Latitude: 35.157104}},
+				{Id: 27, Name: "east-in1", Point: &api.Coord{Longitude: 136.982804, Latitude: 35.154175}},
+			},
+		},
+		{
+			Id: 29, Name: "east-in3", Point: &api.Coord{Longitude: 136.987627, Latitude: 35.157104},
+			NeighborPoints: []*RoutePoint{
+				{Id: 28, Name: "east-in2", Point: &api.Coord{Longitude: 136.984244, Latitude: 35.156283}},
+				{Id: 30, Name: "east-in4", Point: &api.Coord{Longitude: 136.986063, Latitude: 35.155353}},
+			},
+		},
+		{
+			Id: 30, Name: "east-in4", Point: &api.Coord{Longitude: 136.986063, Latitude: 35.155353},
+			NeighborPoints: []*RoutePoint{
+				{Id: 29, Name: "east-in3", Point: &api.Coord{Longitude: 136.987627, Latitude: 35.157104}},
+				{Id: 26, Name: "east6", Point: &api.Coord{Longitude: 136.984100, Latitude: 35.153693}},
 			},
 		},
 	}

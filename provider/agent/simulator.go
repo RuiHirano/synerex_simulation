@@ -31,7 +31,7 @@ func NewSimulator(areaInfo *api.Area, agentType api.AgentType) *Simulator {
 }
 
 // AddAgents :　Agentsを追加する関数
-func (sim *Simulator) AddAgents(agentsInfo []*api.Agent) {
+func (sim *Simulator) AddAgents(agentsInfo []*api.Agent) int {
 	newAgents := make([]*api.Agent, 0)
 	for _, agentInfo := range agentsInfo {
 		if agentInfo.Type == sim.AgentType {
@@ -43,6 +43,8 @@ func (sim *Simulator) AddAgents(agentsInfo []*api.Agent) {
 		}
 	}
 	sim.Agents = append(sim.Agents, newAgents...)
+
+	return len(sim.Agents)
 }
 
 // SetAgents :　Agentsをセットする関数

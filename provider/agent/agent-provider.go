@@ -146,8 +146,8 @@ func (m *Message2) Get() []*api.Agent {
 
 func forwardClock() {
 	//senderId := myProvider.Id
-	t1 := time.Now()
-	logger.Debug("1: 同エリアエージェント取得")
+	//t1 := time.Now()
+	//logger.Debug("1: 同エリアエージェント取得")
 	targets := pm.GetProviderIds([]simutil.IDType{
 		simutil.IDType_SAME,
 	})
@@ -155,7 +155,7 @@ func forwardClock() {
 	if len(targets) != 0 {
 		senderId := myProvider.Id
 		sps, _ := simapi.GetAgentRequest(senderId, targets)
-		//logger.Debug("1: targets %v\n", targets)
+		////logger.Debug("1: targets %v\n", targets)
 		for _, sp := range sps {
 			agents := sp.GetSimSupply().GetGetAgentResponse().GetAgents()
 			sameAgents = append(sameAgents, agents...)
@@ -163,9 +163,9 @@ func forwardClock() {
 	}
 
 	// [2. Calculation]次の時間のエージェントを計算する
-	logger.Debug("2: エージェント計算を行う")
+	//logger.Debug("2: エージェント計算を行う")
 	nextControlAgents := sim.ForwardStep(sameAgents) // agents in control area
-	logger.Debug("2: Set")
+	//logger.Debug("2: Set")
 	agentsMessage.Set(nextControlAgents)
 
 	// databaseに保存
@@ -180,7 +180,7 @@ func forwardClock() {
 	})
 	vissimapi.SetAgentRequest(myProvider.Id, targets, nextControlAgents)
 
-	logger.Debug("3: 隣接エージェントを取得")
+	//logger.Debug("3: 隣接エージェントを取得")
 	targets = pm.GetProviderIds([]simutil.IDType{
 		//simutil.IDType_NEIGHBOR,
 		simutil.IDType_GATEWAY,
@@ -190,23 +190,24 @@ func forwardClock() {
 	if len(targets) != 0 {
 		senderId := myProvider.Id
 		sps, _ := simapi.GetAgentRequest(senderId, targets)
-		//logger.Debug("3: targets %v\n", targets)
+		////logger.Debug("3: targets %v\n", targets)
 		for _, sp := range sps {
 			agents := sp.GetSimSupply().GetGetAgentResponse().GetAgents()
 			neighborAgents = append(neighborAgents, agents...)
 		}
 	}
 
-	logger.Debug("4: エージェントを更新")
+	//logger.Debug("4: エージェントを更新")
 	// [4. Update Agents]重複エリアのエージェントを更新する
 	nextAgents := sim.UpdateDuplicateAgents(nextControlAgents, neighborAgents)
 	// Agentsをセットする
 	sim.SetAgents(nextAgents)
 
-	logger.Info("Finish: Clock Forwarded. AgentNum:  %v", len(nextControlAgents))
-	t2 := time.Now()
-	duration := t2.Sub(t1).Milliseconds()
-	logger.Info("Duration: %v, PID: %v", duration, myProvider.Id)
+	//logger.Info("Finish: Clock Forwarded. AgentNum:  %v", len(nextControlAgents))
+	logger.Info("\x1b[32m\x1b[40m [ Agent : %v ] \x1b[0m", len(nextControlAgents))
+	//t2 := time.Now()
+	//duration := t2.Sub(t1).Milliseconds()
+	//logger.Info("Duration: %v, PID: %v", duration, myProvider.Id)
 }
 
 // callback for each Supply
@@ -222,24 +223,25 @@ func demandCallback(clt *api.SMServiceClient, dm *api.Demand) {
 		senderId := myProvider.Id
 		msgId := dm.GetSimDemand().GetMsgId()
 		simapi.UpdateProvidersResponse(senderId, targets, msgId)
-		logger.Info("Finish: Update Providers num: %v\n", len(providers))
-		for _, p := range providers {
-			logger.Debug("PID: %v,  Name: %v\n", p.Id, p.Name)
-		}
+		//logger.Info("Finish: Update Providers num: %v\n", len(providers))
+		//for _, p := range providers {
+		//logger.Debug("PID: %v,  Name: %v\n", p.Id, p.Name)
+		//}
 
 	case api.DemandType_SET_AGENT_REQUEST:
 		// Agentをセットする
 		agents := dm.GetSimDemand().GetSetAgentRequest().GetAgents()
 
 		// Agent情報を追加する
-		sim.AddAgents(agents)
+		num := sim.AddAgents(agents)
 
 		// セット完了通知を送る
 		targets := []uint64{dm.GetSimDemand().GetSenderId()}
 		senderId := myProvider.Id
 		msgId := dm.GetSimDemand().GetMsgId()
 		simapi.SetAgentResponse(senderId, targets, msgId)
-		logger.Info("Finish: Set Agents Add %v\n", len(agents))
+		logger.Info("\x1b[32m\x1b[40m [ Agent : %v ] \x1b[0m", num)
+		////logger.Info("Finish: Agents %v\n", num)
 
 	case api.DemandType_FORWARD_CLOCK_REQUEST:
 		// クロックを進める要求
@@ -250,7 +252,7 @@ func demandCallback(clt *api.SMServiceClient, dm *api.Demand) {
 		targets := []uint64{dm.GetSimDemand().GetSenderId()}
 		msgId := dm.GetSimDemand().GetMsgId()
 		simapi.ForwardClockResponse(senderId, targets, msgId)
-		logger.Info("Finish: Forward Clock")
+		//logger.Info("Finish: Forward Clock")
 
 	case api.DemandType_FORWARD_CLOCK_INIT_REQUEST:
 		agentsMessage = NewMessage()
@@ -260,10 +262,10 @@ func demandCallback(clt *api.SMServiceClient, dm *api.Demand) {
 		targets := []uint64{dm.GetSimDemand().GetSenderId()}
 		msgId := dm.GetSimDemand().GetMsgId()
 		simapi.ForwardClockInitResponse(senderId, targets, msgId)
-		logger.Info("Finish: Forward Clock Init")
+		//logger.Info("Finish: Forward Clock Init")
 
 	case api.DemandType_GET_AGENT_REQUEST:
-		//logger.Debug("get agent request %v\n", dm)
+		////logger.Debug("get agent request %v\n", dm)
 		senderId := dm.GetSimDemand().GetSenderId()
 		sameAreaIds := pm.GetProviderIds([]simutil.IDType{
 			simutil.IDType_SAME,
@@ -282,13 +284,13 @@ func demandCallback(clt *api.SMServiceClient, dm *api.Demand) {
 			agents = sim.Agents
 		} else if util.Contains(neighborAreaIds, senderId) {
 			// 隣接エリアのエージェントプロバイダの場合
-			//logger.Debug("Get Agent Request from \n%v\n", dm)
+			////logger.Debug("Get Agent Request from \n%v\n", dm)
 			agents = agentsMessage.Get()
 		} else if util.Contains(visIds, senderId) {
 			// Visプロバイダの場合
 			agents = agentsMessage.Get()
 		}
-		//logger.Debug("get agent request2 %v\n")
+		////logger.Debug("get agent request2 %v\n")
 
 		// response
 		pId := myProvider.Id
@@ -303,18 +305,18 @@ func demandCallback(clt *api.SMServiceClient, dm *api.Demand) {
 func supplyCallback(clt *api.SMServiceClient, sp *api.Supply) {
 	switch sp.GetSimSupply().GetType() {
 	case api.SupplyType_REGIST_PROVIDER_RESPONSE:
-		logger.Debug("resist provider response")
+		//logger.Debug("resist provider response")
 		mu.Lock()
 		workerProvider = sp.GetSimSupply().GetRegistProviderResponse().GetProvider()
 		mu.Unlock()
 	case api.SupplyType_GET_AGENT_RESPONSE:
 		//time.Sleep(10 * time.Millisecond)
-		//logger.Debug("get agent response \n", sp)
+		////logger.Debug("get agent response \n", sp)
 		simapi.SendSpToWait(sp)
 	case api.SupplyType_SET_AGENT_RESPONSE:
-		//logger.Debug("response set agent")
+		////logger.Debug("response set agent")
 		//time.Sleep(10 * time.Millisecond)
-		//logger.Debug("get agent response \n", sp)
+		////logger.Debug("get agent response \n", sp)
 		simapi.SendSpToWait(sp)
 	}
 }
@@ -329,15 +331,15 @@ func visDemandCallback(clt *api.SMServiceClient, dm *api.Demand) {
 func visSupplyCallback(clt *api.SMServiceClient, sp *api.Supply) {
 	switch sp.GetSimSupply().GetType() {
 	case api.SupplyType_REGIST_PROVIDER_RESPONSE:
-		logger.Debug("resist provider response")
+		//logger.Debug("resist provider response")
 		mu.Lock()
 		visProvider = sp.GetSimSupply().GetRegistProviderResponse().GetProvider()
 		pm.AddProvider(visProvider)
 		mu.Unlock()
 	case api.SupplyType_SET_AGENT_RESPONSE:
-		//logger.Debug("response set agent from vis")
+		////logger.Debug("response set agent from vis")
 		//time.Sleep(10 * time.Millisecond)
-		//logger.Debug("get agent response \n", sp)
+		////logger.Debug("get agent response \n", sp)
 		vissimapi.SendSpToWait(sp)
 	}
 }
@@ -351,10 +353,10 @@ func registToWorker() {
 	go func() {
 		for {
 			if workerProvider != nil {
-				logger.Debug("Regist Success to Worker!")
+				//logger.Debug("Regist Success to Worker!")
 				return
 			} else {
-				logger.Debug("Couldn't Regist Worker...Retry...\n")
+				//logger.Debug("Couldn't Regist Worker...Retry...\n")
 				time.Sleep(2 * time.Second)
 				// workerへ登録
 				simapi.RegistProviderRequest(senderId, targets, myProvider)
@@ -372,10 +374,10 @@ func registToVis() {
 	go func() {
 		for {
 			if visProvider != nil {
-				logger.Debug("Regist Success to Vis!")
+				//logger.Debug("Regist Success to Vis!")
 				return
 			} else {
-				logger.Debug("Couldn't Regist Vis...Retry...\n")
+				//logger.Debug("Couldn't Regist Vis...Retry...\n")
 				time.Sleep(2 * time.Second)
 				// visへ登録
 				vissimapi.RegistProviderRequest(senderId, targets, myProvider)
@@ -385,7 +387,7 @@ func registToVis() {
 }
 
 func main() {
-	logger.Info("StartUp Provider")
+	//logger.Info("StartUp Provider")
 	fmt.Printf("NumCPU=%d\n", runtime.NumCPU())
 	runtime.GOMAXPROCS(runtime.NumCPU())
 
@@ -409,7 +411,7 @@ func main() {
 	for {
 		err := nodeapi.RegisterNodeName(nodeIdAddr, myProvider.GetName(), false)
 		if err == nil {
-			logger.Info("connected NodeID server!")
+			//logger.Info("connected NodeID server!")
 			go nodeapi.HandleSigInt()
 			nodeapi.RegisterDeferFunction(nodeapi.UnRegisterNode)
 			break
@@ -441,7 +443,7 @@ func main() {
 	for {
 		err := visNodeApi.RegisterNodeName(visNodeIdAddr, myProvider.GetName(), false)
 		if err == nil {
-			logger.Info("connected VIS NodeID server!")
+			//logger.Info("connected VIS NodeID server!")
 			go visNodeApi.HandleSigInt()
 			visNodeApi.RegisterDeferFunction(visNodeApi.UnRegisterNode)
 			break

@@ -729,7 +729,7 @@ func (w *Waiter) WaitSp(msgId uint64, targets []uint64, timeout uint64) ([]*Supp
 
 					// 同期が終了したかどうか
 					if w.isFinishSpSync(msgId, targets) {
-						logger.Debug("Finish Wait!")
+						//logger.Debug("Finish Wait!")
 						mu.Unlock()
 						wg.Done()
 						return
