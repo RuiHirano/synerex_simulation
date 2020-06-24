@@ -144,7 +144,7 @@ const HarmowarePage: React.FC<BasedProps & BasedState> = (props) => {
                 zoom: 16
             })
             actions.setSecPerHour(3600);
-            actions.setLeading(5)
+            actions.setLeading(2)
             actions.setTrailing(5)
 
         }

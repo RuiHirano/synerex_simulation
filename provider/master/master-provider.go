@@ -215,6 +215,54 @@ func NewProcessor() *Processor {
 	return proc
 }
 
+// setAgents3: gatewayから入れる
+// routes から東山のrouteを作成する
+func (proc *Processor) setAgents3(agentNum uint64) (bool, error) {
+
+	if proc.Area == nil {
+		return false, fmt.Errorf("area is nil")
+	}
+
+	agents := make([]*api.Agent, 0)
+	//minLon, maxLon, minLat, maxLat := 136.971626, 136.989379, 35.152210, 35.161499
+	//maxLat, maxLon, minLat, minLon := GetCoordRange(proc.Area.ControlArea)
+	//fmt.Printf("minLon %v, maxLon %v, minLat %v, maxLat %v\n", minLon, maxLon, minLat, maxLat)
+	for i := 0; i < int(agentNum); i++ {
+		uid, _ := uuid.NewRandom()
+		routes := GetRoutes()
+		route1 := routes[0]
+		point1 := route1.Point
+		point2 := route1.NeighborPoints[rand.Intn(int(len(route1.NeighborPoints)))].Point
+		position := GetAmongPosition(point1, point2)
+		nextTransit := point2
+
+		agents = append(agents, &api.Agent{
+			Type: api.AgentType_PEDESTRIAN,
+			Id:   uint64(uid.ID()),
+			Route: &api.Route{
+				Position:      position,
+				Direction:     30,
+				Speed:         60,
+				Departure:     position,
+				Destination:   position,
+				TransitPoints: []*api.Coord{},
+				NextTransit:   nextTransit,
+			},
+		})
+		fmt.Printf("position %v\n", position)
+	}
+
+	// エージェントを設置するリクエスト
+	senderId := myProvider.Id
+	targets := pm.GetProviderIds([]simutil.IDType{
+		simutil.IDType_WORKER,
+	})
+	simapi.SetAgentRequest(senderId, targets, agents)
+
+	logger.Info("Finish Setting Agents \n Add: %v", len(agents))
+	return true, nil
+}
+
 // setAgents: agentをセットするDemandを出す関数
 // routes から東山のrouteを作成する
 func (proc *Processor) setAgents2(agentNum uint64) (bool, error) {
@@ -366,14 +414,19 @@ func (proc *Processor) startClock() {
 	t2 := time.Now()
 	duration := t2.Sub(t1).Milliseconds()
 	logger.Info("Duration: %v", duration)
-	if duration > 1000 {
+	interval := int64(300) // 周期ms
+	if duration > interval {
 		logger.Error("time cycle delayed...")
 	} else {
 		// 待機
-		logger.Info("wait %v ms", 1000-duration)
-		time.Sleep(time.Duration(1000-duration) * time.Millisecond)
+		logger.Info("wait %v ms", interval-duration)
+		time.Sleep(time.Duration(interval-duration) * time.Millisecond)
 	}
-
+	// 1秒毎に10対追加
+	if masterClock%3 == 0 {
+		logger.Info("setAgent")
+		proc.setAgents3(uint64(10))
+	}
 	// 次のサイクルを行う
 	if startFlag {
 		proc.startClock()
