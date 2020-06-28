@@ -2,6 +2,10 @@
 
 Simulation Services for Person and Traffic Trip using synerex-alpha
 
+# Branch Contents
+GKEにて大規模化のテストをするためのブランチ
+gke-server-distributionにてgkeでのresouceを作成できる
+
 # Requirements
 
 go 1.11 or later (we use go.mod files for module dependencies)

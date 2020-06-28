@@ -809,7 +809,9 @@ func main() {
 		log.Fatalf("failed to listen: %v", err)
 	}
 
-	var opts []grpc.ServerOption
+	opts := []grpc.ServerOption{
+		grpc.MaxSendMsgSize(1024 * 1024 * 15),
+	}
 
 	logger := logrus.New()
 

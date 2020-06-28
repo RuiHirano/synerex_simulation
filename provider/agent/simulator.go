@@ -32,24 +32,24 @@ func NewSimulator(areaInfo *api.Area, agentType api.AgentType) *Simulator {
 
 // AddAgents :　Agentsを追加する関数
 func (sim *Simulator) AddAgents(agentsInfo []*api.Agent) int {
-	newAgents := make([]*api.Agent, 0)
+	/*newAgents := make([]*api.Agent, 0)
 	for _, agentInfo := range agentsInfo {
 		if agentInfo.Type == sim.AgentType {
 			position := agentInfo.Route.Position
 			//("Debug %v, %v", position, sim.Area.DuplicateArea)
-			if IsAgentInArea(position, sim.Area.DuplicateArea) {
-				newAgents = append(newAgents, agentInfo)
-			}
+			//if IsAgentInArea(position, sim.Area.DuplicateArea) {
+			newAgents = append(newAgents, agentInfo)
+			//}
 		}
-	}
-	sim.Agents = append(sim.Agents, newAgents...)
+	}*/
+	sim.Agents = append(sim.Agents, agentsInfo...)
 
 	return len(sim.Agents)
 }
 
 // SetAgents :　Agentsをセットする関数
 func (sim *Simulator) SetAgents(agentsInfo []*api.Agent) {
-	newAgents := make([]*api.Agent, 0)
+	/*newAgents := make([]*api.Agent, 0)
 	for _, agentInfo := range agentsInfo {
 		if agentInfo.Type == sim.AgentType {
 			position := agentInfo.Route.Position
@@ -58,8 +58,8 @@ func (sim *Simulator) SetAgents(agentsInfo []*api.Agent) {
 				newAgents = append(newAgents, agentInfo)
 			}
 		}
-	}
-	sim.Agents = newAgents
+	}*/
+	sim.Agents = agentsInfo
 }
 
 // ClearAgents :　Agentsを追加する関数
@@ -75,7 +75,7 @@ func (sim *Simulator) GetAgents() []*api.Agent {
 // UpdateDuplicateAgents :　重複エリアのエージェントを更新する関数
 func (sim *Simulator) UpdateDuplicateAgents(nextControlAgents []*api.Agent, neighborAgents []*api.Agent) []*api.Agent {
 	nextAgents := nextControlAgents
-	for _, neighborAgent := range neighborAgents {
+	/*for _, neighborAgent := range neighborAgents {
 		isAppendAgent := true
 		position := neighborAgent.Route.Position
 		for _, sameAreaAgent := range nextControlAgents {
@@ -88,7 +88,7 @@ func (sim *Simulator) UpdateDuplicateAgents(nextControlAgents []*api.Agent, neig
 		if isAppendAgent && IsAgentInArea(position, sim.Area.DuplicateArea) {
 			nextAgents = append(nextAgents, neighborAgent)
 		}
-	}
+	}*/
 	return nextAgents
 }
 

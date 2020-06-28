@@ -1,4 +1,4 @@
-num=100
+num=1000
 
 agent:
 		./simulator order set agent -n ${num}

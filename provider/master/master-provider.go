@@ -44,7 +44,18 @@ var (
 	config *Config
 	podgen *PodGenerator
 	proc   *Processor
+
+	sLat           float64
+	sLon           float64
+	eLat           float64
+	eLon           float64
+	remainAgentNum int
 )
+
+func init() {
+	sLon, sLon, sLat, sLat = 136.971626, 136.980379, 35.152210, 35.156199
+	remainAgentNum = 0
+}
 
 type Config struct {
 	Area Config_Area `yaml:"area"`
@@ -202,6 +213,7 @@ func demandCallback(clt *api.SMServiceClient, dm *api.Demand) {
 
 type Processor struct {
 	Area        *api.Area            // 全体のエリア
+	Agents      []*api.Agent         // 全エージェント
 	AreaMap     map[string]*api.Area // [areaid] []areaCoord     エリア情報を表したmap
 	NeighborMap map[string][]string  // [areaid] []neighborAreaid   隣接関係を表したmap
 }
@@ -209,6 +221,7 @@ type Processor struct {
 func NewProcessor() *Processor {
 	proc := &Processor{
 		Area:        nil,
+		Agents:      []*api.Agent{},
 		AreaMap:     make(map[string]*api.Area),
 		NeighborMap: make(map[string][]string),
 	}
@@ -314,45 +327,52 @@ func (proc *Processor) setAgents2(agentNum uint64) (bool, error) {
 // setAgents: agentをセットするDemandを出す関数
 func (proc *Processor) setAgents(agentNum uint64) (bool, error) {
 
-	if proc.Area == nil {
-		return false, fmt.Errorf("area is nil")
-	}
+	//if proc.Area == nil {
+	//	return false, fmt.Errorf("area is nil")
+	//}
 
 	agents := make([]*api.Agent, 0)
-	//minLon, maxLon, minLat, maxLat := 136.971626, 136.989379, 35.152210, 35.161499
-	maxLat, maxLon, minLat, minLon := GetCoordRange(proc.Area.ControlArea)
-	fmt.Printf("minLon %v, maxLon %v, minLat %v, maxLat %v\n", minLon, maxLon, minLat, maxLat)
-	for i := 0; i < int(agentNum); i++ {
-		uid, _ := uuid.NewRandom()
-		position := &api.Coord{
-			Longitude: minLon + (maxLon-minLon)*rand.Float64(),
-			Latitude:  minLat + (maxLat-minLat)*rand.Float64(),
-		}
-		destination := &api.Coord{
-			Longitude: minLon + (maxLon-minLon)*rand.Float64(),
-			Latitude:  minLat + (maxLat-minLat)*rand.Float64(),
-		}
-		transitPoint := &api.Coord{
-			Longitude: minLon + (maxLon-minLon)*rand.Float64(),
-			Latitude:  minLat + (maxLat-minLat)*rand.Float64(),
-		}
+	lonRange := 0.01640
+	//minLon, maxLon, minLat, maxLat := 136.971626, 136.980379, 35.152210, 35.156199
+	// longitudeを変えていく
+	//var minLon, maxLon, minLat, maxLat float64
+	for i := 0; i < int(agentNum)/1000; i++ {
+		minLon, maxLon, minLat, maxLat := sLon+lonRange, eLon+lonRange, sLat, eLat
+		fmt.Printf("minLon %v, maxLon %v, minLat %v, maxLat %v\n", minLon, maxLon, minLat, maxLat)
+		for i := 0; i < 1000; i++ {
+			uid, _ := uuid.NewRandom()
+			position := &api.Coord{
+				Longitude: minLon + (maxLon-minLon)*rand.Float64(),
+				Latitude:  minLat + (maxLat-minLat)*rand.Float64(),
+			}
+			destination := &api.Coord{
+				Longitude: minLon + (maxLon-minLon)*rand.Float64(),
+				Latitude:  minLat + (maxLat-minLat)*rand.Float64(),
+			}
+			transitPoint := &api.Coord{
+				Longitude: minLon + (maxLon-minLon)*rand.Float64(),
+				Latitude:  minLat + (maxLat-minLat)*rand.Float64(),
+			}
 
-		transitPoints := []*api.Coord{transitPoint}
-		agents = append(agents, &api.Agent{
-			Type: api.AgentType_PEDESTRIAN,
-			Id:   uint64(uid.ID()),
-			Route: &api.Route{
-				Position:      position,
-				Direction:     30,
-				Speed:         60,
-				Departure:     position,
-				Destination:   destination,
-				TransitPoints: transitPoints,
-				NextTransit:   transitPoint,
-			},
-		})
-		fmt.Printf("position %v\n", position)
+			transitPoints := []*api.Coord{transitPoint}
+			agents = append(agents, &api.Agent{
+				Type: api.AgentType_PEDESTRIAN,
+				Id:   uint64(uid.ID()),
+				Route: &api.Route{
+					Position:      position,
+					Direction:     30,
+					Speed:         60,
+					Departure:     position,
+					Destination:   destination,
+					TransitPoints: transitPoints,
+					NextTransit:   transitPoint,
+				},
+			})
+			//fmt.Printf("position %v\n", position)
+		}
 	}
+	//maxLat, maxLon, minLat, minLon := GetCoordRange(proc.Area.ControlArea)
+	//fmt.Printf("minLon %v, maxLon %v, minLat %v, maxLat %v\n", minLon, maxLon, minLat, maxLat)
 
 	// エージェントを設置するリクエスト
 	senderId := myProvider.Id
@@ -375,7 +395,7 @@ func (proc *Processor) setAreas(areaCoords []*api.Coord) (bool, error) {
 	}
 	//id := "test"
 
-	areas, neighborsMap := proc.divideArea(areaCoords, config.Area)
+	/*areas, neighborsMap := proc.divideArea(areaCoords, config.Area)
 	for _, area := range areas {
 		neighbors := neighborsMap[int(area.Id)]
 		go podgen.applyWorker(area, neighbors)
@@ -389,7 +409,7 @@ func (proc *Processor) setAreas(areaCoords []*api.Coord) (bool, error) {
 	})
 	logger.Debug("Send Area Info to Vis! \n%v\n", targets)
 	//areas := []*api.Area{proc.Area}
-	simapi.SendAreaInfoRequest(senderId, targets, areas)
+	simapi.SendAreaInfoRequest(senderId, targets, areas)*/
 
 	return true, nil
 }
@@ -414,7 +434,7 @@ func (proc *Processor) startClock() {
 	t2 := time.Now()
 	duration := t2.Sub(t1).Milliseconds()
 	logger.Info("Duration: %v", duration)
-	interval := int64(300) // 周期ms
+	interval := int64(1000) // 周期ms
 	if duration > interval {
 		logger.Error("time cycle delayed...")
 	} else {
@@ -422,11 +442,7 @@ func (proc *Processor) startClock() {
 		logger.Info("wait %v ms", interval-duration)
 		time.Sleep(time.Duration(interval-duration) * time.Millisecond)
 	}
-	// 1秒毎に10対追加
-	if masterClock%3 == 0 {
-		logger.Info("setAgent")
-		proc.setAgents3(uint64(10))
-	}
+
 	// 次のサイクルを行う
 	if startFlag {
 		proc.startClock()
@@ -529,7 +545,7 @@ func (or *Order) SetAgent() echo.HandlerFunc {
 			return err
 		}
 		fmt.Printf("agent num %d\n", ao.Num)
-		ok, err := proc.setAgents2(uint64(ao.Num))
+		ok, err := proc.setAgents(uint64(ao.Num))
 		fmt.Printf("ok %v, err %v", ok, err)
 		return c.String(http.StatusOK, "Set Agent")
 	}

@@ -156,49 +156,48 @@ func (rvo2route *RVO2Route) CalcNextAgents() []*api.Agent {
 	nextControlAgents := make([]*api.Agent, 0)
 	for rvoId, agentInfo := range currentAgents {
 		// 管理エリア内のエージェントのみ抽出
-		position := agentInfo.Route.Position
-		if IsAgentInArea(position, rvo2route.Area.ControlArea) {
-			destination := agentInfo.Route.Destination
+		//position := agentInfo.Route.Position
+		//if IsAgentInArea(position, rvo2route.Area.ControlArea) {
+		destination := agentInfo.Route.Destination
 
-			// rvoの位置情報を緯度経度に変換する
-			rvoAgentPosition := sim.GetAgentPosition(int(rvoId))
+		// rvoの位置情報を緯度経度に変換する
+		//rvoAgentPosition := sim.GetAgentPosition(int(rvoId))
 
-			nextCoord := &api.Coord{
-				Latitude:  rvoAgentPosition.Y,
-				Longitude: rvoAgentPosition.X,
-			}
+		/*nextCoord := &api.Coord{
+			Latitude:  rvoAgentPosition.Y,
+			Longitude: rvoAgentPosition.X,
+		}*/
+		// 現在の位置とゴールとの距離と角度を求める (度, m))
+		//_, distance := rvo2route.CalcDirectionAndDistance(nextCoord, agentInfo.Route.NextTransit)
+		// 次の経由地nextTransitを求める
+		//nextTransit := rvo2route.DecideNextTransit(agentInfo.Route.NextTransit, agentInfo.Route.TransitPoints, distance, destination)
+		nextTransit := agentInfo.Route.NextTransit
+		//nextTransit := rvo2route.GetNextTransit(agentInfo.Route.NextTransit, distance)
 
-			// 現在の位置とゴールとの距離と角度を求める (度, m))
-			_, distance := rvo2route.CalcDirectionAndDistance(nextCoord, agentInfo.Route.NextTransit)
-			// 次の経由地nextTransitを求める
-			//nextTransit := rvo2route.DecideNextTransit(agentInfo.Route.NextTransit, agentInfo.Route.TransitPoints, distance, destination)
-			//nextTransit := agentInfo.Route.NextTransit
-			nextTransit := rvo2route.GetNextTransit(agentInfo.Route.NextTransit, distance)
+		goalVector := sim.GetAgentGoalVector(int(rvoId))
+		direction := math.Atan2(goalVector.Y, goalVector.X)
+		speed := agentInfo.Route.Speed
 
-			goalVector := sim.GetAgentGoalVector(int(rvoId))
-			direction := math.Atan2(goalVector.Y, goalVector.X)
-			speed := agentInfo.Route.Speed
-
-			nextRoute := &api.Route{
-				Position:      nextCoord,
-				Direction:     direction,
-				Speed:         speed,
-				Destination:   destination,
-				Departure:     agentInfo.Route.Departure,
-				TransitPoints: agentInfo.Route.TransitPoints,
-				NextTransit:   nextTransit,
-				TotalDistance: agentInfo.Route.TotalDistance,
-				RequiredTime:  agentInfo.Route.RequiredTime,
-			}
-
-			nextControlAgent := &api.Agent{
-				Id:    agentInfo.Id,
-				Type:  agentInfo.Type,
-				Route: nextRoute,
-			}
-
-			nextControlAgents = append(nextControlAgents, nextControlAgent)
+		nextRoute := &api.Route{
+			Position:      agentInfo.Route.Position,
+			Direction:     direction,
+			Speed:         speed,
+			Destination:   destination,
+			Departure:     agentInfo.Route.Departure,
+			TransitPoints: agentInfo.Route.TransitPoints,
+			NextTransit:   nextTransit,
+			TotalDistance: agentInfo.Route.TotalDistance,
+			RequiredTime:  agentInfo.Route.RequiredTime,
 		}
+
+		nextControlAgent := &api.Agent{
+			Id:    agentInfo.Id,
+			Type:  agentInfo.Type,
+			Route: nextRoute,
+		}
+
+		nextControlAgents = append(nextControlAgents, nextControlAgent)
+		//}
 	}
 
 	return nextControlAgents

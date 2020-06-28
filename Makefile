@@ -22,7 +22,7 @@ database:
 		kubectl logs -f database${arg} -c database-provider
 
 agent:
-		kubectl logs -f agent11 -c agent-provider
+		kubectl logs -f worker11 -c agent-provider
 
 vis:
 		kubectl logs -f visualization -c visualization-provider

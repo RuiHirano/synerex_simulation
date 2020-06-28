@@ -233,14 +233,14 @@ func demandCallback(clt *api.SMServiceClient, dm *api.Demand) {
 		agents := dm.GetSimDemand().GetSetAgentRequest().GetAgents()
 
 		// Agent情報を追加する
-		sim.AddAgents(agents)
+		num := sim.AddAgents(agents)
 
 		// セット完了通知を送る
 		targets := []uint64{dm.GetSimDemand().GetSenderId()}
 		senderId := myProvider.Id
 		msgId := dm.GetSimDemand().GetMsgId()
 		simapi.SetAgentResponse(senderId, targets, msgId)
-		//logger.Info("\x1b[32m\x1b[40m [ Agent : %v ] \x1b[0m", num)
+		logger.Info("\x1b[32m\x1b[40m [ Agent : %v ] \x1b[0m", num)
 		////logger.Info("Finish: Agents %v\n", num)
 
 	case api.DemandType_FORWARD_CLOCK_REQUEST:
