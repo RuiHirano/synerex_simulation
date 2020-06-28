@@ -351,7 +351,7 @@ func (proc *Processor) setAgents(agentNum uint64) (bool, error) {
 				NextTransit:   transitPoint,
 			},
 		})
-		fmt.Printf("position %v\n", position)
+		//fmt.Printf("position %v\n", position)
 	}
 
 	// エージェントを設置するリクエスト
@@ -414,7 +414,7 @@ func (proc *Processor) startClock() {
 	t2 := time.Now()
 	duration := t2.Sub(t1).Milliseconds()
 	logger.Info("Duration: %v", duration)
-	interval := int64(300) // 周期ms
+	interval := int64(1000) // 周期ms
 	if duration > interval {
 		logger.Error("time cycle delayed...")
 	} else {
@@ -422,11 +422,7 @@ func (proc *Processor) startClock() {
 		logger.Info("wait %v ms", interval-duration)
 		time.Sleep(time.Duration(interval-duration) * time.Millisecond)
 	}
-	// 1秒毎に10対追加
-	if masterClock%3 == 0 {
-		logger.Info("setAgent")
-		proc.setAgents3(uint64(10))
-	}
+
 	// 次のサイクルを行う
 	if startFlag {
 		proc.startClock()
@@ -458,7 +454,7 @@ func (proc *Processor) divideArea(areaCoords []*api.Coord, areaConfig Config_Are
 			// calc slat, elat
 			slat := minLat + (maxLat-minLat)*float64(r)/float64(row)
 			elat := minLat + (maxLat-minLat)*float64((r+1))/float64(row)
-			fmt.Printf("test id %v\n", areaId)
+			//fmt.Printf("test id %v\n", areaId)
 			areas = append(areas, &api.Area{
 				Id: uint64(areaIdint),
 				ControlArea: []*api.Coord{
