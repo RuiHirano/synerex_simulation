@@ -22,7 +22,7 @@
     "css-loader": "^2.1.1",
     "hard-source-webpack-plugin": "^0.13.1",
     "harmoware-vis": "^1.2.0",
-    "node-sass": "^4.12.0",
+    "node-sass": "^4.13.1",
     "react": "^16.8.5",
     "react-dom": "^16.8.5",
     "react-redux": "^5.0.6",
